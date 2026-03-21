@@ -42,10 +42,16 @@ function getPointGen() {
 		return new Decimal(0)
 
 	let gain = new Decimal(1)
-	
+	if (hasUpgrade('p', 11)) gain = gain.times(2)
+    if (hasUpgrade('p', 12)) gain = gain.times(upgradeEffect('p', 12))
+	  if (player.sp) {
+        gain = gain.times(player.sp.points.add(1).pow(0.55))
+    }     
+	if (player.a) {
+        gain = gain.times(player.a.points.add(1).pow(0.66))
+    }    
 	return gain
 }
-
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
 function addedPlayerData() { return {
 }}
@@ -71,3 +77,4 @@ var backgroundStyle = {
 function maxTickLength() {
 	return(3600) // Default is 1 hour which is just arbitrarily large
 }
+
