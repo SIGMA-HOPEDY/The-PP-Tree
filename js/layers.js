@@ -24,5 +24,23 @@ addLayer("p", {
     hotkeys: [
         {key: "p", description: "P: Reset for prestige points", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
     ],
-    layerShown(){return true}
+    layerShown(){return true},    upgrades: {        11: {    title: "Make this whatever you want!",
+    description: "双倍点数获取",
+    cost: new Decimal(1),12: {
+        title: "点数强度",
+        description: "基于你的点数提升效果。",
+        cost: new Decimal(5),  // 消耗5个P点
+        unlocked() { return hasUpgrade('p', 11) },  // 例如：需要先购买升级11
+        
+        // 你提供的代码片段从这里开始插入
+        effect() {
+            return player[this.layer].points.add(1).pow(0.5)
+        },
+        effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },
+        // 到这里结束
+    },
+
+        },
+
+    },
 })
