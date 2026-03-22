@@ -28,6 +28,8 @@ addLayer("p", {
                     if (hasMilestone('sp', 1)) mult = mult.times(1.2);  // ×1.2
     if (hasMilestone('sp', 4)) mult = mult.times(1.5);  // ×1.5
     if (hasMilestone('sp', 5)) mult = mult.times(10);    // (x10)
+    if (hasUpgrade('p', 23)) mult = mult.times(upgradeEffect('p', 23))
+        if (hasUpgrade('p', 24)) mult = mult.times(upgradeEffect('p', 24))
     
         return mult
     },
@@ -49,8 +51,9 @@ addLayer("p", {
         description: "基于你的p点提升点数获取。",
         cost: new Decimal(5),  // 消耗5个P点
         unlocked() { return hasUpgrade('p', 11) },  // 例如：需要先购买升级11
-        effect() {
-            return player[this.layer].points.add(1).pow(0.44)
+        effect() {if (player[this.layer].points.add(1).pow(0.33)>1e38) 
+            return (1e38*player[this.layer].points.add(1).pow(0.05)); else
+            return player[this.layer].points.add(1).pow(0.5)
         },
         effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },
     },
@@ -92,8 +95,42 @@ addLayer("p", {
         cost: new Decimal(1e9),  
         unlocked() { return hasUpgrade('p', 21) }, 
              },
+     23: {
+        title: "08",
+        description: "p点获取*p点^0.005.",
+        cost: new Decimal(1e12),  
+        unlocked() { return hasUpgrade('p', 22) }, 
+             effect() {
+        return player.p.points.add(1).pow(0.005)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    24: {
+        title: "09",
+        description: "p点获取*p点^0.02.",
+        cost: new Decimal(1e20),  
+        unlocked() { return hasUpgrade('p', 23) }, 
+             effect() {
+        return player.p.points.add(1).pow(0.02)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    25: {
+        title: "10",
+        description: "点数获取*p点^0.01.",
+        cost: new Decimal(1e20),  
+        unlocked() { return hasUpgrade('p', 24) }, 
+             effect() {
+        return player.p.points.add(1).pow(0.01)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    31: {
+        title: "p11",
+        description: "点数获取*点数获取^0.005.",
+        cost: new Decimal(1e38),  
+        unlocked() { return hasUpgrade('p', 25) }, 
+             effect() {
+        return player.points.add(1).pow(0.005)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+
 }  
     },
+)  
 addLayer("sp", {
     name: "second prestige",
     symbol: "SP",
@@ -208,10 +245,10 @@ if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
         return true // 可以根据解锁状态调整，例如：return player.sp.unlocked
     },
     upgrades: {31: {    title: "11",
-    description: "双倍p点获取,基于你的sp点提升点数获取.",
+    description: "双倍p点获取,基于你的sp点小幅度提升点数获取.",
     cost: new Decimal(1),
 effect() {
-        return player.sp.points.add(1).pow(0.5)
+        return player.sp.points.add(1).pow(0.3)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  
         }, 
         32: {
@@ -219,14 +256,32 @@ effect() {
         description: "基于你的sp点提升P点获取。",
         cost: new Decimal(25),  
         unlocked() { return hasUpgrade('sp', 31) }, 
+        effect() {if (player.sp.points.add(1).pow(0.35)>1e38) 
+            return (1e38*player.sp.points.add(1).pow(0.035)); else
+            return player.sp.points.add(1).pow(0.35)
+        },
+        effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },},
+    33: {
+        title: "13",
+        description: "基于你的sp点提升sp点获取。",
+        cost: new Decimal(1e9),  
+        unlocked() { return hasUpgrade('sp', 32) }, 
             effect() {
-        return player.sp.points.add(1).pow(0.35)
+        return player.sp.points.add(1).pow(0.025)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
-        // 这里可以定义该层的升级，结构参考P层
+    34: {
+        title: "14",
+        description: "基于你的sp点提升点数获取。",
+        cost: new Decimal(1e15),  
+        unlocked() { return hasUpgrade('sp', 33) }, 
+            effect() {
+        return player.sp.points.add(1).pow(0.5)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     },
 }
 )
-)  
+        // 这里可以定义该层的升级，结构参考P层 
+
 addLayer("a", {
     name: "amplifier",
     symbol: "a",

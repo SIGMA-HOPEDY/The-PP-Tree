@@ -46,13 +46,42 @@ function getPointGen() {
 	let gain = new Decimal(1);
     if (hasUpgrade('p', 11)) gain = gain.times(2);
     if (hasUpgrade('p', 12)) gain = gain.times(upgradeEffect('p', 12));
-    if (hasUpgrade('p', 16)) gain = gain.times(upgradeEffect('p', 16));
+    if (hasUpgrade('p', 21)) gain = gain.times(upgradeEffect('p', 21));
+	if (hasUpgrade('p', 25)) gain = gain.times(upgradeEffect('p', 25));
+	if (hasUpgrade('p', 31)) gain = gain.times(upgradeEffect('p', 31));
     if (hasUpgrade('sp', 31)) gain = gain.times(upgradeEffect('sp', 31));
+	if (hasUpgrade('sp', 34)) gain = gain.times(upgradeEffect('sp', 34));
     if (hasUpgrade('a', 51)) gain = gain.times(upgradeEffect('a', 51));
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasMilestone('sp', 5)) gain = gain.times(10);
-    return gain;
+    
+    // 软上限：当点数获取 > 1e9 时，将超过部分 ^ (99/(100+lg(lg(点数获取))))
+    const softcapThreshold = new Decimal(1e9);
+    if (gain.gt(softcapThreshold)) {
+        let excess = gain.minus(softcapThreshold);
+        // lg(lg(gain)) = log10(log10(gain))
+        let Log10Gain = gain.log10();
+        let Log10Log10Gain = Log10Gain.log10();
+        let exponent = new Decimal(99).div(new Decimal(100).plus(Log10Log10Gain));
+        let cappedExcess = excess.pow(exponent);
+        let cappedGain = softcapThreshold.plus(cappedExcess);
+        
+        // 设置软上限提示
+        if (tmp && tmp.other) {
+            tmp.other.softcapHint = "由于你的点数获取大于1e9,点数获取受到软上限!（效果：将超过部分^{99/(100+lg(lg点数获取))})";
+            tmp.other.softcappedPointGen = cappedGain;
+        }
+        
+        return cappedGain;
+    } else {
+        // 清除提示
+        if (tmp && tmp.other) {
+            tmp.other.softcapHint = "";
+            tmp.other.softcappedPointGen = gain;
+        }
+        return gain;
+    }
 }
 
 // You can add non-layer related variables that should go into "player" and be saved here, along with default values
