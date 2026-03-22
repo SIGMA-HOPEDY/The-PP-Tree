@@ -127,37 +127,49 @@ function canReset(layer)
 }
 
 function rowReset(row, layer) {
-	for (lr in ROW_LAYERS[row]){
-		if(layers[lr].doReset) {
-			if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null) // Exit challenges on any row reset on an equal or higher row
-			run(layers[lr].doReset, layers[lr], layer)
-		}
-		else
-			if(tmp[layer].row > tmp[lr].row && !isNaN(row)) layerDataReset(lr)
-	}
+    for (lr in ROW_LAYERS[row]){
+        if(layers[lr].doReset) {
+            if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null) // Exit challenges on any row reset on an equal or higher row
+            run(layers[lr].doReset, layers[lr], layer)
+        }
+        else
+            if(tmp[layer].row > tmp[lr].row && !isNaN(row)) {
+                // 检查是否是sp层重置p层，并且sp层第3个里程碑已解锁
+                if (layer === "sp" && lr === "p" && hasMilestone('sp', 3)) {
+                    // 保存p层的升级
+                    let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
+                    // 正常重置p层
+                    layerDataReset(lr);
+                    // 恢复p层的升级
+                    player.p.upgrades = savedUpgrades;
+                } else {
+                    layerDataReset(lr);
+                }
+            }
+    }
 }
 
 function layerDataReset(layer, keep = []) {
-	let storedData = {unlocked: player[layer].unlocked, forceTooltip: player[layer].forceTooltip, noRespecConfirm: player[layer].noRespecConfirm, prevTab:player[layer].prevTab} // Always keep these
+    let storedData = {unlocked: player[layer].unlocked, forceTooltip: player[layer].forceTooltip, noRespecConfirm: player[layer].noRespecConfirm, prevTab:player[layer].prevTab} // Always keep these
 
-	for (thing in keep) {
-		if (player[layer][keep[thing]] !== undefined)
-			storedData[keep[thing]] = player[layer][keep[thing]]
-	}
+    for (thing in keep) {
+        if (player[layer][keep[thing]] !== undefined)
+            storedData[keep[thing]] = player[layer][keep[thing]]
+    }
 
-	Vue.set(player[layer], "buyables", getStartBuyables(layer))
-	Vue.set(player[layer], "clickables", getStartClickables(layer))
-	Vue.set(player[layer], "challenges", getStartChallenges(layer))
-	Vue.set(player[layer], "grid", getStartGrid(layer))
+    Vue.set(player[layer], "buyables", getStartBuyables(layer))
+    Vue.set(player[layer], "clickables", getStartClickables(layer))
+    Vue.set(player[layer], "challenges", getStartChallenges(layer))
+    Vue.set(player[layer], "grid", getStartGrid(layer))
 
-	layOver(player[layer], getStartLayerData(layer))
-	player[layer].upgrades = []
-	player[layer].milestones = []
-	player[layer].achievements = []
+    layOver(player[layer], getStartLayerData(layer))
+    player[layer].upgrades = []
+    player[layer].milestones = []
+    player[layer].achievements = []
 
-	for (thing in storedData) {
-		player[layer][thing] =storedData[thing]
-	}
+    for (thing in storedData) {
+        player[layer][thing] =storedData[thing]
+    }
 }
 
 

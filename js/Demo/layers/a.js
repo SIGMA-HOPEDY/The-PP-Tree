@@ -29,7 +29,7 @@ addLayer("a", {
         },
         13: {
             name: "EIEIO",
-            done() {return player.f.points.gte(1)},
+            done() {return player.p.points.gte(1)},
             tooltip: "Get a farm point.\n\nReward: The dinosaur is now your friend (you can max Farm Points).", // Showed when the achievement is completed
             onComplete() {console.log("Bork bork bork!")}
         },

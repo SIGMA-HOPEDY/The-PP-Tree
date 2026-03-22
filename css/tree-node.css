@@ -102,7 +102,3 @@
     border-left: 1em solid transparent;
 	transform: rotate(-35deg);
 }
-
-.star:after {
-	transform: rotate(35deg);
-}

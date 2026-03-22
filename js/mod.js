@@ -35,34 +35,57 @@ function getStartPoints(){
 function canGenPoints(){
 	return true
 }
-
-// Calculate points/sec!
+// You can add non-layer related variables that should to into "player" and be saved here, along with default values
+function addedPlayerData() { return {
+}}
+// 根据升级和里程碑计算增益
 function getPointGen() {
 	if(!canGenPoints())
 		return new Decimal(0)
 
-	let gain = new Decimal(1)
-	if (hasUpgrade('p', 11)) gain = gain.times(2)
-    if (hasUpgrade('p', 12)) gain = gain.times(upgradeEffect('p', 12))
-	  if (player.sp) {
-        gain = gain.times(player.sp.points.add(1).pow(0.55))
-    }     
-	if (player.a) {
-        gain = gain.times(player.a.points.add(1).pow(0.66))
-    }    
-	return gain
+	let gain = new Decimal(1);
+    if (hasUpgrade('p', 11)) gain = gain.times(2);
+    if (hasUpgrade('p', 12)) gain = gain.times(upgradeEffect('p', 12));
+    if (hasUpgrade('p', 16)) gain = gain.times(upgradeEffect('p', 16));
+    if (hasUpgrade('sp', 31)) gain = gain.times(upgradeEffect('sp', 31));
+    if (hasUpgrade('a', 51)) gain = gain.times(upgradeEffect('a', 51));
+    if (hasMilestone('sp', 0)) gain = gain.times(2);
+    if (hasMilestone('sp', 2)) gain = gain.times(5);
+    if (hasMilestone('sp', 5)) gain = gain.times(10);
+    return gain;
 }
-// You can add non-layer related variables that should to into "player" and be saved here, along with default values
+
+// You can add non-layer related variables that should go into "player" and be saved here, along with default values
 function addedPlayerData() { return {
 }}
 
 // Display extra things at the top of the page
+
 var displayThings = [
 ]
+// 在mod.js的某个每帧调用的函数中
+// function autoBuyUpgrades() {
+//     if (hasMilestone('sp', 3)) {
+//         // 自动购买P层可购买的升级
+//         for (let id in layers.p.upgrades) {
+//             let upg = layers.p.upgrades[id];
+//             if (upg.unlocked && upg.unlocked() && !hasUpgrade('p', id)) {
+//                 if (player.p.points.gte(upg.cost)) {
+//                     // 执行购买
+//                     player.p.points = player.p.points.minus(upg.cost);
+//                     player.p.upgrades[id] = true;
+//                     console.log(`自动购买了P层升级 ${id}`);
+//                 }
+//             }
+//         }
+//     }
+// }
 
+// 确保这个函数被添加到doNotCallTheseFunctionsEveryTick数组
+// doNotCallTheseFunctionsEveryTick.push("autoBuyUpgrades");
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte(new Decimal("e280000000"))
+	return player.points.gte(new Decimal("1e308"))
 }
 
 
@@ -77,4 +100,3 @@ var backgroundStyle = {
 function maxTickLength() {
 	return(3600) // Default is 1 hour which is just arbitrarily large
 }
-

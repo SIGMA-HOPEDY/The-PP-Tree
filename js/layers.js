@@ -12,18 +12,22 @@ addLayer("p", {
     baseResource: "points", // Name of resource prestige is based on
     baseAmount() {return player.points}, // Get the current amount of baseResource
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
-    exponent: 0.5, // Prestige currency exponent
+        exponent: function() {
+        let exp = 0.52;
+        if (hasUpgrade('a', 52)) exp = exp * 1.01;
+        return exp;
+    },
+// Prestige currency exponent
     gainMult() {
         let mult = new Decimal(1)
         if (hasUpgrade('p', 13)) mult = mult.times(upgradeEffect('p', 13))
         if (hasUpgrade('p', 14)) mult = mult.times(upgradeEffect('p', 14))
-        if (player.sp) {
-        mult = mult.times(player.sp.points.add(1).pow(0.33))
-    }
-    if (player.a) {
-        mult = mult.times(player.a.points.add(1).pow(0.44))
-
-    }
+    if (hasUpgrade('sp', 31)) mult = mult.times(2)
+        if (hasUpgrade('sp', 32)) mult = mult.times(upgradeEffect('sp', 32))
+                if (hasUpgrade('a', 51)) mult = mult.times(upgradeEffect('a', 51))
+                    if (hasMilestone('sp', 1)) mult = mult.times(1.2);  // ×1.2
+    if (hasMilestone('sp', 4)) mult = mult.times(1.5);  // ×1.5
+    if (hasMilestone('sp', 5)) mult = mult.times(10);    // (x10)
     
         return mult
     },
@@ -34,6 +38,7 @@ addLayer("p", {
     hotkeys: [
         {key: "p", description: "P: Reset for prestige points", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
     ],
+
     layerShown(){return true},    upgrades: {        11: {    title: "01",
     description: "双倍点数获取.",
     cost: new Decimal(1),
@@ -45,31 +50,50 @@ addLayer("p", {
         cost: new Decimal(5),  // 消耗5个P点
         unlocked() { return hasUpgrade('p', 11) },  // 例如：需要先购买升级11
         effect() {
-            return player[this.layer].points.add(1).pow(0.5)
+            return player[this.layer].points.add(1).pow(0.44)
         },
         effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },
     },
     13: {
         title: "03",
-        description: "基于你的点数提升P点获取。",
+        description: "基于你的点数提升p点获取。",
         cost: new Decimal(10),  
         unlocked() { return hasUpgrade('p', 12) }, 
             effect() {
-        return player.points.add(1).pow(0.15)
-    },    },
+        return player.points.add(1).pow(0.175)
+    }, effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },   },
     14: {
         title: "04",
-        description: "基于你的p点提升P点获取。",
+        description: "基于你的p点提升p点获取。",
         cost: new Decimal(250),  
         unlocked() { return hasUpgrade('p', 13) }, 
             effect() {
-        return player.p.points.add(1).pow(0.25)
-    },    },
+        return player.p.points.add(1).pow(0.135)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+     15: {
+        title: "05",
+        description: "基于你的p点提升sp点获取。",
+        cost: new Decimal(10000),  
+        unlocked() { return hasUpgrade('p', 14) }, 
+            effect() {
+        return player.p.points.add(1).pow(0.0725)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    21: {
+        title: "06",
+        description: "基于你的点数提升点数获取。",
+        cost: new Decimal(1000000),  
+        unlocked() { return hasUpgrade('p', 15) }, 
+            effect() {
+        return player.points.add(1).pow(0.135)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    22: {
+        title: "07",
+        description: "amplifier获取公式指数+0.01.",
+        cost: new Decimal(1e9),  
+        unlocked() { return hasUpgrade('p', 21) }, 
+             },
 }  
     },
-
-        
-    )
 addLayer("sp", {
     name: "second prestige",
     symbol: "SP",
@@ -86,9 +110,89 @@ addLayer("sp", {
     baseResource: "prestige points", // 基于的货币（P点）
     baseAmount() { return player.p.points }, // 这里应指向P层的点数，注意路径
     type: "normal", 
-    exponent: 0.25,
+    exponent: function() {
+        let exp = 0.4;
+        if (hasMilestone('sp', 2)) exp = exp + 0.05;
+        if (hasMilestone('sp', 4)) exp = exp + 0.05;
+        return exp;
+    },
+    // 禁用里程碑弹窗
+    milestonePopups: false,
+    
+    // 里程碑定义
+    milestones: {
+        0: {
+            requirementDescription: "1 SP点",
+            effectDescription: "点数获取速度×2",
+            done() { 
+                return player.sp.points.gte(1) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1 SP点");
+            }
+        },
+        1: {
+            requirementDescription: "5 SP点",
+            effectDescription: "P点获取速度×1.2",
+            done() { 
+                return player.sp.points.gte(5) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 5 SP点");
+            }
+        },
+        2: {
+            requirementDescription: "25 SP点",
+            effectDescription: "点数获取速度×5，SP点获取指数+0.05",
+            done() { 
+                return player.sp.points.gte(25) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 25 SP点");
+            }
+        },
+        3: {
+            requirementDescription: "1000 SP点",
+            effectDescription: "进行SP重置不重置P升级",
+            done() { 
+                return player.sp.points.gte(1000) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1000 SP点 - SP重置不重置P升级");
+            },
+            
+        },
+        4: {
+            requirementDescription: "10000 SP点",
+            effectDescription: "P点获取速度×1.5，SP点获取指数+0.05",
+            done() { 
+                return player.sp.points.gte(10000) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 10000 SP点");
+            }
+        },
+        5: {
+            requirementDescription: "1e6 SP点",
+            effectDescription: "点数和P点获取×10",
+            done() { 
+                return player.sp.points.gte(1e6) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1e6 SP点 - 数和P点获取×10");
+            },
+            style: {
+                "color": "#ff9900",
+                "border": "2px solid #ff9900"
+            }
+        },
+    },
+    
     gainMult() {
         let mult = new Decimal(1)
+if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
+    if (hasUpgrade('a', 51)) mult = mult.times(upgradeEffect('a', 51))
+    
         return mult
     },
     gainExp() {
@@ -98,14 +202,31 @@ addLayer("sp", {
     hotkeys: [
         {key: "s", description: "S: Reset for second prestige points", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
     ],
+    // 在mod.js中查找类似这样的函数
+
     layerShown() {
         return true // 可以根据解锁状态调整，例如：return player.sp.unlocked
     },
-
-    upgrades: {
+    upgrades: {31: {    title: "11",
+    description: "双倍p点获取,基于你的sp点提升点数获取.",
+    cost: new Decimal(1),
+effect() {
+        return player.sp.points.add(1).pow(0.5)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  
+        }, 
+        32: {
+        title: "12",
+        description: "基于你的sp点提升P点获取。",
+        cost: new Decimal(25),  
+        unlocked() { return hasUpgrade('sp', 31) }, 
+            effect() {
+        return player.sp.points.add(1).pow(0.35)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
         // 这里可以定义该层的升级，结构参考P层
-    }
-})
+    },
+}
+)
+)  
 addLayer("a", {
     name: "amplifier",
     symbol: "a",
@@ -116,13 +237,45 @@ addLayer("a", {
             points: new Decimal(0),
         }
     },
-    color: "#ff0000ff",
-    requires: new Decimal(1000000), // 需要1000000个P点才能解锁此层
+    color: "#1900ffff",
+    requires: new Decimal(1e6), // 需要1e6个P点才能解锁此层
     resource: "amplifier", // 该层的货币名称
     baseResource: "prestige points", // 基于的货币（P点）
     baseAmount() { return player.p.points }, // 这里应指向P层的点数，注意路径
     type: "normal", 
-    exponent: 0.125,
+   exponent: function() {
+        let exp = 0.02;
+        if (hasUpgrade('p', 22)) exp = exp + 0.01;
+        return exp;
+    },
+    // 禁用里程碑弹窗
+    milestonePopups: false,
+    
+    // 里程碑定义
+    milestones: {
+        0: {
+            requirementDescription: "1 amplifier",
+            effectDescription: "点数获取速度×2",
+            done() { 
+                return player.a.points.gte(1) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1 amplifier");
+            }
+        },
+        //1: {
+            //requirementDescription: "5 amplifier",
+           // effectDescription: "软上限弱化为0.55",
+            //done() { 
+           //     return player.a.points.gte(5) 
+           // },
+           // onComplete() {
+//     console.log("里程碑解锁: 5 amplifier");
+           // }
+       // },
+        
+    },
+    
     gainMult() {
         let mult = new Decimal(1)
         return mult
@@ -130,7 +283,7 @@ addLayer("a", {
     gainExp() {
         return new Decimal(1)
     },
-    row: 1, // 放在第二行（0是第一行，1是第二行）
+    row: 1, // 放在第三行（0是第一行，1是第二行，2是第三行）
        hotkeys: [
         {key: "a", description: "A: Reset for amplifier", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
     ],
@@ -138,7 +291,19 @@ addLayer("a", {
         return true // 可以根据解锁状态调整，例如：return player.a.unlocked
     },
 
-    upgrades: {
+    upgrades: {51: {
+        title: "21",
+        description: "基于你的amplifier提升点数,P点,sp点获取。(加成不低于2.5)",
+        cost: new Decimal(1),  
+            effect() {
+        return player.a.points.add(16).pow(0.33)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+52: {
+        title: "22",
+        description: "P点获取公式指数x1.01.",
+        cost: new Decimal(5),  
+             },
         // 这里可以定义该层的升级，结构参考P层
     }
-})
+}
+)
