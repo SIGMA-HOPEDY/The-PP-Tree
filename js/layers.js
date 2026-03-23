@@ -91,41 +91,41 @@ addLayer("p", {
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     22: {
         title: "07",
-        description: "amplifier获取公式指数+0.01.",
+        description: "amplifier获取公式指数+0.03.",
         cost: new Decimal(1e9),  
         unlocked() { return hasUpgrade('p', 21) }, 
              },
      23: {
         title: "08",
-        description: "p点获取*p点^0.005.",
+        description: "p点获取*p点^0.015",
         cost: new Decimal(1e12),  
         unlocked() { return hasUpgrade('p', 22) }, 
              effect() {
-        return player.p.points.add(1).pow(0.005)
+        return player.p.points.add(1).pow(0.015)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     24: {
         title: "09",
-        description: "p点获取*p点^0.02.",
+        description: "p点获取*p点^0.025.",
         cost: new Decimal(1e20),  
         unlocked() { return hasUpgrade('p', 23) }, 
              effect() {
-        return player.p.points.add(1).pow(0.02)
+        return player.p.points.add(1).pow(0.025)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     25: {
         title: "10",
-        description: "点数获取*p点^0.01.",
+        description: "点数获取*p点^0.125",
         cost: new Decimal(1e20),  
         unlocked() { return hasUpgrade('p', 24) }, 
              effect() {
-        return player.p.points.add(1).pow(0.01)
+        return player.p.points.add(1).pow(0.1)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     31: {
         title: "p11",
-        description: "点数获取*点数获取^0.005.",
+        description: "点数获取*点数获取^0.025",
         cost: new Decimal(1e38),  
         unlocked() { return hasUpgrade('p', 25) }, 
              effect() {
-        return player.points.add(1).pow(0.005)
+        return player.points.add(1).pow(0.05)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
 
 }  
@@ -300,7 +300,7 @@ addLayer("a", {
     type: "normal", 
    exponent: function() {
         let exp = 0.02;
-        if (hasUpgrade('p', 22)) exp = exp + 0.01;
+        if (hasUpgrade('p', 22)) exp = exp + 0.03;
         return exp;
     },
     // 禁用里程碑弹窗
@@ -310,7 +310,7 @@ addLayer("a", {
     milestones: {
         0: {
             requirementDescription: "1 amplifier",
-            effectDescription: "点数获取速度×2",
+            effectDescription: "点数获取速度×25",
             done() { 
                 return player.a.points.gte(1) 
             },
@@ -351,7 +351,7 @@ addLayer("a", {
         description: "基于你的amplifier提升点数,P点,sp点获取。(加成不低于2.5)",
         cost: new Decimal(1),  
             effect() {
-        return player.a.points.add(16).pow(0.33)
+        return player.a.points.add(16).pow(0.78)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
 52: {
         title: "22",

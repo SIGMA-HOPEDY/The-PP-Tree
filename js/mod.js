@@ -55,21 +55,23 @@ function getPointGen() {
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasMilestone('sp', 5)) gain = gain.times(10);
+    if (hasMilestone('a', 0)) gain = gain.times(25);
     const softcapThreshold = new Decimal(1e9);
     if (gain.gt(softcapThreshold)) {
         let excess = gain.minus(softcapThreshold);
         // lg(lg(gain)) = log10(log10(gain))
         let Log10Gain = gain.log10();
         let Log10Log10Gain = Log10Gain.log10();
-        let exponent = new Decimal(12).div(new Decimal(25).plus(Log10Log10Gain));
+        let exponent = new Decimal(12).div(new Decimal(13).plus(Log10Log10Gain));
         let cappedExcess = excess.pow(exponent);
         let cappedGain = softcapThreshold.plus(cappedExcess);
         
         // 设置软上限提示
-        if (tmp && tmp.other) {
-            tmp.other.softcapHint = "由于你的点数获取大于1e9,点数获取受到软上限!（效果：将超过部分^{12/(13+lg(lg点数获取))})";
+                if (tmp && tmp.other) {
+            tmp.other.softcapHint = "由于你的点数获取大于1e9,点数获取受到软上限!（效果：超过部分^" + exponent + "）";
             tmp.other.softcappedPointGen = cappedGain;
         }
+        // 计算软上限后的点数获取
         
         return cappedGain;
     } else {
