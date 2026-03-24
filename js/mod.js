@@ -33,7 +33,7 @@ function getStartPoints(){
 
 // Determines if it should show points/sec
 function canGenPoints(){
-	return true
+    return true
 }
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
 function addedPlayerData() { return {
@@ -51,6 +51,7 @@ function getPointGen() {
 	if (hasUpgrade('p', 31)) gain = gain.times(upgradeEffect('p', 31));
     if (hasUpgrade('sp', 31)) gain = gain.times(upgradeEffect('sp', 31));
 	if (hasUpgrade('sp', 34)) gain = gain.times(upgradeEffect('sp', 34));
+    if (hasUpgrade('sp', 35)) gain = gain.times(upgradeEffect('sp', 35));
     if (hasUpgrade('a', 51)) gain = gain.times(upgradeEffect('a', 51));
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
@@ -62,7 +63,7 @@ function getPointGen() {
         // lg(lg(gain)) = log10(log10(gain))
         let Log10Gain = gain.log10();
         let Log10Log10Gain = Log10Gain.log10();
-        let exponent = new Decimal(12).div(new Decimal(13).plus(Log10Log10Gain));
+        let exponent = new Decimal(8).div(new Decimal(9).plus(Log10Log10Gain));
         let cappedExcess = excess.pow(exponent);
         let cappedGain = softcapThreshold.plus(cappedExcess);
         

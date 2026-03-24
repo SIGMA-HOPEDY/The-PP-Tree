@@ -51,9 +51,9 @@ addLayer("p", {
         description: "基于你的p点提升点数获取。",
         cost: new Decimal(5),  // 消耗5个P点
         unlocked() { return hasUpgrade('p', 11) },  // 例如：需要先购买升级11
-        effect() {if (player[this.layer].points.add(1).pow(0.33)>1e38) 
-            return (1e38*player[this.layer].points.add(1).pow(0.05)); else
-            return player[this.layer].points.add(1).pow(0.5)
+        effect() {if (player.p.points.add(1).pow(0.5)>1e38) 
+            return (1e38*((player.p.points.div(1e38)).add(1).pow(0.05))); else
+            return player.p.points.add(1).pow(0.5)
         },
         effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },
     },
@@ -151,6 +151,7 @@ addLayer("sp", {
         let exp = 0.4;
         if (hasMilestone('sp', 2)) exp = exp + 0.05;
         if (hasMilestone('sp', 4)) exp = exp + 0.05;
+        if (hasUpgrade('sp', 41)) exp = exp+upgradeEffect('sp', 41);
         return exp;
     },
     // 禁用里程碑弹窗
@@ -229,7 +230,8 @@ addLayer("sp", {
         let mult = new Decimal(1)
 if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
     if (hasUpgrade('a', 51)) mult = mult.times(upgradeEffect('a', 51))
-    
+        if (hasUpgrade('a', 53)) mult = mult.times(upgradeEffect('a', 53))
+
         return mult
     },
     gainExp() {
@@ -275,9 +277,27 @@ effect() {
         cost: new Decimal(1e15),  
         unlocked() { return hasUpgrade('sp', 33) }, 
             effect() {if (player.sp.points.add(1).pow(0.33)>1e38) 
-            return (1e38*player.sp.points.add(1).pow(0.25)); else
+            return (1e38*((player.sp.points.div(1e38)).add(1).pow(0.165))); else
             return player.sp.points.add(1).pow(0.33)},
    effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+   35: {
+        title: "15",
+        description: "基于你的sp点提升点数获取。",
+        cost: new Decimal(1e38),  
+        unlocked() { return hasUpgrade('sp', 34) }, 
+            effect() {if (player.sp.points.add(1).pow(0.25)>1e38) 
+            return (1e38*((player.sp.points.div(1e38)).add(1).pow(0.125))); else
+            return player.sp.points.add(1).pow(0.25)},
+   effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+   41: {
+        title: "16",
+        description: "基于你的sp点提升sp点获取指数。",
+        cost: new Decimal(1e100),  
+        unlocked() {  return hasUpgrade('sp', 35)}, 
+            effect() {if ((player.sp.points.add(1).pow(0.0001).add(-1))>1) 
+            return (1e38*((player.sp.points.div(1e38)).add(1).pow(0.000025))); else
+            return player.sp.points.add(1).pow(0.0001)},
+   effectDisplay() { return "+"+format(upgradeEffect(this.layer, this.id).add(-1)) },  },
     },
 })
         // 这里可以定义该层的升级，结构参考P层 
@@ -358,6 +378,18 @@ addLayer("a", {
         description: "P点获取公式指数x1.01.",
         cost: new Decimal(5),  
              },
+53: {
+        title: "23",
+        description: "基于你的amplifier提升sp点获取。(加成不低于10)",
+        cost: new Decimal(10000000),  
+            effect() {
+        return player.a.points.add(100).pow(0.5)
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  }, 
+//53: {
+        //title: "23",
+        //description: "每秒获得重置时P点的1%.",
+        //cost: new Decimal(10000000),  
+           //  },
         // 这里可以定义该层的升级，结构参考P层
     }
 }
