@@ -127,25 +127,29 @@ function canReset(layer)
 }
 
 function rowReset(row, layer) {
-    for (lr in ROW_LAYERS[row]){
-        if(layers[lr].doReset) {
-            if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null) // Exit challenges on any row reset on an equal or higher row
-            run(layers[lr].doReset, layers[lr], layer)
-        }
-        else
-            if(tmp[layer].row > tmp[lr].row && !isNaN(row)) {
-                // 检查是否是sp层重置p层，并且sp层第3个里程碑已解锁
-                if (layer === "sp" && lr === "p" && hasMilestone('sp', 3)) {
-                    // 保存p层的升级
-                    let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
-                    // 正常重置p层
-                    layerDataReset(lr);
-                    // 恢复p层的升级
-                    player.p.upgrades = savedUpgrades;
-                } else {
-                    layerDataReset(lr);
-                }
+    for (lr in ROW_LAYERS[row]) {
+        if (layers[lr].doReset) {
+            if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null); // Exit challenges on any row reset on an equal or higher row
+            run(layers[lr].doReset, layers[lr], layer);
+        } else if (tmp[layer].row > tmp[lr].row && !isNaN(row)) {
+            // 检查是否是sp层重置p层，并且sp层第3个里程碑已解锁
+            if (layer === "sp" && lr === "p" && hasMilestone('sp', 3)) {
+                // 保存p层的升级
+                let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
+                // 正常重置p层
+                layerDataReset(lr);
+                // 恢复p层的升级
+                player.p.upgrades = savedUpgrades;
             }
+            // 检查是否是a层重置p层，并且a层升级55已解锁
+            else if (layer === "a" && lr === "p" && hasUpgrade('a', 55)) {
+                let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
+                layerDataReset(lr);
+                player.p.upgrades = savedUpgrades;
+            } else {
+                layerDataReset(lr);
+            }
+        }
     }
 }
 

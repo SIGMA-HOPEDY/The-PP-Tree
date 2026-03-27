@@ -18,6 +18,14 @@ addLayer("p", {
         return exp;
     },
 // Prestige currency exponent
+
+    passiveGeneration: function() {
+        let passiveGeneration = 0;
+        if (hasUpgrade('a', 54)) passiveGeneration = passiveGeneration+0.01;
+        if (hasUpgrade('a', 62)) passiveGeneration = passiveGeneration+0.09;
+        if (hasUpgrade('a', 63)) passiveGeneration = passiveGeneration+0.9;
+        return passiveGeneration;
+    },
     gainMult() {
         let mult = new Decimal(1)
         if (hasUpgrade('p', 13)) mult = mult.times(upgradeEffect('p', 13))
@@ -114,13 +122,13 @@ addLayer("p", {
     25: {
         title: "10",
         description: "点数获取*p点^0.125",
-        cost: new Decimal(1e20),  
+        cost: new Decimal(1e25),  
         unlocked() { return hasUpgrade('p', 24) }, 
              effect() {
         return player.p.points.add(1).pow(0.1)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     31: {
-        title: "p11",
+        title: "多出来的升级?",
         description: "点数获取*点数获取^0.025",
         cost: new Decimal(1e38),  
         unlocked() { return hasUpgrade('p', 25) }, 
@@ -231,11 +239,18 @@ addLayer("sp", {
 if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
     if (hasUpgrade('a', 51)) mult = mult.times(upgradeEffect('a', 51))
         if (hasUpgrade('a', 53)) mult = mult.times(upgradeEffect('a', 53))
+            if (hasUpgrade('sp', 42)) mult = mult.times(upgradeEffect('sp', 42))
 
         return mult
     },
     gainExp() {
         return new Decimal(1)
+    },
+    passiveGeneration: function() {
+        let passiveGeneration = 0;
+        if (hasUpgrade('a', 64)) passiveGeneration = passiveGeneration+0.01;
+        if (hasUpgrade('a', 65)) passiveGeneration = passiveGeneration+0.99;
+        return passiveGeneration;
     },
     row: 1, // 放在第二行（0是第一行，1是第二行）
     hotkeys: [
@@ -298,6 +313,42 @@ effect() {
             return (1e38*((player.sp.points.div(1e38)).add(1).pow(0.000025))); else
             return player.sp.points.add(1).pow(0.0001)},
    effectDisplay() { return "+"+format(upgradeEffect(this.layer, this.id).add(-1)) },  },
+   42: {
+        title: "17",
+        description: "基于你的点数提升sp点获取。",
+        cost: new Decimal(1e120),  
+        unlocked() { return hasUpgrade('sp', 41) }, 
+            effect() {if (player.points.add(1).pow(0.025)>1e38) 
+            return (1e38*((player.points.div(1e38)).add(1).pow(0.0125))); else
+            return player.points.add(1).pow(0.025)},
+   effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+   43: {
+        title: "18",
+        description: "基于你的sp点提升amplifier获取。",
+        cost: new Decimal(1e150),  
+        unlocked() { return hasUpgrade('sp', 42) }, 
+            effect() {if (player.sp.points.add(1).pow(0.005)>1e38) 
+            return (1e38*((player.sp.points.div(1e38)).add(1).pow(0.0025))); else
+            return player.sp.points.add(1).pow(0.005)},
+   effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    44: {
+        title: "19",
+        description: "软上限再弱化1.03125",
+        cost: new Decimal(1e175),  
+        unlocked() { return hasUpgrade('sp', 43) }, 
+            },
+     45: {
+        title: "20",
+        description: "软上限再弱化1.0325",
+        cost: new Decimal(1e180),  
+        unlocked() { return hasUpgrade('sp', 44) }, 
+            },
+    51: {
+        title: "666还有第二关",
+        description: "软上限再弱化1.0335",
+        cost: new Decimal(1e200),  
+        unlocked() { return hasUpgrade('sp', 45) }, 
+            },
     },
 })
         // 这里可以定义该层的升级，结构参考P层 
@@ -338,21 +389,12 @@ addLayer("a", {
                 console.log("里程碑解锁: 1 amplifier");
             }
         },
-        //1: {
-            //requirementDescription: "5 amplifier",
-           // effectDescription: "软上限弱化为0.55",
-            //done() { 
-           //     return player.a.points.gte(5) 
-           // },
-           // onComplete() {
-//     console.log("里程碑解锁: 5 amplifier");
-           // }
-       // },
         
     },
     
     gainMult() {
         let mult = new Decimal(1)
+        if(hasUpgrade('sp', 43)) mult = mult.times(upgradeEffect('sp', 43))
         return mult
     },
     gainExp() {
@@ -368,29 +410,89 @@ addLayer("a", {
 
     upgrades: {51: {
         title: "21",
-        description: "基于你的amplifier提升点数,P点,sp点获取。(加成不低于2.5)",
+        description: "基于你的amplifier提升点数,P点,sp点获取。(加成不低于10)",
         cost: new Decimal(1),  
             effect() {
-        return player.a.points.add(16).pow(0.78)
+                {if (player.a.points.add(10).pow(1)>1e38) 
+            return (1e38*((player.a.points.div(1e38)).add(10).pow(0.78))); else
+            return player.a.points.add(10).pow(1)}
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
 52: {
         title: "22",
         description: "P点获取公式指数x1.01.",
         cost: new Decimal(5),  
+        unlocked() { return hasUpgrade('a', 51) },
              },
 53: {
         title: "23",
         description: "基于你的amplifier提升sp点获取。(加成不低于10)",
         cost: new Decimal(10000000),  
+        unlocked() { return hasUpgrade('a', 52) },
             effect() {
         return player.a.points.add(100).pow(0.5)
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  }, 
-//53: {
-        //title: "23",
-        //description: "每秒获得重置时P点的1%.",
-        //cost: new Decimal(10000000),  
-           //  },
-        // 这里可以定义该层的升级，结构参考P层
+54: {
+        title: "24",
+        description: "每秒获得重置时P点的1%.",
+        cost: new Decimal(1e9),  
+        unlocked() { return hasUpgrade('a', 53) },
+             },
+55: {
+        title: "25",
+        description: "进行A重置不重置P升级",
+        cost: new Decimal(1e10),  
+        unlocked() { return hasUpgrade('a', 54) },
+             },
+61: {
+        title: "26",
+        description: "软上限弱化1.03",
+        cost: new Decimal(1e12),  
+        unlocked() { return hasUpgrade('a', 55) },
+             },
+ 62: {
+        title: "27",
+        description: "每秒再获得重置时P点的9%.",
+        cost: new Decimal(1e13),  
+        unlocked() { return hasUpgrade('a', 61) },
+             },
+63: {
+        title: "28",
+        description: "每秒再获得重置时P点的90%.",
+        cost: new Decimal(1e14),  
+        unlocked() { return hasUpgrade('a', 62) },
+             },
+64: {
+        title: "29",
+        description: "每秒获得重置时SP点的1%.",
+        cost: new Decimal(1e15),  
+        unlocked() { return hasUpgrade('a', 63) },
+             },
+65: {
+        title: "30",
+        description: "每秒获得重置时SP点的99%.",
+        cost: new Decimal(1e16),  
+        unlocked() { return hasUpgrade('a', 64) },
+             },
+71: {
+        title: "我感受到了...",
+        description: "软上限再弱化1.035",
+        cost: new Decimal(1e17),  
+        unlocked() { return hasUpgrade('a', 65)&& hasUpgrade('sp', 51) },
+             }, 
+ 72: {
+        title: 
+        "这是...?",
+        description: "点数获取*100",
+        cost: new Decimal(1e18),  
+        unlocked() { return hasUpgrade('a', 71) },
+             },          
+73: {
+        title: 
+        "三相之力?",
+        description: "软上限再弱化1.0375,点数获取*100",
+        cost: new Decimal(2.5e18),  
+        unlocked() { return hasUpgrade('a', 72) },
+             },             
     }
 }
 )

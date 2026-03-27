@@ -21,7 +21,7 @@ let changelog = `<h1>Changelog:</h1><br>
 		- Added things.<br>
 		- Added stuff.`
 
-let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
+let winText = `这便是终点...了?`
 
 // If you add new functions anywhere inside of a layer, and those functions have an effect when called, add them here.
 // (The ones here are examples, all official functions are already taken care of)
@@ -53,23 +53,32 @@ function getPointGen() {
 	if (hasUpgrade('sp', 34)) gain = gain.times(upgradeEffect('sp', 34));
     if (hasUpgrade('sp', 35)) gain = gain.times(upgradeEffect('sp', 35));
     if (hasUpgrade('a', 51)) gain = gain.times(upgradeEffect('a', 51));
+    if (hasUpgrade('a', 72)) gain = gain.times(100);
+    if (hasUpgrade('a', 73)) gain = gain.times(100);
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasMilestone('sp', 5)) gain = gain.times(10);
     if (hasMilestone('a', 0)) gain = gain.times(25);
-    const softcapThreshold = new Decimal(1e9);
+    let pointmax = new Decimal(1e9);
+    const softcapThreshold = new Decimal(pointmax);
     if (gain.gt(softcapThreshold)) {
         let excess = gain.minus(softcapThreshold);
         // lg(lg(gain)) = log10(log10(gain))
         let Log10Gain = gain.log10();
         let Log10Log10Gain = Log10Gain.log10();
         let exponent = new Decimal(8).div(new Decimal(9).plus(Log10Log10Gain));
+        if(hasUpgrade('a', 56)) exponent = exponent.times(1.03);
+        if(hasUpgrade('sp', 44)) exponent = exponent.times(1.03125);
+        if(hasUpgrade('sp', 45)) exponent = exponent.times(1.0325);
+        if(hasUpgrade('sp', 45)) exponent = exponent.times(1.0335);
+        if(hasUpgrade('a', 71)) exponent = exponent.times(1.035);
+        if(hasUpgrade('a', 73)) exponent = exponent.times(1.0375);
         let cappedExcess = excess.pow(exponent);
         let cappedGain = softcapThreshold.plus(cappedExcess);
         
         // 设置软上限提示
                 if (tmp && tmp.other) {
-            tmp.other.softcapHint = "由于你的点数获取大于1e9,点数获取受到软上限!（效果：超过部分^" + exponent + "）";
+            tmp.other.softcapHint = "由于你的点数获取大于"+pointmax+",点数获取受到软上限!（效果：超过部分^" + exponent + "）";
             tmp.other.softcappedPointGen = cappedGain;
         }
         // 计算软上限后的点数获取
