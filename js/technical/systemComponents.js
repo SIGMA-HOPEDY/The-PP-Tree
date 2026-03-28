@@ -102,27 +102,28 @@ var systemComponents = {
 			`
 	},
 
-			'overlay-head': {
-				template: `			
-				<div class="overlayThing" style="padding-bottom:7px; width: 90%; z-index: 1000; position: relative">
-				<span v-if="player.devSpeed && player.devSpeed != 1" class="overlayThing">
-					<br>Dev Speed: {{format(player.devSpeed)}}x<br>
-				</span>
-				<span v-if="player.offTime !== undefined"  class="overlayThing">
-					<br>Offline Time: {{formatTime(player.offTime.remain)}}<br>
-				</span>
-				<br>
-				<span v-if="player.points.lt('1e1000')"  class="overlayThing">You have </span>
-				<h2  class="overlayThing" id="points">{{format(player.points)}}</h2>
-				<span v-if="player.points.lt('1e1e6')"  class="overlayThing"> {{modInfo.pointsName}}</span>
-				<br>
-				<span v-if="canGenPoints()"  class="overlayThing">({{tmp.other.oompsMag != 0 ? format(tmp.other.oomps) + " OOM" + (tmp.other.oompsMag < 0 ? "^OOM" : tmp.other.oompsMag > 1 ? "^" + tmp.other.oompsMag : "") + "s" : formatSmall(getPointGen())}}/sec)</span>
-				<span v-if="tmp.other.softcapHint" class="overlayThing"><br>软上限提示: {{tmp.other.softcapHint}}</span>
-				
-				<div v-for="thing in tmp.displayThings" class="overlayThing"><span v-if="thing" v-html="thing"></span></div>
-			</div>
-			`
-		    },
+				'overlay-head': {
+					template: `			
+					<div class="overlayThing" style="padding-bottom:7px; width: 90%; z-index: 1000; position: relative">
+					<span v-if="player.devSpeed && player.devSpeed != 1" class="overlayThing">
+						<br>Dev Speed: {{format(player.devSpeed)}}x<br>
+					</span>
+					<span v-if="player.offTime !== undefined"  class="overlayThing">
+						<br>Offline Time: {{formatTime(player.offTime.remain)}}<br>
+					</span>
+					<br>
+					<span v-if="player.points.lt('1e1000')"  class="overlayThing">You have </span>
+					<h2  class="overlayThing" id="points">{{format(player.points)}}</h2>
+					<span v-if="player.points.lt('1e1e6')"  class="overlayThing"> {{modInfo.pointsName}}</span>
+					<br>
+					<span v-if="canGenPoints()"  class="overlayThing">({{tmp.other.oompsMag != 0 ? format(tmp.other.oomps) + " OOM" + (tmp.other.oompsMag < 0 ? "^OOM" : tmp.other.oompsMag > 1 ? "^" + tmp.other.oompsMag : "") + "s" : formatSmall(getPointGen())}}/sec)</span>
+					<span v-if="tmp.other.softcapHint" class="overlayThing"><br> {{tmp.other.softcapHint}}</span>
+					<span v-if="tmp.other.doubleSoftcapHint" class="overlayThing" style="color: #ff9999;"><br> {{tmp.other.doubleSoftcapHint}}</span>
+					
+					<div v-for="thing in tmp.displayThings" class="overlayThing"><span v-if="thing" v-html="thing"></span></div>
+				</div>
+				`
+			    },
     'info-tab': {
         template: `
         <div>

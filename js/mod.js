@@ -59,38 +59,71 @@ function getPointGen() {
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasMilestone('sp', 5)) gain = gain.times(10);
     if (hasMilestone('a', 0)) gain = gain.times(25);
+    if (hasMilestone('lw', 0)) gain = gain.times(100);
+    if (hasMilestone('re', 0)) gain = gain.times(100);
+    if (hasMilestone('sa', 0)) gain = gain.times(100);
     let pointmax = new Decimal(1e9);
     const softcapThreshold = new Decimal(pointmax);
+    let postSoftcapGain;
+    let softcapExponent = null;
     if (gain.gt(softcapThreshold)) {
         let excess = gain.minus(softcapThreshold);
         // lg(lg(gain)) = log10(log10(gain))
         let Log10Gain = gain.log10();
         let Log10Log10Gain = Log10Gain.log10();
-        let exponent = new Decimal(8).div(new Decimal(9).plus(Log10Log10Gain));
+        let exponent = new Decimal(8.2).div(new Decimal(9).plus(Log10Log10Gain));
         if(hasUpgrade('a', 56)) exponent = exponent.times(1.03);
         if(hasUpgrade('sp', 44)) exponent = exponent.times(1.03125);
         if(hasUpgrade('sp', 45)) exponent = exponent.times(1.0325);
         if(hasUpgrade('sp', 45)) exponent = exponent.times(1.0335);
         if(hasUpgrade('a', 71)) exponent = exponent.times(1.035);
         if(hasUpgrade('a', 73)) exponent = exponent.times(1.0375);
+        if(hasUpgrade('sa', 12)) exponent = exponent.times(1.05);
+        if(hasUpgrade('lw', 12)) exponent = exponent.times(1.05);
+        if(hasUpgrade('re', 12)) exponent = exponent.times(1.05);
+        softcapExponent = exponent;
         let cappedExcess = excess.pow(exponent);
-        let cappedGain = softcapThreshold.plus(cappedExcess);
+        postSoftcapGain = softcapThreshold.plus(cappedExcess);
         
         // 设置软上限提示
-                if (tmp && tmp.other) {
+        if (tmp && tmp.other) {
             tmp.other.softcapHint = "由于你的点数获取大于"+pointmax+",点数获取受到软上限!（效果：超过部分^" + exponent + "）";
-            tmp.other.softcappedPointGen = cappedGain;
+            tmp.other.softcappedPointGen = postSoftcapGain;
         }
-        // 计算软上限后的点数获取
-        
-        return cappedGain;
     } else {
+        postSoftcapGain = gain;
         // 清除提示
         if (tmp && tmp.other) {
             tmp.other.softcapHint = "";
             tmp.other.softcappedPointGen = gain;
         }
-        return gain;
+    }
+    
+    // 二重软上限检查
+    const doubleSoftcapThreshold = new Decimal("1e308");
+    if (postSoftcapGain.gt(doubleSoftcapThreshold)) {
+        let doubleExcess = postSoftcapGain.minus(doubleSoftcapThreshold);
+        // lg(lg(在软上限生效后的点数获取)) = log10(log10(postSoftcapGain))
+        let Log10Post = postSoftcapGain.log10();
+        let Log10Log10Post = Log10Post.log10();
+        let doubleExponent = new Decimal(7.8).div(new Decimal(9.1).plus(Log10Log10Post)); 
+        if(hasUpgrade('sa', 12)) doubleExponent = doubleExponent.times(1.05);
+        if(hasUpgrade('lw', 12)) doubleExponent = doubleExponent.times(1.05);
+        if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
+        let doubleCappedExcess = doubleExcess.pow(doubleExponent);
+        let finalGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
+        
+        // 设置二重软上限提示
+        if (tmp && tmp.other) {
+            tmp.other.doubleSoftcapHint = "由于你的点数获取大于1e308,点数获取受到二重软上限!(效果：超过部分^" + doubleExponent + ")";
+        }
+        return finalGain;
+    } else {
+        // 清除二重软上限提示
+        if (tmp && tmp.other) {
+            tmp.other.doubleSoftcapHint = "";
+        }
+        return postSoftcapGain;
     }
 }
 

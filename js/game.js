@@ -129,24 +129,54 @@ function canReset(layer)
 function rowReset(row, layer) {
     for (lr in ROW_LAYERS[row]) {
         if (layers[lr].doReset) {
-            if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null); // Exit challenges on any row reset on an equal or higher row
+            if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null);
             run(layers[lr].doReset, layers[lr], layer);
         } else if (tmp[layer].row > tmp[lr].row && !isNaN(row)) {
-            // 检查是否是sp层重置p层，并且sp层第3个里程碑已解锁
-            if (layer === "sp" && lr === "p" && hasMilestone('sp', 3)) {
-                // 保存p层的升级
-                let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
-                // 正常重置p层
-                layerDataReset(lr);
-                // 恢复p层的升级
-                player.p.upgrades = savedUpgrades;
-            }
-            // 检查是否是a层重置p层，并且a层升级55已解锁
-            else if (layer === "a" && lr === "p" && hasUpgrade('a', 55)) {
-                let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
-                layerDataReset(lr);
-                player.p.upgrades = savedUpgrades;
-            } else {
+            // 根据被重置的层 lr 判断是否需要保留升级
+            if (lr === "p") {
+                let keepUpgrades = false;
+                if (layer === "sp" && hasMilestone('sp', 3)) {
+                    keepUpgrades = true;
+                } else if (layer === "a" && hasUpgrade('a', 55)) {
+                    keepUpgrades = true;
+                } else if ((layer === "sa" || layer === "re" || layer === "lw") && hasMilestone('sa', 1)) {
+                    keepUpgrades = true;
+                }
+                if (keepUpgrades) {
+                    let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
+                    layerDataReset(lr);
+                    player.p.upgrades = savedUpgrades;
+                } else {
+                    layerDataReset(lr);
+                }
+            } 
+            else if (lr === "sp") {
+                let keepUpgrades = false;
+                if ((layer === "sa" || layer === "re" || layer === "lw") && hasMilestone('lw', 1)) {
+                    keepUpgrades = true;
+                }
+                if (keepUpgrades) {
+                    let savedUpgrades = player.sp.upgrades ? player.sp.upgrades.slice() : [];
+                    layerDataReset(lr);
+                    player.sp.upgrades = savedUpgrades;
+                } else {
+                    layerDataReset(lr);
+                }
+            } 
+            else if (lr === "a") {
+                let keepUpgrades = false;
+                if ((layer === "sa" || layer === "re" || layer === "lw") && hasMilestone('re', 1)) {
+                    keepUpgrades = true;
+                }
+                if (keepUpgrades) {
+                    let savedUpgrades = player.a.upgrades ? player.a.upgrades.slice() : [];
+                    layerDataReset(lr);
+                    player.a.upgrades = savedUpgrades;
+                } else {
+                    layerDataReset(lr);
+                }
+            } 
+            else {
                 layerDataReset(lr);
             }
         }

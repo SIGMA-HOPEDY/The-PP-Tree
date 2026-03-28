@@ -1,6 +1,6 @@
 addLayer("p", {
     name: "prestige", // This is optional, only used in a few places, If absent it just uses the layer id.
-    symbol: "p", // This appears on the layer's node. Default is the id with the first letter capitalized
+    symbol: "P", // This appears on the layer's node. Default is the id with the first letter capitalized
     position: 0, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
     startData() { return {
         unlocked: true,
@@ -24,6 +24,7 @@ addLayer("p", {
         if (hasUpgrade('a', 54)) passiveGeneration = passiveGeneration+0.01;
         if (hasUpgrade('a', 62)) passiveGeneration = passiveGeneration+0.09;
         if (hasUpgrade('a', 63)) passiveGeneration = passiveGeneration+0.9;
+        if (hasUpgrade('sa', 11)) passiveGeneration = passiveGeneration+9;
         return passiveGeneration;
     },
     gainMult() {
@@ -38,6 +39,7 @@ addLayer("p", {
     if (hasMilestone('sp', 5)) mult = mult.times(10);    // (x10)
     if (hasUpgrade('p', 23)) mult = mult.times(upgradeEffect('p', 23))
         if (hasUpgrade('p', 24)) mult = mult.times(upgradeEffect('p', 24))
+            if(hasUpgrade('sa', 12)) mult = mult.times(upgradeEffect('sa', 12))
     
         return mult
     },
@@ -240,6 +242,7 @@ if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
     if (hasUpgrade('a', 51)) mult = mult.times(upgradeEffect('a', 51))
         if (hasUpgrade('a', 53)) mult = mult.times(upgradeEffect('a', 53))
             if (hasUpgrade('sp', 42)) mult = mult.times(upgradeEffect('sp', 42))
+                if(hasUpgrade('lw', 12)) mult = mult.times(upgradeEffect('lw', 12))
 
         return mult
     },
@@ -250,6 +253,7 @@ if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
         let passiveGeneration = 0;
         if (hasUpgrade('a', 64)) passiveGeneration = passiveGeneration+0.01;
         if (hasUpgrade('a', 65)) passiveGeneration = passiveGeneration+0.99;
+        if (hasUpgrade('lw', 11)) passiveGeneration = passiveGeneration+1.5;
         return passiveGeneration;
     },
     row: 1, // 放在第二行（0是第一行，1是第二行）
@@ -259,7 +263,7 @@ if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
     // 在mod.js中查找类似这样的函数
 
     layerShown() {
-        return true // 可以根据解锁状态调整，例如：return player.sp.unlocked
+        return player.p.points.gte(100) || player.sp.points.gte(1) ||hasUpgrade('sp', 31)// 可以根据解锁状态调整，例如：return player.sp.unlocked
     },
     upgrades: {31: {    title: "11",
     description: "双倍p点获取,基于你的sp点小幅度提升点数获取.",
@@ -355,7 +359,7 @@ effect() {
 
 addLayer("a", {
     name: "amplifier",
-    symbol: "a",
+    symbol: "A",
     position: 0,
     startData() {
         return {
@@ -395,6 +399,7 @@ addLayer("a", {
     gainMult() {
         let mult = new Decimal(1)
         if(hasUpgrade('sp', 43)) mult = mult.times(upgradeEffect('sp', 43))
+         if(hasUpgrade('re', 12)) mult = mult.times(upgradeEffect('re', 12))
         return mult
     },
     gainExp() {
@@ -405,9 +410,13 @@ addLayer("a", {
         {key: "a", description: "A: Reset for amplifier", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
     ],
     layerShown() {
-        return true // 可以根据解锁状态调整，例如：return player.a.unlocked
+        return player.p.points.gte(1e6) || player.a.points.gte(1) ||hasUpgrade('a', 51)// 可以根据解锁状态调整，例如：return player.a.unlocked
     },
-
+passiveGeneration: function() {
+        let passiveGeneration = 0;
+        if (hasUpgrade('re', 11)) passiveGeneration = passiveGeneration+0.01;
+        return passiveGeneration;
+    },
     upgrades: {51: {
         title: "21",
         description: "基于你的amplifier提升点数,P点,sp点获取。(加成不低于10)",
@@ -494,5 +503,251 @@ addLayer("a", {
         unlocked() { return hasUpgrade('a', 72) },
              },             
     }
+}
+)
+addLayer("lw", {
+    name: "Law Weaving",
+    symbol: "LW",
+    position: 0,
+    startData() {
+        return {
+            unlocked: false, // 通常新层默认是锁定的，通过条件解锁
+            points: new Decimal(0),
+        }
+    },
+    color: "#c2f310ff",
+    requires: new Decimal(1e308), // 需要???才能解锁此层
+    resource: "Law Weaving", // 该层的货币名称
+    baseResource: "points", // 基于的货币
+    baseAmount() { return player.points }, // 这里应指向点数，注意路径
+    type: "normal", 
+   exponent: function() {
+        let exp = 0.01;
+        return exp;
+    },
+    // 禁用里程碑弹窗
+    milestonePopups: false,
+    
+    // 里程碑定义
+    milestones: {
+       0: {
+            requirementDescription: "1 Law Weaving",
+            effectDescription: "点数获取速度×100",
+            done() { 
+                return player.lw.points.gte(1) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1 Law Weaving");
+           }
+        },
+        1: {
+            requirementDescription: "3 law Weaving",
+            effectDescription: "第三行重置时不重置SP层升级",
+            done() { 
+                return player.lw.points.gte(3) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 3 law Weaving");
+           }
+        },
+        
+    },
+    
+    gainMult() {
+        let mult = new Decimal(1)
+        return mult
+    },
+    gainExp() {
+        return new Decimal(1)
+    },
+    row: 2, // 放在第三行（0是第一行，1是第二行，2是第三行）
+       hotkeys: [
+        {key: "shift+s", description: "L: Reset for Law Weaving", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+    ],
+    layerShown() {
+        return hasUpgrade('a', 73) || player.lw.points.gte(1)||hasUpgrade('lw', 11)
+    },
+
+    upgrades: {   
+        11: {
+        title: "始",
+        description: "每秒再获得重置时SP点的150%.",
+        cost: new Decimal(1),  
+             },
+        12: {
+        title: "破限",
+        description: "基于lw提升SP点获取(不低于100),软上限弱化1.05,二重软上限弱化1.05.",
+        cost: new Decimal(1), 
+        unlocked() { return hasUpgrade('lw', 11) }, 
+        effect() {
+                {if (player.lw.points.add(1).pow(2)>1e36) 
+            return (1e38*((player.lw.points.div(1e36)).add(1).pow(0.91))); else
+            return player.lw.points.add(1).pow(2)*100}
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+     }
+}
+)
+addLayer("sa", {
+    name: "Source Amplification",
+    symbol: "SA",
+    position: 0,
+    startData() {
+        return {
+            unlocked: false, // 通常新层默认是锁定的，通过条件解锁
+            points: new Decimal(0),
+        }
+    },
+    color: "#00ffbfff",
+    requires: new Decimal(1e308), // 需要???才能解锁此层
+    resource: "Source Amplification", // 该层的货币名称
+    baseResource: "points", // 基于的货币
+    baseAmount() { return player.points }, // 这里应指向点数，注意路径
+    type: "normal", 
+   exponent: function() {
+        let exp = 0.01;
+        return exp;
+    },
+    // 禁用里程碑弹窗
+    milestonePopups: false,
+    
+    // 里程碑定义
+    milestones: {
+        0: {
+            requirementDescription: "1 Source Amplification",
+            effectDescription: "点数获取速度×100",
+            done() { 
+                return player.sa.points.gte(1) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1 Source Amplification");
+           }
+        },
+        1: {
+            requirementDescription: "3 Source Amplification",
+            effectDescription: "第三行重置时不重置P层升级",
+            done() { 
+                return player.sa.points.gte(3) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 3 Source Amplification");
+           }
+        },
+        
+    },
+    
+    gainMult() {
+        let mult = new Decimal(1)
+        return mult
+    },
+    gainExp() {
+        return new Decimal(1)
+    },
+    row: 2, // 放在第三行（0是第一行，1是第二行，2是第三行）
+       hotkeys: [
+        {key: "shift+a", description: "S: Reset for Source Amplification", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+    ],
+    layerShown() {
+        return hasUpgrade('a', 73) || player.sa.points.gte(1)||hasUpgrade('sa', 11)
+    },
+
+    upgrades: {   
+        11: {
+        title: "始",
+        description: "每秒再获得重置时P点的900%.",
+        cost: new Decimal(1),  
+             }, 
+        12: {
+        title: "破限",
+        description: "基于sa提升P点获取(不低于1000),软上限弱化1.05,二重软上限弱化1.05.",
+        cost: new Decimal(1), 
+        unlocked() { return hasUpgrade('sa', 11) }, 
+        effect() {
+                {if (player.sa.points.add(1).pow(2)>1e35) 
+            return (1e38*((player.sa.points.div(1e35)).add(1).pow(0.91))); else
+            return player.sa.points.add(1).pow(2)*1000}
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+             },}
+)
+
+addLayer("re", {
+    name: "Recursive Echo",
+    symbol: "RE",
+    position: 0,
+    startData() {
+        return {
+            unlocked: false, // 通常新层默认是锁定的，通过条件解锁
+            points: new Decimal(0),
+        }
+    },
+    color: "rgba(0, 89, 255, 1)",
+    requires: new Decimal(1e308), // 需要???才能解锁此层
+    resource: "Recursive Echo", // 该层的货币名称
+    baseResource: "points", // 基于的货币
+    baseAmount() { return player.points }, // 这里应指向点数，注意路径
+    type: "normal", 
+   exponent: function() {
+        let exp = 0.01;
+        return exp;
+    },
+    // 禁用里程碑弹窗
+    milestonePopups: false,
+    
+    // 里程碑定义
+    milestones: {
+       0: {
+            requirementDescription: "1 Recursive Echo",
+            effectDescription: "点数获取速度×100",
+            done() { 
+                return player.re.points.gte(1) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1 Recursive Echo");
+           }
+        },
+        1: {
+            requirementDescription: "3 Recursive Echo",
+            effectDescription: "第三行重置时不重置Amplifier层升级",
+            done() { 
+                return player.re.points.gte(3) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 3 Recursive Echo");
+           }
+        },
+        
+    },
+    
+    gainMult() {
+        let mult = new Decimal(1)
+        return mult
+    },
+    gainExp() {
+        return new Decimal(1)
+    },
+    row: 2, // 放在第三行（0是第一行，1是第二行，2是第三行）
+       hotkeys: [
+        {key: "shift+R", description: "R: Reset for Recursive Echo", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+    ],
+    layerShown() {
+        return hasUpgrade('a', 73) || player.re.points.gte(1) ||hasUpgrade('re', 11) // 可以根据解锁状态调整，例如：return player.a.unlocked
+    },
+
+    upgrades: {  
+        11: {
+        title: "始",
+        description: "每秒获得重置时Amplifier的1%.",
+        cost: new Decimal(1),  
+             },
+        12: {
+        title: "破限",
+        description: "基于re提升amplifier获取(不低于10),软上限弱化1.05,二重软上限弱化1.05.",
+        cost: new Decimal(1), 
+        unlocked() { return hasUpgrade('re', 11) }, 
+        effect() {
+                {if (player.re.points.add(1).pow(2)>1e8)
+            return (1e9*((player.re.points.div(1e8)).add(1).pow(0.91))); else
+            return player.re.points.add(1).pow(2)*10}
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },    
+      }
 }
 )
