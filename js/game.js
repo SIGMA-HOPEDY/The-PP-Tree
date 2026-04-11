@@ -127,62 +127,52 @@ function canReset(layer)
 }
 
 function rowReset(row, layer) {
+    // 定义保留升级的规则：key 为 "触发层_被重置层"，value 为判断函数
+    const keepRules = {
+        // 当触发层是 sp 时重置 p 层
+        "sp_p": () => hasMilestone('sp', 3),
+        // 当触发层是 a 时重置 p 层
+        "a_p": () => hasUpgrade('a', 55),
+        // 当触发层是 sa 时重置 p 层
+        "sa_p": () => hasMilestone('sa', 1) || hasUpgrade('sa', 15),  // 可修改为其他条件
+        // 当触发层是 re 时重置 p 层
+        "re_p": () => hasUpgrade('re', 15),  // 可修改为 milestone 或其他
+        // 当触发层是 lw 时重置 p 层
+        "lw_p": () => hasUpgrade('lw', 15),  // 可修改为不同条件
+
+        // 当触发层是 lw 时重置 sp 层
+        "lw_sp": () => hasMilestone('lw', 1) || hasUpgrade('lw', 15),
+        // 当触发层是 sa 时重置 sp 层（示例）
+        "sa_sp": () => hasUpgrade('sa', 15),
+        // 当触发层是 re 时重置 sp 层（示例）
+        "re_sp": () => hasUpgrade('re', 15),
+
+        // 当触发层是 re 时重置 a 层
+        "re_a": () => hasMilestone('re', 1) || hasUpgrade('re', 15),
+        // 当触发层是 sa 时重置 a 层（示例）
+        "sa_a": () => hasUpgrade('sa', 15),
+        // 当触发层是 lw 时重置 a 层（示例）
+        "lw_a": () => hasUpgrade('lw', 15),
+    };
+
     for (lr in ROW_LAYERS[row]) {
         if (layers[lr].doReset) {
             if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null);
             run(layers[lr].doReset, layers[lr], layer);
         } else if (tmp[layer].row > tmp[lr].row && !isNaN(row)) {
-            // 根据被重置的层 lr 判断是否需要保留升级
-            if (lr === "p") {
-                let keepUpgrades = false;
-                if (layer === "sp" && hasMilestone('sp', 3)) {
-                    keepUpgrades = true;
-                } else if (layer === "a" && hasUpgrade('a', 55)) {
-                    keepUpgrades = true;
-                } else if ((layer === "sa" || layer === "re" || layer === "lw") && hasMilestone('sa', 1)) {
-                    keepUpgrades = true;
-                }
-                if (keepUpgrades) {
-                    let savedUpgrades = player.p.upgrades ? player.p.upgrades.slice() : [];
-                    layerDataReset(lr);
-                    player.p.upgrades = savedUpgrades;
-                } else {
-                    layerDataReset(lr);
-                }
-            } 
-            else if (lr === "sp") {
-                let keepUpgrades = false;
-                if ((layer === "sa" || layer === "re" || layer === "lw") && hasMilestone('lw', 1)) {
-                    keepUpgrades = true;
-                }
-                if (keepUpgrades) {
-                    let savedUpgrades = player.sp.upgrades ? player.sp.upgrades.slice() : [];
-                    layerDataReset(lr);
-                    player.sp.upgrades = savedUpgrades;
-                } else {
-                    layerDataReset(lr);
-                }
-            } 
-            else if (lr === "a") {
-                let keepUpgrades = false;
-                if ((layer === "sa" || layer === "re" || layer === "lw") && hasMilestone('re', 1)) {
-                    keepUpgrades = true;
-                }
-                if (keepUpgrades) {
-                    let savedUpgrades = player.a.upgrades ? player.a.upgrades.slice() : [];
-                    layerDataReset(lr);
-                    player.a.upgrades = savedUpgrades;
-                } else {
-                    layerDataReset(lr);
-                }
-            } 
-            else {
+            const ruleKey = `${layer}_${lr}`;
+            const shouldKeep = keepRules[ruleKey] ? keepRules[ruleKey]() : false;
+
+            if (shouldKeep) {
+                let savedUpgrades = player[lr].upgrades ? player[lr].upgrades.slice() : [];
+                layerDataReset(lr);
+                player[lr].upgrades = savedUpgrades;
+            } else {
                 layerDataReset(lr);
             }
         }
     }
 }
-
 function layerDataReset(layer, keep = []) {
     let storedData = {unlocked: player[layer].unlocked, forceTooltip: player[layer].forceTooltip, noRespecConfirm: player[layer].noRespecConfirm, prevTab:player[layer].prevTab} // Always keep these
 

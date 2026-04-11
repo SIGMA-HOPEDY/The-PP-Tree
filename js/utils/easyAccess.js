@@ -63,7 +63,12 @@ function upgradeEffect(layer, id) {
 }
 
 function challengeEffect(layer, id) {
-	return (tmp[layer].challenges[id].rewardEffect)
+	let baseEffect = tmp[layer].challenges[id].rewardEffect;
+	if (!baseEffect) return new Decimal(1);
+	
+	// 应用全局挑战奖励加成
+	let bonus = player.challengeRewardBonus || new Decimal(1);
+	return baseEffect.times(bonus);
 }
 
 function buyableEffect(layer, id) {
