@@ -196,7 +196,7 @@ return cap.times(capped);
         title: "666又来? 不对!",
         description: "软上限后点数获取*(1+点数获取^0.0114514/114514)^1.4",
         cost: new Decimal("1e365"),  
-        unlocked() { return hasUpgrade('p', 25) &&hasUpgrade('sa', 15) }, 
+        unlocked() { return hasUpgrade('p', 31) &&hasUpgrade('sa', 15) }, 
              effect() {let base = player.points.add(1).pow(0.0114514).div(114514).add(1)
 let raw = base.pow(1.4);
 let cap = new Decimal("1e38");
@@ -858,7 +858,7 @@ return cap.times(capped);
                 },  },  
                 14: {
         title: "开始膨胀",
-        description: "自我增幅",
+        description: "自我增幅,弱化并延迟二重软上限(1.01,1e17)",
         cost: new Decimal(10), 
         unlocked() { return hasUpgrade('sa', 13) }, 
         effect() {

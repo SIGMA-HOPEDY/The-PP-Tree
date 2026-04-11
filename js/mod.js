@@ -133,46 +133,38 @@ function getPointGen() {
         }
     }
 
-    // 二重软上限
+     // 二重软上限检查
     let doublepointmax = new Decimal("1e308");
+    if(hasUpgrade('re', 13)) doublepointmax = doublepointmax.times(1e17);
     const doubleSoftcapThreshold = new Decimal(doublepointmax);
-    if (postSoftcapGain.gt(doubleSoftcapThreshold) && isValidDecimal(postSoftcapGain)) {
+    if (postSoftcapGain.gt(doubleSoftcapThreshold)) {
         let doubleExcess = postSoftcapGain.minus(doubleSoftcapThreshold);
-        if (doubleExcess.lte(0)) {
-            return postSoftcapGain;
-        }
-        let ratio2 = postSoftcapGain.div(doubleSoftcapThreshold);
-        if (ratio2.lte(1)) ratio2 = new Decimal(1.0000000001);
-        let Log10Post = ratio2.log10();
-        let Log10Log10Post = Log10Post.log10();
-        if (!isValidDecimal(Log10Log10Post)) {
-            return postSoftcapGain; // 降级
-        }
-        let doubleExponent = new Decimal(7.8).div(new Decimal(9.1).plus(Log10Log10Post));
-        if (hasUpgrade('sa', 12)) doubleExponent = doubleExponent.times(1.05);
-        if (hasUpgrade('lw', 12)) doubleExponent = doubleExponent.times(1.05);
-        if (hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
-        if (!isValidDecimal(doubleExponent) || doubleExponent.lte(0)) {
-            doubleExponent = new Decimal(0.9);
-        }
+        // lg(lg(在软上限生效后的点数获取)) = log10(log10(postSoftcapGain))
+        let Log10Post = (postSoftcapGain.div(doublepointmax).add(1)).log10();
+        let Log10Log10Post = (Log10Post.add(1)).log10();
+        let doubleExponent = new Decimal(7.8).div(new Decimal(9.1).plus(Log10Log10Post)); 
+        if(hasUpgrade('sa', 12)) doubleExponent = doubleExponent.times(1.05);
+        if(hasUpgrade('lw', 12)) doubleExponent = doubleExponent.times(1.05);
+        if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
+        if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
-        if (!isValidDecimal(doubleCappedExcess)) {
-            doubleCappedExcess = doubleExcess;
-        }
         let finalGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
+        
+        // 设置二重软上限提示
         if (tmp && tmp.other) {
-            tmp.other.doubleSoftcapHint = "由于你的点数获取大于1e308,点数获取受到二重软上限!(效果：超过部分^" + doubleExponent + ")";
+            tmp.other.doubleSoftcapHint = "由于你的点数获取大于"+ doublepointmax+",点数获取受到二重软上限!(效果：超过部分^" + doubleExponent + ")";
         }
         return finalGain;
     } else {
-        if (tmp && tmp.other) tmp.other.doubleSoftcapHint = "";
+        // 清除二重软上限提示
+        if (tmp && tmp.other) {
+            tmp.other.doubleSoftcapHint = "";
+        }
         return postSoftcapGain;
     }
 }
-
 // You can add non-layer related variables that should go into "player" and be saved here, along with default values
-function addedPlayerData() { return {
-    challengeRewardBonus: new Decimal(1), // 全局挑战奖励加成乘数
+function addedPlayerData() { return { // 全局挑战奖励加成乘数
 }}
 
 // Display extra things at the top of the page
