@@ -135,7 +135,7 @@ function getPointGen() {
 
      // 二重软上限检查
     let doublepointmax = new Decimal("1e308");
-    if(hasUpgrade('re', 14)) doublepointmax = doublepointmax.times(1e17);
+    if(hasUpgrade('re', 14)) doublepointmax = doublepointmax.times(10);
     const doubleSoftcapThreshold = new Decimal(doublepointmax);
     let doubleCappedGain;
     if (postSoftcapGain.gt(doubleSoftcapThreshold)) {

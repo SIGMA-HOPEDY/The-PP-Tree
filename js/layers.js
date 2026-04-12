@@ -194,11 +194,11 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     32: {
         title: "666又来? 不对!",
-        description: "软上限后点数获取*(1+点数获取^0.0114514/114514)^1.4",
+        description: "软上限后点数获取*(1+点数获取^0.114514/114514)^1.4",
         cost: new Decimal("1e365"),  
         unlocked() { return hasUpgrade('p', 31) &&hasUpgrade('sa', 15) }, 
              effect() {
-                let base = player.points.add(1).pow(0.0114514).div(114514).add(1)
+                let base = player.points.add(1).pow(0.114514).div(114514).add(1)
 let raw = base.pow(1.4);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
@@ -737,7 +737,7 @@ return cap.times(capped);
     13: {
         title: "软上限有什么用？",
         description: "软上限延迟1e9",
-        cost: new Decimal(10), 
+        cost: new Decimal(5), 
         unlocked() { return hasUpgrade('lw', 12) }, 
         effect() {
                 },  },  
@@ -758,7 +758,7 @@ return cap.times(capped);
     15: {
         title: "更多...",
         description: "lw重置时不重置前两行,解锁更多sp层升级.",
-        cost: new Decimal(100), 
+        cost: new Decimal(1e9), 
         unlocked() { return hasUpgrade('lw', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('p', 91)}, 
         effect() {
                 
@@ -862,13 +862,13 @@ return cap.times(capped);
     13: {
         title: "软上限有什么用？",
         description: "软上限延迟1e9",
-        cost: new Decimal(10), 
+        cost: new Decimal(5), 
         unlocked() { return hasUpgrade('sa', 12) }, 
         effect() {
                 },  },  
                 14: {
         title: "开始膨胀",
-        description: "自我增幅,弱化并延迟二重软上限(1.01,1e17)",
+        description: "自我增幅,弱化并延迟二重软上限(1.01,10)",
         cost: new Decimal(10), 
         unlocked() { return hasUpgrade('sa', 13) }, 
         effect() {
@@ -884,7 +884,7 @@ return cap.times(capped);
     15: {
         title: "更多...",
         description: "sa重置时不重置前两行,解锁更多p层升级.",
-        cost: new Decimal(100), 
+        cost: new Decimal(1e9), 
         unlocked() { return hasUpgrade('sa', 14) }, 
         effect() {
                 
@@ -989,7 +989,7 @@ return cap.times(capped);
     13: {
         title: "软上限有什么用？",
         description: "软上限延迟1e9",
-        cost: new Decimal(10), 
+        cost: new Decimal(5), 
         unlocked() { return hasUpgrade('re', 12) }, 
         effect() {
                 },  },   
@@ -1011,7 +1011,7 @@ return cap.times(capped);
     15: {
         title: "更多...",
         description: "re重置时不重置前两行,解锁更多a层升级.",
-        cost: new Decimal(100), 
+        cost: new Decimal(1e9), 
         unlocked() { return hasUpgrade('re', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('lw', 15) }, 
         effect() {
                 
