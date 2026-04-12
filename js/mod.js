@@ -53,8 +53,8 @@ function getPointGen() {
     if (hasUpgrade('sp', 34)) gain = gain.times(upgradeEffect('sp', 34));
     if (hasUpgrade('sp', 35)) gain = gain.times(upgradeEffect('sp', 35));
     if (hasUpgrade('a', 51)) gain = gain.times(upgradeEffect('a', 51));
-    if (hasUpgrade('a', 72)) gain = gain.times(100);
-    if (hasUpgrade('a', 73)) gain = gain.times(100);
+    if (hasUpgrade('a', 72)) gain = gain.times(1e9);
+    if (hasUpgrade('a', 73)) gain = gain.times(1e9);
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasMilestone('sp', 5)) gain = gain.times(10);
@@ -96,12 +96,12 @@ function getPointGen() {
             } else {
                 let exponent = new Decimal(8.2).div(new Decimal(9).plus(Log10Log10Gain));
                 // 应用各种加成
-                if (hasUpgrade('a', 56)) exponent = exponent.times(1.03);
-                if (hasUpgrade('sp', 44)) exponent = exponent.times(1.03125);
-                if (hasUpgrade('sp', 45)) exponent = exponent.times(1.0325);
-                if (hasUpgrade('sp', 51)) exponent = exponent.times(1.0335);
-                if (hasUpgrade('a', 71)) exponent = exponent.times(1.035);
-                if (hasUpgrade('a', 73)) exponent = exponent.times(1.0375);
+                if (hasUpgrade('a', 61)) exponent = exponent.times(1.05);
+                if (hasUpgrade('sp', 44)) exponent = exponent.times(1.05);
+                if (hasUpgrade('sp', 45)) exponent = exponent.times(1.05);
+                if (hasUpgrade('sp', 51)) exponent = exponent.times(1.05);
+                if (hasUpgrade('a', 71)) exponent = exponent.times(1.05);
+                if (hasUpgrade('a', 73)) exponent = exponent.times(1.05);
                 if (hasUpgrade('sa', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('lw', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('re', 12)) exponent = exponent.times(1.05);
@@ -135,8 +135,9 @@ function getPointGen() {
 
      // 二重软上限检查
     let doublepointmax = new Decimal("1e308");
-    if(hasUpgrade('re', 13)) doublepointmax = doublepointmax.times(1e17);
+    if(hasUpgrade('re', 14)) doublepointmax = doublepointmax.times(1e17);
     const doubleSoftcapThreshold = new Decimal(doublepointmax);
+    let doubleCappedGain;
     if (postSoftcapGain.gt(doubleSoftcapThreshold)) {
         let doubleExcess = postSoftcapGain.minus(doubleSoftcapThreshold);
         // lg(lg(在软上限生效后的点数获取)) = log10(log10(postSoftcapGain))
@@ -148,20 +149,69 @@ function getPointGen() {
         if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
         if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
-        let finalGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
+        doubleCappedGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
         
         // 设置二重软上限提示
         if (tmp && tmp.other) {
             tmp.other.doubleSoftcapHint = "由于你的点数获取大于"+ doublepointmax+",点数获取受到二重软上限!(效果：超过部分^" + doubleExponent + ")";
         }
-        return finalGain;
     } else {
         // 清除二重软上限提示
         if (tmp && tmp.other) {
             tmp.other.doubleSoftcapHint = "";
         }
-        return postSoftcapGain;
+        doubleCappedGain = postSoftcapGain;
     }
+
+    // 三重软上限检查
+    let triplepointmax = new Decimal("1e1000");
+    const tripleSoftcapThreshold = new Decimal(triplepointmax);
+    if (doubleCappedGain.gt(tripleSoftcapThreshold)) {
+        let tripleExcess = doubleCappedGain.minus(tripleSoftcapThreshold);
+        // lg(lg(在二重软上限生效后的点数获取)) = log10(log10(doubleCappedGain))
+        let Log10PostTriple = (doubleCappedGain.div(triplepointmax).add(1)).log10();
+        let Log10Log10PostTriple = (Log10PostTriple.add(1)).log10();
+        let tripleExponent = new Decimal(6.9).div(new Decimal(10).plus(Log10Log10PostTriple)); 
+        // 这里可以添加升级影响，但用户没有指定，暂时留空
+        let tripleCappedExcess = tripleExcess.pow(tripleExponent);
+        let tripleCappedGain = tripleSoftcapThreshold.plus(tripleCappedExcess);
+        
+        // 设置三重软上限提示（更红一点）
+        if (tmp && tmp.other) {
+            tmp.other.tripleSoftcapHint = "由于你的点数获取大于"+ triplepointmax+",点数获取受到三重软上限!(效果：超过部分^" + tripleExponent + ")";
+        }
+        // 四重软上限检查
+let quadruplepointmax = new Decimal("1e114514");
+const quadrupleSoftcapThreshold = new Decimal(quadruplepointmax);
+if (tripleCappedGain.gt(quadrupleSoftcapThreshold)) {
+    let quadrupleExcess = tripleCappedGain.minus(quadrupleSoftcapThreshold);
+    // 使用对数压缩公式，与前三重风格一致
+    let Log10PostQuad = (tripleCappedGain.div(quadruplepointmax).add(1)).log10();
+    let Log10Log10PostQuad = (Log10PostQuad.add(1)).log10();
+    let quadrupleExponent = new Decimal(114514).div(new Decimal(1919810).plus(Log10Log10PostQuad));
+    // 如果有升级影响可在此添加，例如：
+    // if (hasUpgrade('xx', xx)) quadrupleExponent = quadrupleExponent.times(1.05);
+    let quadrupleCappedExcess = quadrupleExcess.pow(quadrupleExponent);
+    let quadrupleCappedGain = quadrupleSoftcapThreshold.plus(quadrupleCappedExcess);
+    
+    // 设置四重软上限提示
+    if (tmp && tmp.other) {
+        tmp.other.quadrupleSoftcapHint = "由于你的点数获取大于" + quadruplepointmax + ",点数获取受到四重软上限!(效果：超过部分^" + quadrupleExponent + ")";
+    }
+    return quadrupleCappedGain;
+} else {
+    if (tmp && tmp.other) {
+        tmp.other.quadrupleSoftcapHint = "";
+    }
+    return tripleCappedGain;
+}    } else {
+        // 清除三重软上限提示
+        if (tmp && tmp.other) {
+            tmp.other.tripleSoftcapHint = "";
+        }
+        return doubleCappedGain;
+    }
+
 }
 // You can add non-layer related variables that should go into "player" and be saved here, along with default values
 function addedPlayerData() { return { // 全局挑战奖励加成乘数
