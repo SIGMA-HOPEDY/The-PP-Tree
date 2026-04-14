@@ -748,7 +748,7 @@ return cap.times(capped);
         unlocked() { return hasUpgrade('lw', 13) }, 
         effect() {
                 let base = player.lw.points.add(1);
-let raw = base.pow(0.91);
+let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
@@ -873,7 +873,7 @@ return cap.times(capped);
         unlocked() { return hasUpgrade('sa', 13) }, 
         effect() {
                 let base = player.sa.points.add(1);
-let raw = base.pow(0.91);
+let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
@@ -1000,7 +1000,7 @@ return cap.times(capped);
         unlocked() { return hasUpgrade('re', 13) }, 
         effect() {
                 let base = player.re.points.add(1);
-let raw = base.pow(0.91);
+let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
