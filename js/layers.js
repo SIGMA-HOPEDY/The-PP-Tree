@@ -14,7 +14,7 @@ addLayer("p", {
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
         exponent: function() {
         let exp = 0.52;
-        if (hasUpgrade('a', 52)) exp = exp * 1.01;
+        if (hasUpgrade('a', 52)) exp *1.01;
         return exp;
     },
 // Prestige currency exponent
@@ -77,7 +77,7 @@ return cap.times(capped);
     },
     13: {
         title: "03",
-        description: "基于你的点数提升p点获取。",
+        description: "基于你的点数提升p点获取。(到100p点解锁SP重置)",
         cost: new Decimal(10),  
         unlocked() { return hasUpgrade('p', 12) }, 
             effect() {let base = player.points.add(1);
@@ -104,7 +104,7 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
      15: {
         title: "05",
-        description: "基于你的p点提升sp点获取。",
+        description: "基于你的p点提升sp点获取。(到1e6p点解锁A重置)",
         cost: new Decimal(10000),  
         unlocked() { return hasUpgrade('p', 14) }, 
             effect() {
@@ -194,7 +194,7 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     32: {
         title: "666又来? 不对!",
-        description: "软上限后点数获取*(1+点数获取^0.114514/114514)^1.4",
+        description: "软上限后点数获取*(1+点数^0.114514/114514)^1.4",
         cost: new Decimal("1e365"),  
         unlocked() { return hasUpgrade('p', 31) &&hasUpgrade('sa', 15) }, 
              effect() {
@@ -207,6 +207,31 @@ let capped = ratio.pow(0.7);
 return cap.times(capped);
         
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+33: {
+        title: "更进一歩!",
+        description: "二重软上限后点数获取*(1+lg(点数+1))^{1+lg(lg(点数+1)+1)}",
+        cost: new Decimal("1e455"),  
+        unlocked() { return hasUpgrade('p', 32)  }, 
+             effect() {
+                let base = player.points.add(1).log10().add(1);
+let raw = base.pow(player.points.add(1).log10().add(1).log10().add(1))
+let cap = new Decimal("1e38");
+if (raw.lte(cap)) return raw;
+let ratio = raw.div(cap);
+let capped = ratio.pow(0.91);
+return cap.times(capped);
+        
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    34: {
+        title: "升级18太弱了!",
+        description: "升级18效果^2.5(有神秘小彩蛋哦)",
+        cost: new Decimal("1e465"),  
+        unlocked() { return hasUpgrade('p', 33)  },  },
+    35: {
+        title: "可笑的软上限",
+        description: "软上限延迟1e14,弱化软上限1.14514,解锁一个新的LW升级",
+        cost: new Decimal("1e475"),  
+        unlocked() { return hasUpgrade('p', 34)  },  },
 }  
     },
 )  
@@ -228,9 +253,10 @@ addLayer("sp", {
     type: "normal", 
     exponent: function() {
         let exp = 0.45;
-        if (hasMilestone('sp', 2)) exp = exp+0.05;
-        if (hasMilestone('sp', 4)) exp = exp+0.05;
-        if (hasUpgrade('sp', 41)) exp = exp+upgradeEffect('sp', 41);
+        if (hasMilestone('sp', 2)) exp += 0.05;
+        if (hasMilestone('sp', 4)) exp += 0.05;
+        if (hasUpgrade('sp', 41)) exp += upgradeEffect('sp', 41);
+        if (hasUpgrade('sp', 52)) exp += upgradeEffect('sp', 52);
         return exp;
     },
     // 禁用里程碑弹窗
@@ -422,7 +448,6 @@ if (raw.lte(cap)) return raw;
 let ratio = raw.sub(cap);
 let capped = ratio.pow(0.01);
 return cap.add(capped);
-;
 },
    effectDisplay() { return "+"+format(upgradeEffect(this.layer, this.id)) },  },
    42: {
@@ -443,13 +468,22 @@ return cap.times(capped);},
         description: "基于你的sp点提升amplifier获取。",
         cost: new Decimal(1e150),  
         unlocked() { return hasUpgrade('sp', 42) }, 
-            effect() {let base = player.sp.points.add(1);
-let raw = base.pow(0.0066);
-let cap = new Decimal("1e38");
-if (raw.lte(cap)) return raw;
-let ratio = raw.div(cap);
-let capped = ratio.pow(0.0033);
-return cap.times(capped);},
+            effect() {
+    let base = player.sp.points.add(1);
+    let raw = base.pow(0.0066);                 
+    if (hasUpgrade('p', 34)) {
+        raw = raw.pow(2.5);                     
+    }
+    let cap = new Decimal("1e38");
+    if (raw.lte(cap)) return raw;
+    let ratio = raw.div(cap);
+    let capped = ratio.pow(0.0033);   
+    if (hasUpgrade('p', 34)) {
+        capped = capped.pow(1.25);              //       没想到吧?升级34还会影响这个软上限的弱化程度(✿◡‿◡)
+    }          
+    return cap.times(capped);
+
+},
    effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     44: {
         title: "19",
@@ -469,6 +503,23 @@ return cap.times(capped);},
         cost: new Decimal(1e200),  
         unlocked() { return hasUpgrade('sp', 45) }, 
             },
+     52: {
+    title: "22",
+    description: "基于你的SP点提升SP点获取指数。",
+    cost: new Decimal("1e488"),
+    unlocked() { return hasUpgrade('sp', 51) &&hasUpgrade('lw', 15)  },
+    effect() {
+let base = player.sp.points.add(1).log10().div(1000);
+    let powResult = base.pow(1);
+    let raw = powResult;
+let cap = new Decimal("1");
+if (raw.lte(cap)) return raw;
+let ratio = raw.sub(cap);
+let capped = ratio.pow(0.1);
+return cap.add(capped);
+    },
+    effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
+},
     },
 })
         // 这里可以定义该层的升级，结构参考P层 
@@ -491,7 +542,7 @@ addLayer("a", {
     type: "normal", 
    exponent: function() {
         let exp = 0.025;
-        if (hasUpgrade('p', 22)) exp = exp + 0.03;
+        if (hasUpgrade('p', 22)) exp = exp+=0.03;
         return exp;
     },
     // 禁用里程碑弹窗
@@ -731,7 +782,7 @@ let raw = base.pow(2);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.91);
+let capped = ratio.pow(0.78);
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     13: {
@@ -752,14 +803,14 @@ let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.78);
+let capped = ratio.pow(0.13);
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },   }, 
     15: {
         title: "更多...",
         description: "lw重置时不重置前两行,解锁更多sp层升级.",
         cost: new Decimal(1e9), 
-        unlocked() { return hasUpgrade('lw', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('p', 91)}, 
+        unlocked() { return hasUpgrade('lw', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('p', 35)}, 
         effect() {
                 
     },   }, 
@@ -856,7 +907,7 @@ let raw = base.pow(2);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.91);
+let capped = ratio.pow(0.78);
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     13: {
@@ -877,7 +928,7 @@ let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.78);
+let capped = ratio.pow(0.13);
 return cap.times(capped);
 
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },   }, 
@@ -982,7 +1033,7 @@ let raw = base.pow(2);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.91);
+let capped = ratio.pow(0.78);
 return cap.times(capped);
 
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },    
@@ -1004,7 +1055,7 @@ let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.78);
+let capped = ratio.pow(0.13);
 return cap.times(capped);
 
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },   },  
@@ -1012,7 +1063,7 @@ return cap.times(capped);
         title: "更多...",
         description: "re重置时不重置前两行,解锁更多a层升级.",
         cost: new Decimal(1e9), 
-        unlocked() { return hasUpgrade('re', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('lw', 15) }, 
+        unlocked() { return hasUpgrade('re', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('lw', 15) &&hasUpgrade('sp', 55) }, 
         effect() {
                 
     },   }, 

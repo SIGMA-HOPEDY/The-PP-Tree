@@ -73,6 +73,7 @@ function getPointGen() {
     if (hasUpgrade('sa', 13)) pointmax = pointmax.times(1e9);
     if (hasUpgrade('lw', 13)) pointmax = pointmax.times(1e9);
     if (hasUpgrade('re', 13)) pointmax = pointmax.times(1e9);
+    if (hasUpgrade('p', 35)) pointmax = pointmax.times(1e14);
     const softcapThreshold = new Decimal(pointmax);
 
     let postSoftcapGain;
@@ -105,6 +106,7 @@ function getPointGen() {
                 if (hasUpgrade('sa', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('lw', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('re', 12)) exponent = exponent.times(1.05);
+                if (hasUpgrade('p', 35)) exponent = exponent.times(1.14514);
 
                 // 确保 exponent 是正有限数
                 if (!isValidDecimal(exponent) || exponent.lte(0)) {
@@ -150,7 +152,7 @@ function getPointGen() {
         if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
         doubleCappedGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
-        
+        if (hasUpgrade('p', 33)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('p', 33));
         // 设置二重软上限提示
         if (tmp && tmp.other) {
             tmp.other.doubleSoftcapHint = "由于你的点数获取大于"+ doublepointmax+",点数获取受到二重软上限!(效果：超过部分^" + doubleExponent + ")";
