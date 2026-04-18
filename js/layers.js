@@ -559,7 +559,7 @@ return cap.add(capped);
 },
 55: {
     title: "千禧之刻",
-    description: "二重软上限延迟lg(前两行点数+1)乘积,二重软上限后点数获取*1000,解锁一个新的RE升级",
+    description: "二重软上限延迟lg(前两行点数+1)之和,二重软上限后点数获取*1000,解锁一个新的RE升级",
     cost: new Decimal("1e1000"),
     unlocked() { return hasUpgrade('sp', 54)  },
     effect() {let safePointsp = player.p.points.max(1);
@@ -568,8 +568,8 @@ return cap.add(capped);
 let basep = safePointsp.add(1).log10();
 let basesp = safePointssp.add(1).log10();
 let basea = safePointsa.add(1).log10();
-    let raw = basep.times(basesp).times(basea);
-let cap = new Decimal("1e38");
+    let raw = basep.add(basesp).add(basea);
+let cap = new Decimal("1000");
 if (raw.lte(cap)) return raw;
 let ratio = raw.sub(cap);
 let capped = ratio.pow(0.5);
