@@ -129,29 +129,16 @@ function canReset(layer)
 function rowReset(row, layer) {
     // 定义保留升级的规则：key 为 "触发层_被重置层"，value 为判断函数
     const keepRules = {
-        // 当触发层是 sp 时重置 p 层
         "sp_p": () => hasMilestone('sp', 3),
-        // 当触发层是 a 时重置 p 层
         "a_p": () => hasUpgrade('a', 55),
-        // 当触发层是 sa 时重置 p 层
-        "sa_p": () => hasMilestone('sa', 1) || hasUpgrade('sa', 15),  // 可修改为其他条件
-        // 当触发层是 re 时重置 p 层
-        "re_p": () => hasUpgrade('re', 15),  // 可修改为 milestone 或其他
-        // 当触发层是 lw 时重置 p 层
-        "lw_p": () => hasUpgrade('lw', 15),  // 可修改为不同条件
-
-        // 当触发层是 lw 时重置 sp 层
+        "sa_p": () => hasMilestone('sa', 1) || hasUpgrade('sa', 15), 
+        "lw_p": () => hasUpgrade('lw', 15), 
+        "re_p": () => hasUpgrade('re', 15),
         "lw_sp": () => hasMilestone('lw', 1) || hasUpgrade('lw', 15),
-        // 当触发层是 sa 时重置 sp 层（示例）
         "sa_sp": () => hasUpgrade('sa', 15),
-        // 当触发层是 re 时重置 sp 层（示例）
         "re_sp": () => hasUpgrade('re', 15),
-
-        // 当触发层是 re 时重置 a 层
         "re_a": () => hasMilestone('re', 1) || hasUpgrade('re', 15),
-        // 当触发层是 sa 时重置 a 层（示例）
         "sa_a": () => hasUpgrade('sa', 15),
-        // 当触发层是 lw 时重置 a 层（示例）
         "lw_a": () => hasUpgrade('lw', 15),
     };
 

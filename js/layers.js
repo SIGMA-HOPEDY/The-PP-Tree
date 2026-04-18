@@ -13,9 +13,9 @@ addLayer("p", {
     baseAmount() {return player.points}, // Get the current amount of baseResource
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
         exponent: function() {
-        let exp = 0.52;
-        if (hasUpgrade('a', 52)) exp *1.01;
-        if (hasUpgrade('sp', 53)) exp = exp+=(upgradeEffect('sp', 53)).toNumber();
+        let exp = new Decimal(0.52);
+        if (hasUpgrade('a', 52)) exp = exp.times(1.01);
+        if (hasUpgrade('sp', 53)) exp = exp.add(upgradeEffect('sp', 53));
         return exp;
     },
 // Prestige currency exponent
@@ -253,11 +253,11 @@ addLayer("sp", {
     baseAmount() { return player.p.points }, // 这里应指向P层的点数，注意路径
     type: "normal", 
     exponent: function() {
-    let exp = 0.45; 
-    if (hasMilestone('sp', 2)) exp = exp+=(0.05);
-    if (hasMilestone('sp', 4)) exp = exp+=(0.05);
-    if (hasUpgrade('sp', 41)) exp = exp+=(upgradeEffect('sp', 41)).toNumber();
-    if (hasUpgrade('sp', 52)) exp = exp+=(upgradeEffect('sp', 52)).toNumber();
+    let exp = new Decimal(0.45);
+    if (hasMilestone('sp', 2)) exp = exp.add(0.05);
+    if (hasMilestone('sp', 4)) exp = exp.add(0.05);
+    if (hasUpgrade('sp', 41)) exp = exp.add(upgradeEffect('sp', 41));
+    if (hasUpgrade('sp', 52)) exp = exp.add(upgradeEffect('sp', 52));
     return exp; 
 },
     // 禁用里程碑弹窗
@@ -510,7 +510,8 @@ return cap.times(capped);},
     cost: new Decimal("1e600"),
     unlocked() { return hasUpgrade('sp', 51) &&hasUpgrade('lw', 15)  },
     effect() {
-let base = player.sp.points.add(1).log10().div(1000).add(1);
+        let safePoints = player.sp.points.max(1);
+let base = safePoints.add(1).log10().div(1000).add(1);
     let powResult = base.pow(0.066);
     let raw = powResult.add(-1);
 let cap = new Decimal("1");
@@ -527,7 +528,8 @@ return cap.add(capped);
     cost: new Decimal("6.66e666"),
     unlocked() { return hasUpgrade('sp', 52)  },
     effect() {
-let base = player.sp.points.add(1).log10().div(666).add(1);
+        let safePoints = player.sp.points.max(1);
+let base = safePoints.add(1).log10().div(666).add(1);
     let powResult = base.pow(0.12);
     let raw = powResult.add(-1);
 let cap = new Decimal("1");
@@ -543,8 +545,8 @@ return cap.add(capped);
     description: "基于你的SP点提升Amplifier获取指数。",
     cost: new Decimal("1e750"),
     unlocked() { return hasUpgrade('sp', 53)  },
-    effect() {
-let base = player.sp.points.add(1).log10().div(444).add(1);
+    effect() {let safePoints = player.sp.points.max(1);
+let base = safePoints.add(1).log10().div(444).add(1);
     let powResult = base.pow(0.05);
     let raw = powResult.add(-1);
 let cap = new Decimal("1");
@@ -560,10 +562,12 @@ return cap.add(capped);
     description: "二重软上限延迟lg(前两行点数+1)乘积,二重软上限后点数获取*1000,解锁一个新的RE升级",
     cost: new Decimal("1e1000"),
     unlocked() { return hasUpgrade('sp', 54)  },
-    effect() {
-let basep = player.p.points.add(1).log10();
-let basesp = player.sp.points.add(1).log10();
-let basea = player.a.points.add(1).log10();
+    effect() {let safePointsp = player.p.points.max(1);
+        let safePointssp = player.sp.points.max(1);
+        let safePointsa = player.a.points.max(1);
+let basep = safePointsp.add(1).log10();
+let basesp = safePointssp.add(1).log10();
+let basea = safePointsa.add(1).log10();
     let raw = basep.times(basesp).times(basea);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
@@ -594,9 +598,9 @@ addLayer("a", {
     baseAmount() { return player.p.points }, // 这里应指向P层的点数，注意路径
     type: "normal", 
    exponent: function() {
-        let exp = 0.025;
-        if (hasUpgrade('p', 22)) exp = exp+=0.03;
-        if (hasUpgrade('sp', 54)) exp = exp+=(upgradeEffect('sp', 54)).toNumber();
+        let exp = new Decimal(0.025);
+        if (hasUpgrade('p', 22)) exp = exp.add(0.03);
+        if (hasUpgrade('sp', 54)) exp = exp.add(upgradeEffect('sp', 54));
         return exp;
     },
     // 禁用里程碑弹窗
@@ -762,7 +766,7 @@ addLayer("lw", {
     baseAmount() { return player.points }, // 这里应指向点数，注意路径
     type: "normal", 
    exponent: function() {
-        let exp = 0.01;
+        let exp = new Decimal(0.01);
         return exp;
     },
     // 禁用里程碑弹窗
@@ -888,7 +892,7 @@ addLayer("sa", {
     baseAmount() { return player.points }, // 这里应指向点数，注意路径
     type: "normal", 
    exponent: function() {
-        let exp = 0.01;
+        let exp = new Decimal(0.01);
 
         return exp;
     },
@@ -1016,7 +1020,7 @@ addLayer("re", {
     baseAmount() { return player.points }, // 这里应指向点数，注意路径
     type: "normal", 
    exponent: function() {
-        let exp = 0.01;
+        let exp = new Decimal(0.01);
         return exp;
     },
     // 禁用里程碑弹窗
