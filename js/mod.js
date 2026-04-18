@@ -7,7 +7,7 @@ let modInfo = {
 	discordName: "",
 	discordLink: "",
 	initialStartPoints: new Decimal (10), // Used for hard resets and new players
-	offlineLimit: 1,  // In hours
+	offlineLimit: 5,  // In hours
 }
 
 // Set your version in num and name
@@ -138,6 +138,7 @@ function getPointGen() {
      // 二重软上限检查
     let doublepointmax = new Decimal("1e308");
     if(hasUpgrade('re', 14)) doublepointmax = doublepointmax.times(10);
+    if(hasUpgrade('sp', 55)) doublepointmax = doublepointmax.times(upgradeEffect('sp', 55));
     const doubleSoftcapThreshold = new Decimal(doublepointmax);
     let doubleCappedGain;
     if (postSoftcapGain.gt(doubleSoftcapThreshold)) {
@@ -153,6 +154,7 @@ function getPointGen() {
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
         doubleCappedGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
         if (hasUpgrade('p', 33)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('p', 33));
+        if (hasUpgrade('sp', 55)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('sp', 55));
         // 设置二重软上限提示
         if (tmp && tmp.other) {
             tmp.other.doubleSoftcapHint = "由于你的点数获取大于"+ doublepointmax+",点数获取受到二重软上限!(效果：超过部分^" + doubleExponent + ")";
@@ -245,7 +247,7 @@ var displayThings = [
 // doNotCallTheseFunctionsEveryTick.push("autoBuyUpgrades");
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte(new Decimal("1e308"))
+	return player.points.gte(new Decimal("1e1000"))
 }
 
 

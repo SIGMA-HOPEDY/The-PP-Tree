@@ -15,6 +15,7 @@ addLayer("p", {
         exponent: function() {
         let exp = 0.52;
         if (hasUpgrade('a', 52)) exp *1.01;
+        if (hasUpgrade('sp', 53)) exp = exp+=(upgradeEffect('sp', 53)).toNumber();
         return exp;
     },
 // Prestige currency exponent
@@ -180,7 +181,7 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     31: {
         title: "多出来的升级?",
-        description: "点数获取*点数获取^0.025",
+        description: "点数获取*点数^0.025",
         cost: new Decimal(1e38),  
         unlocked() { return hasUpgrade('p', 25) }, 
              effect() {
@@ -252,13 +253,13 @@ addLayer("sp", {
     baseAmount() { return player.p.points }, // 这里应指向P层的点数，注意路径
     type: "normal", 
     exponent: function() {
-        let exp = 0.45;
-        if (hasMilestone('sp', 2)) exp += 0.05;
-        if (hasMilestone('sp', 4)) exp += 0.05;
-        if (hasUpgrade('sp', 41)) exp += upgradeEffect('sp', 41);
-        if (hasUpgrade('sp', 52)) exp += upgradeEffect('sp', 52);
-        return exp;
-    },
+    let exp = 0.45; 
+    if (hasMilestone('sp', 2)) exp = exp+=(0.05);
+    if (hasMilestone('sp', 4)) exp = exp+=(0.05);
+    if (hasUpgrade('sp', 41)) exp = exp+=(upgradeEffect('sp', 41)).toNumber();
+    if (hasUpgrade('sp', 52)) exp = exp+=(upgradeEffect('sp', 52)).toNumber();
+    return exp; 
+},
     // 禁用里程碑弹窗
     milestonePopups: false,
     
@@ -504,21 +505,73 @@ return cap.times(capped);},
         unlocked() { return hasUpgrade('sp', 45) }, 
             },
      52: {
-    title: "22",
+    title: "!?强?!",
     description: "基于你的SP点提升SP点获取指数。",
-    cost: new Decimal("1e488"),
+    cost: new Decimal("1e600"),
     unlocked() { return hasUpgrade('sp', 51) &&hasUpgrade('lw', 15)  },
     effect() {
-let base = player.sp.points.add(1).log10().div(1000);
-    let powResult = base.pow(1);
-    let raw = powResult;
+let base = player.sp.points.add(1).log10().div(1000).add(1);
+    let powResult = base.pow(0.066);
+    let raw = powResult.add(-1);
 let cap = new Decimal("1");
 if (raw.lte(cap)) return raw;
 let ratio = raw.sub(cap);
-let capped = ratio.pow(0.1);
+let capped = ratio.pow(0.033);
 return cap.add(capped);
     },
     effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
+},
+53: {
+    title: "666还有第三关",
+    description: "基于你的SP点提升P点获取指数。",
+    cost: new Decimal("6.66e666"),
+    unlocked() { return hasUpgrade('sp', 52)  },
+    effect() {
+let base = player.sp.points.add(1).log10().div(666).add(1);
+    let powResult = base.pow(0.12);
+    let raw = powResult.add(-1);
+let cap = new Decimal("1");
+if (raw.lte(cap)) return raw;
+let ratio = raw.sub(cap);
+let capped = ratio.pow(0.06);
+return cap.add(capped);
+    },
+    effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
+},
+54: {
+    title: "我勒个高考750分",
+    description: "基于你的SP点提升Amplifier获取指数。",
+    cost: new Decimal("1e750"),
+    unlocked() { return hasUpgrade('sp', 53)  },
+    effect() {
+let base = player.sp.points.add(1).log10().div(444).add(1);
+    let powResult = base.pow(0.05);
+    let raw = powResult.add(-1);
+let cap = new Decimal("1");
+if (raw.lte(cap)) return raw;
+let ratio = raw.sub(cap);
+let capped = ratio.pow(0.025);
+return cap.add(capped);
+    },
+    effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
+},
+55: {
+    title: "千禧之刻",
+    description: "二重软上限延迟lg(前两行点数+1)乘积,二重软上限后点数获取*1000,解锁一个新的RE升级",
+    cost: new Decimal("1e1000"),
+    unlocked() { return hasUpgrade('sp', 54)  },
+    effect() {
+let basep = player.p.points.add(1).log10();
+let basesp = player.sp.points.add(1).log10();
+let basea = player.a.points.add(1).log10();
+    let raw = basep.times(basesp).times(basea);
+let cap = new Decimal("1e38");
+if (raw.lte(cap)) return raw;
+let ratio = raw.sub(cap);
+let capped = ratio.pow(0.5);
+return cap.add(capped);
+    },
+    effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id)) },
 },
     },
 })
@@ -543,6 +596,7 @@ addLayer("a", {
    exponent: function() {
         let exp = 0.025;
         if (hasUpgrade('p', 22)) exp = exp+=0.03;
+        if (hasUpgrade('sp', 54)) exp = exp+=(upgradeEffect('sp', 54)).toNumber();
         return exp;
     },
     // 禁用里程碑弹窗
@@ -809,7 +863,7 @@ return cap.times(capped);
     15: {
         title: "更多...",
         description: "lw重置时不重置前两行,解锁更多sp层升级.",
-        cost: new Decimal(1e9), 
+        cost: new Decimal(1e20), 
         unlocked() { return hasUpgrade('lw', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('p', 35)}, 
         effect() {
                 
@@ -835,6 +889,7 @@ addLayer("sa", {
     type: "normal", 
    exponent: function() {
         let exp = 0.01;
+
         return exp;
     },
     // 禁用里程碑弹窗
@@ -1062,7 +1117,7 @@ return cap.times(capped);
     15: {
         title: "更多...",
         description: "re重置时不重置前两行,解锁更多a层升级.",
-        cost: new Decimal(1e9), 
+        cost: new Decimal(1e40), 
         unlocked() { return hasUpgrade('re', 14) &&hasUpgrade('sa', 15) &&hasUpgrade('lw', 15) &&hasUpgrade('sp', 55) }, 
         effect() {
                 
