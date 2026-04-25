@@ -41,7 +41,7 @@ addLayer("p", {
     if (hasUpgrade('p', 23)) mult = mult.times(upgradeEffect('p', 23))
         if (hasUpgrade('p', 24)) mult = mult.times(upgradeEffect('p', 24))
             if(hasUpgrade('sa', 12)) mult = mult.times(upgradeEffect('sa', 12))
-                
+                if(hasUpgrade('tp', 11)) mult = mult.times(upgradeEffect('tp', 11)); 
         return mult
     },
     gainExp() { // Calculate the exponent on main currency from bonuses
@@ -339,7 +339,7 @@ if (hasUpgrade('p', 15)) mult = mult.times(upgradeEffect('p', 15))
         if (hasUpgrade('a', 53)) mult = mult.times(upgradeEffect('a', 53))
             if (hasUpgrade('sp', 42)) mult = mult.times(upgradeEffect('sp', 42))
                 if(hasUpgrade('lw', 12)) mult = mult.times(upgradeEffect('lw', 12))
-
+if(hasUpgrade('tp', 11)) mult = mult.times(upgradeEffect('tp', 11)); 
         return mult
     },
     gainExp() {
@@ -625,6 +625,8 @@ addLayer("a", {
         let mult = new Decimal(1)
         if(hasUpgrade('sp', 43)) mult = mult.times(upgradeEffect('sp', 43))
          if(hasUpgrade('re', 12)) mult = mult.times(upgradeEffect('re', 12))
+            if(hasUpgrade('a', 74)) mult = mult.times((upgradeEffect('a', 74)).add(1).log10().add(1).pow(1.44))
+                if(hasUpgrade('tp', 11)) mult = mult.times(upgradeEffect('tp', 11)); 
         return mult
     },
     gainExp() {
@@ -745,9 +747,31 @@ return cap.times(capped);
         description: "软上限再弱化1.05,点数获取*1e9",
         cost: new Decimal(2.5e18),  
         unlocked() { return hasUpgrade('a', 72) },
-             },             
-    }
-}
+             },     
+74: {
+        title: 
+        "1e288",
+        description: "点数获取*lg(点数+1)^2.88,amplifier获取*lg(lg(点数+1)^2.88+1)^1.44",
+        cost: new Decimal(1e288),  
+        unlocked() { return hasUpgrade('a', 73) && hasUpgrade('re', 15)},
+        effect() {
+            let base = player.points.add(1).log10().add(1);
+let raw = base.pow(2.88)
+let cap = new Decimal("1e38");
+if (raw.lte(cap)) return raw;
+let ratio = raw.div(cap);
+let capped = ratio.pow(1.88);
+return cap.times(capped);
+
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x"+","+((upgradeEffect(this.layer, this.id).add(1).log10().add(1).pow(1.44))+"x" )},  },
+    75: {
+        title: 
+        "新的层级?",
+        description: "解锁新的层级",
+        cost: new Decimal(1.79e308),  
+        unlocked() { return hasUpgrade('a', 74) },
+             },     
+    }}
 )
 addLayer("lw", {
     name: "Law Weaving",
@@ -800,7 +824,9 @@ addLayer("lw", {
     gainMult() {
         let mult = new Decimal(1)
         if(hasUpgrade('lw', 14)) mult = mult.times(upgradeEffect('lw', 14));
+        if(hasUpgrade('tp', 11)) mult = mult.times(upgradeEffect('tp', 11)); 
         return mult
+    
     },
     gainExp() {
         return new Decimal(1)
@@ -927,6 +953,7 @@ addLayer("sa", {
     gainMult() {
         let mult = new Decimal(1)
          if(hasUpgrade('sa', 14)) mult = mult.times(upgradeEffect('sa', 14));
+         if(hasUpgrade('tp', 11)) mult = mult.times(upgradeEffect('tp', 11)); 
         return mult
     },
     gainExp() {
@@ -1054,6 +1081,7 @@ addLayer("re", {
     gainMult() {
         let mult = new Decimal(1)
         if(hasUpgrade('re', 14)) mult = mult.times(upgradeEffect('re', 14)); 
+        if(hasUpgrade('tp', 11)) mult = mult.times(upgradeEffect('tp', 11)); 
         return mult
     },
     gainExp() {
@@ -1127,4 +1155,70 @@ return cap.times(capped);
                 
     },   }, 
       },}
+)
+addLayer("tp", {
+    name: "Time Points",
+    symbol: "TP",
+    position: 0,
+    startData() {
+        return {
+            unlocked: false, // 通常新层默认是锁定的，通过条件解锁
+            points: new Decimal(0),
+        }
+    },
+    color: "rgba(255, 0, 221, 1)",
+    requires: new Decimal("1e1000"), // 需要???才能解锁此层
+    resource: "Time points", // 该层的货币名称
+    baseResource: "points", // 基于的货币
+    baseAmount() { return player.points }, // 这里应指向点数，注意路径
+    type: "normal",     
+   exponent: function() {
+        let exp = new Decimal(0.01);
+        return exp;
+    },
+    // 禁用里程碑弹窗
+    milestonePopups: false,
+    
+    // 里程碑定义
+    milestones: {
+    },
+    gainMult() {
+        let mult = new Decimal(1)
+        return mult
+    },
+    gainExp() {
+        return new Decimal(1)
+    },
+    row: 3, // 放在第三行（0是第一行，1是第二行，2是第三行）
+       hotkeys: [ {key: "T", description: "R: Reset for Time Points", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+    ],
+    layerShown() {
+        return hasUpgrade('a', 75) || player.tp.points.gte(1) ||hasUpgrade('tp', 11) // 可以根据解锁状态调整，例如：return player.a.unlocked
+    },
+
+    tabFormat: {
+        "Upgrades": {
+            content: ["main-display", "prestige-button", "blank", "upgrades"]
+        },
+        "Milestones": {
+            content: ["main-display", "prestige-button", "blank", "milestones"]
+        },
+    },
+    upgrades: {
+        11: {
+            title: "时间的力量...",
+            description: "软上限弱化1.25,二重软上限弱化1.25,之前所有资源获取*(TP+10)^2",
+            cost: new Decimal(1),
+        effect() {
+                let base = player.tp.points.add(10);
+let raw = base.pow(2);
+let cap = new Decimal("1e38");
+if (raw.lte(cap)) return raw;
+let ratio = raw.div(cap);
+let capped = ratio.pow(0.78);
+return cap.times(capped);
+
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },    
+    },
+    },
 )

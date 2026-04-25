@@ -55,6 +55,7 @@ function getPointGen() {
     if (hasUpgrade('a', 51)) gain = gain.times(upgradeEffect('a', 51));
     if (hasUpgrade('a', 72)) gain = gain.times(1e9);
     if (hasUpgrade('a', 73)) gain = gain.times(1e9);
+    if (hasUpgrade('a', 74)) gain = gain.times(upgradeEffect('a', 74));
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasMilestone('sp', 5)) gain = gain.times(10);
@@ -107,7 +108,7 @@ function getPointGen() {
                 if (hasUpgrade('lw', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('re', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('p', 35)) exponent = exponent.times(1.14514);
-
+if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
                 // 确保 exponent 是正有限数
                 if (!isValidDecimal(exponent) || exponent.lte(0)) {
                     exponent = new Decimal(0.9);
@@ -151,6 +152,7 @@ function getPointGen() {
         if(hasUpgrade('lw', 12)) doubleExponent = doubleExponent.times(1.05);
         if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
         if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
+        if(hasUpgrade('tp', 11)) doubleExponent = doubleExponent.times(1.25);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
         doubleCappedGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
         if (hasUpgrade('p', 33)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('p', 33));
