@@ -171,13 +171,14 @@ if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
 
     // 三重软上限检查
     let triplepointmax = new Decimal("1e1000");
+    if(hasUpgrade('tp', 12)) triplepointmax = triplepointmax.times('1e314');
     const tripleSoftcapThreshold = new Decimal(triplepointmax);
     if (doubleCappedGain.gt(tripleSoftcapThreshold)) {
         let tripleExcess = doubleCappedGain.minus(tripleSoftcapThreshold);
         // lg(lg(在二重软上限生效后的点数获取)) = log10(log10(doubleCappedGain))
         let Log10PostTriple = (doubleCappedGain.div(triplepointmax).add(1)).log10();
         let Log10Log10PostTriple = (Log10PostTriple.add(1)).log10();
-        let tripleExponent = new Decimal(6.9).div(new Decimal(10).plus(Log10Log10PostTriple)); 
+        let tripleExponent = new Decimal(6.9).div(new Decimal(13).plus(Log10Log10PostTriple)); 
         // 这里可以添加升级影响，但用户没有指定，暂时留空
         let tripleCappedExcess = tripleExcess.pow(tripleExponent);
         let tripleCappedGain = tripleSoftcapThreshold.plus(tripleCappedExcess);
