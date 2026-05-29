@@ -178,7 +178,7 @@ if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
         // lg(lg(在二重软上限生效后的点数获取)) = log10(log10(doubleCappedGain))
         let Log10PostTriple = (doubleCappedGain.div(triplepointmax).add(1)).log10();
         let Log10Log10PostTriple = (Log10PostTriple.add(1)).log10();
-        let tripleExponent = new Decimal(6.9).div(new Decimal(13).plus(Log10Log10PostTriple)); 
+        let tripleExponent = new Decimal(6.9).div(new Decimal(10.78).plus(Log10Log10PostTriple)); 
         // 这里可以添加升级影响，但用户没有指定，暂时留空
         let tripleCappedExcess = tripleExcess.pow(tripleExponent);
         let tripleCappedGain = tripleSoftcapThreshold.plus(tripleCappedExcess);

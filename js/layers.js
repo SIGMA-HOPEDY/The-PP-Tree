@@ -1193,7 +1193,9 @@ addLayer("tp", {
     },
     milestonePopups: false,
     milestones: {},
-    gainMult() { return new Decimal(1) },
+    gainMult() { let mult = new Decimal(1)
+        if(hasUpgrade('tp', 13)) mult = mult.times(upgradeEffect('tp', 13)); 
+        return mult },
     gainExp() { return new Decimal(1) },
     row: 3,
     hotkeys: [{
@@ -1238,8 +1240,23 @@ addLayer("tp", {
             title: "改变...",
             description: "三重软上限延迟1e314",
             cost: new Decimal(1),
-            // 建议至少加一个效果，否则升级12没有实际作用
-            effect() { return new Decimal(1) },
+            unlocked() { return hasUpgrade('tp', 11) }, 
+        },
+        13: {
+            title: "碎片化...",
+            description: "解锁时间碎片,tp增加tp获取",
+            cost: new Decimal(3),
+            effect() {
+                let base = player.tp.points.add(100).log(10);
+                let raw = base.pow(2);
+                let cap = new Decimal("1e38");
+                if (raw.lte(cap)) return raw;
+                let ratio = raw.div(cap);
+                let capped = ratio.pow(1.14514);
+                return cap.times(capped);
+            },
+             unlocked() { return hasUpgrade('tp', 12) }, 
+             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" },
         },
     },
 
@@ -1247,7 +1264,7 @@ addLayer("tp", {
     buyables: {
         11: {
     title: "时间碎片",
-    unlocked() { return hasUpgrade('tp', 11) },
+    unlocked() { return hasUpgrade('tp', 13) },
     cost(x) { 
         return Decimal.pow(x.pow(2), x).floor()   // 价格超级指数
     },
