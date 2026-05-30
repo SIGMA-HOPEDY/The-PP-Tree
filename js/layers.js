@@ -774,6 +774,9 @@ return cap.times(capped);
             let base = player.points.add(1).log10().add(1);
 let raw = base.pow(2.88)
 let cap = new Decimal("1e38");
+if (hasUpgrade('tp', 15)) {
+        raw = raw.pow(2.026);                     
+    }
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
 let capped = ratio.pow(1.88);
@@ -1247,57 +1250,145 @@ addLayer("tp", {
             description: "解锁时间碎片,tp增加tp获取",
             cost: new Decimal(3),
             effect() {
-                let base = player.tp.points.add(100).log(10);
-                let raw = base.pow(2);
+                let base = player.tp.points.add(1);
+                let raw = base.pow(0.33);
                 let cap = new Decimal("1e38");
                 if (raw.lte(cap)) return raw;
                 let ratio = raw.div(cap);
-                let capped = ratio.pow(1.14514);
+                let capped = ratio.pow(0.114514);
                 return cap.times(capped);
             },
              unlocked() { return hasUpgrade('tp', 12) }, 
              effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" },
         },
+        14: {
+            title: "时间之晶？",
+            description: "解锁时间之晶,时间碎片效果公式提升至0.52",
+            cost: new Decimal(65536),
+            unlocked() { return hasUpgrade('tp', 13) }
+        },
+        15: {
+            title: "时蚀之刻",
+            description: "解锁时蚀之刻,时间碎片效果公式提升至0.66,升级'1e288'效果再^2.026",
+            cost: new Decimal(114514),
+            unlocked() { return hasUpgrade('tp', 14) }
+        },
     },
 
     
     buyables: {
-        11: {
-    title: "时间碎片",
-    unlocked() { return hasUpgrade('tp', 13) },
-    cost(x) { 
-        return Decimal.pow(x.pow(2), x).floor()   // 价格超级指数
+    11: {
+        title: "时间碎片",
+        unlocked() { return hasUpgrade('tp', 13); },
+        cost(x) {
+            if (x.eq(0)) return new Decimal(1);
+            let base = Decimal.pow(x.pow(2), x).floor();
+            let discount = getTimeCrystalDiscount();
+            let cost = base.times(discount).max(1);
+            return cost;
+        },
+       effect(x) {
+    if (x.eq(0)) return new Decimal(1);
+    let exp;
+    if (hasUpgrade('tp', 15)) exp = 0.66;
+    else if (hasUpgrade('tp', 14)) exp = 0.52;
+    else exp = 0.5;
+    let raw = x.pow(exp).div(10).add(1);
+    // 软上限：效果 > 1 时，取其平方根
+    if (raw.gt(1)) {
+        return raw.sqrt();
+    }
+    return raw;
+},
+        display() {
+            let x = player[this.layer].buyables[this.id] || new Decimal(0);
+            let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+            let eff = tmp[this.layer].buyables[this.id]?.effect || new Decimal(1);
+            let limit = getTimeFragmentBaseLimit();
+            return `花费: ${format(cost)} TP\n已购买: ${formatWhole(x)} / ${formatWhole(limit)}\n效果: 升级21效果 ^${format(eff,4,true)}`;
+        },
+        canAfford() {
+            let cost = tmp[this.layer].buyables[this.id]?.cost;
+            if (!cost) return false;
+            return player[this.layer].points.gte(cost);
+        },
+        buy() {
+            let x = player[this.layer].buyables[this.id] || new Decimal(0);
+            let limit = getTimeFragmentBaseLimit().floor();
+            if (x.gte(limit)) return;
+            let cost = tmp[this.layer].buyables[this.id].cost;
+            player[this.layer].points = player[this.layer].points.sub(cost);
+            player[this.layer].buyables[this.id] = x.add(1);
+            updateTemp();
+        },
+    },
+    12: {
+        title: "时间之晶",
+        unlocked() { return hasUpgrade('tp', 14); },
+        cost(x) {
+            if (x.eq(0)) return new Decimal(4);
+            return Decimal.pow(5, x).floor();
+        },
+        effect(x) {
+            if (x.eq(0)) return new Decimal(1);
+            return Decimal.pow(x.div(114514), x);
+        },
+        display() {
+    let x = player[this.layer].buyables[this.id] || new Decimal(0);
+    let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+    let discount = getTimeCrystalDiscount();
+    let limitBonus = new Decimal(1.25).pow(getTimeCrystalLimitBonus()).add(1);
+    return `花费: ${format(cost)} 时间碎片\n已购买: ${formatWhole(x)} / 4\n效果: 时间碎片成本 x${format(discount, 4, true)}，上限 *${format(limitBonus, 4, true)}`;
+},
+        canAfford() {
+            let need = tmp[this.layer].buyables[this.id]?.cost;
+            if (!need) return false;
+            let have = player[this.layer].buyables[11] || new Decimal(0);
+            return have.gte(need);
+        },
+        buy() {
+            let x = player[this.layer].buyables[this.id] || new Decimal(0);
+            if (x.gte(4)) return;
+            let cost = tmp[this.layer].buyables[this.id].cost;
+            player[this.layer].buyables[11] = player[this.layer].buyables[11].sub(cost);
+            player[this.layer].buyables[this.id] = x.add(1);
+            updateTemp();
+        },
+        purchaseLimit: 4,
+    },
+    13: {
+    title: "时蚀之刻",
+    unlocked() { return hasUpgrade('tp', 15); },
+    cost(x) {
+        if (x.eq(0)) return new Decimal(1);
+        return Decimal.pow(2, x).floor();
     },
     effect(x) {
-        // x=0 时效果=1
-        if (x.eq(0)) return new Decimal(1)
-        // 公式：1 + x^0.5 / 10
-        return x.pow(0.5).div(10).add(1)
+        if (x.eq(0)) return new Decimal(1);
+        return Decimal.pow(1.05, x);
     },
     display() {
-        let eff = tmp[this.layer].buyables[this.id].effect
-        return `花费: ${format(tmp[this.layer].buyables[this.id].cost)} TP\n\
-已购买: ${formatWhole(player[this.layer].buyables[this.id])} / 100\n\
-效果: 升级21效果 ^${format(eff)}`
+        let x = player[this.layer].buyables[this.id] || new Decimal(0);
+        let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+        let factor1 = getEclipseMultiplier(1);
+        let factor2 = getEclipseMultiplier(2);
+        let factor3 = getEclipseMultiplier(3);
+        return `花费: ${format(cost)} 时间碎片\n已购买: ${formatWhole(x)} / 10\n效果: 一重软上限指数 *${format(factor1, 4, true)}\n      二重软上限指数 *${format(factor2, 4, true)}\n      三重软上限指数 *${format(factor3, 4, true)}`;
     },
     canAfford() {
-        return player[this.layer].points.gte(tmp[this.layer].buyables[this.id].cost)
+        let need = tmp[this.layer].buyables[this.id]?.cost;
+        if (!need) return false;
+        let have = player[this.layer].buyables[11] || new Decimal(0);
+        return have.gte(need);
     },
     buy() {
-        let cost = tmp[this.layer].buyables[this.id].cost
-        player[this.layer].points = player[this.layer].points.sub(cost)
-        player[this.layer].buyables[this.id] = player[this.layer].buyables[this.id].add(1)
+        let x = player[this.layer].buyables[this.id] || new Decimal(0);
+        if (x.gte(10)) return;   // 上限检查
+        let cost = tmp[this.layer].buyables[this.id].cost;
+        player[this.layer].buyables[11] = player[this.layer].buyables[11].sub(cost);
+        player[this.layer].buyables[this.id] = x.add(1);
+        updateTemp();
     },
-    purchaseLimit: new Decimal(100),   // 上限 100 个
-    // 可选：卖出功能，方便调整
-    sellOne() {
-        let amount = getBuyableAmount(this.layer, this.id)
-        if (amount.lte(0)) return
-        setBuyableAmount(this.layer, this.id, amount.sub(1))
-        player[this.layer].points = player[this.layer].points.add(
-            Decimal.pow(amount.sub(1).pow(2), amount.sub(1)).floor()
-        )
-    },
+    purchaseLimit: 10,   // 框架可能自动使用该值，双重保障
 }
-    }
-});
+}})

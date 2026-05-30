@@ -109,6 +109,8 @@ function getPointGen() {
                 if (hasUpgrade('re', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('p', 35)) exponent = exponent.times(1.14514);
 if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
+let eclipseMult1 = getEclipseMultiplier(1);
+exponent = exponent.times(eclipseMult1);
                 // 确保 exponent 是正有限数
                 if (!isValidDecimal(exponent) || exponent.lte(0)) {
                     exponent = new Decimal(0.9);
@@ -153,6 +155,8 @@ if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
         if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
         if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
         if(hasUpgrade('tp', 11)) doubleExponent = doubleExponent.times(1.25);
+        let eclipseMult2 = getEclipseMultiplier(2);
+doubleExponent = doubleExponent.times(eclipseMult2);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
         doubleCappedGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
         if (hasUpgrade('p', 33)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('p', 33));
@@ -178,8 +182,9 @@ if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
         // lg(lg(在二重软上限生效后的点数获取)) = log10(log10(doubleCappedGain))
         let Log10PostTriple = (doubleCappedGain.div(triplepointmax).add(1)).log10();
         let Log10Log10PostTriple = (Log10PostTriple.add(1)).log10();
-        let tripleExponent = new Decimal(6.9).div(new Decimal(10.78).plus(Log10Log10PostTriple)); 
-        // 这里可以添加升级影响，但用户没有指定，暂时留空
+        let tripleExponent = new Decimal(6.9).div(new Decimal(10.78).plus(Log10Log10PostTriple));
+let eclipseMult3 = getEclipseMultiplier(3);
+tripleExponent = tripleExponent.times(eclipseMult3);
         let tripleCappedExcess = tripleExcess.pow(tripleExponent);
         let tripleCappedGain = tripleSoftcapThreshold.plus(tripleCappedExcess);
         
@@ -264,4 +269,34 @@ var backgroundStyle = {
 // You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
 	return(3600) // Default is 1 hour which is just arbitrarily large
+}
+function getTimeCrystalDiscount() {
+    let crystals = player.tp?.buyables?.[12] || new Decimal(0);
+    return Decimal.pow(crystals.div(114514), crystals);
+}
+
+function getTimeCrystalLimitBonus() {
+    let crystals = player.tp?.buyables?.[12] || new Decimal(0);
+    return crystals;
+}
+
+function getTimeFragmentBaseLimit() {
+    // 基础上限 100
+    return new Decimal(100).times(new Decimal(1.25).pow(getTimeCrystalLimitBonus()).add(1));
+}
+function getEclipseCount() {
+    return player.tp?.buyables?.[13] || new Decimal(0);
+}
+
+function getEclipseCount() {
+    return player.tp?.buyables?.[13] || new Decimal(0);
+}
+
+function getEclipseMultiplier(level) {
+    // level: 1 表示一重软上限，2 表示二重，3 表示三重
+    let cnt = getEclipseCount();
+    if (level === 1) return Decimal.pow(1.01, cnt);
+    if (level === 2) return Decimal.pow(1.02, cnt);
+    if (level === 3) return Decimal.pow(1.03, cnt);
+    return new Decimal(1);
 }
