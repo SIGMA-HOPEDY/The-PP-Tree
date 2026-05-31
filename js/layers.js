@@ -1299,7 +1299,7 @@ update(diff) {
          21: {
         title: "时间之力",
         description: "解锁 Times power,自动获得 +[log10(TP+1)]^1.14514/秒,基于(tpr+1)^1.3给TP一个获取倍数",
-        cost: new Decimal(1e9),   // 根据平衡调整成本
+        cost: new Decimal(1919810),   // 根据平衡调整成本
         unlocked() { return hasUpgrade('tp', 15); }, // 可根据需要调整前置
         effectDisplay() {
             let tpPoints = player.tp.points;
@@ -1314,21 +1314,21 @@ update(diff) {
     22: {
         title: "优化时间",
         description: "优化Tpr自动获得指数为1.919810",
-        cost: new Decimal(1e16),   // 根据平衡调整成本
+        cost: new Decimal(1e9),   // 根据平衡调整成本
         unlocked() { return hasUpgrade('tp', 21); }, // 可根据需要调整前置
         
     },
     23: {
         title: "时间浮动",
         description: "优化Tpr效果指数为2.026",
-        cost: new Decimal(1e25),   // 根据平衡调整成本
+        cost: new Decimal(1e16),   // 根据平衡调整成本
         unlocked() { return hasUpgrade('tp', 22); }, // 可根据需要调整前置
         
     },
     24: {
         title: "时间扭曲",
         description: "Tpr自动获得*(tpr+1)^0.1919810",
-        cost: new Decimal(1e36),   // 根据平衡调整成本
+        cost: new Decimal(1e25),   // 根据平衡调整成本
         unlocked() { return hasUpgrade('tp', 23); }, // 可根据需要调整前置
         effect() {
     // 确保 timesPower 是 Decimal 对象
@@ -1348,7 +1348,7 @@ update(diff) {
     25: {
         title: "时间侵蚀",
         description: "软上限(一重、二重、三重、四重)指数分别乘以1.025,1.05,1.075,1.1",
-        cost: new Decimal(1e49),   // 根据平衡调整成本
+        cost: new Decimal(1e36),   // 根据平衡调整成本
         unlocked() { return hasUpgrade('tp', 24); }, // 可根据需要调整前置
         
     },
