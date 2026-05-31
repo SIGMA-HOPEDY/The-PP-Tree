@@ -75,7 +75,7 @@ let raw = base.pow(0.5);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.25);
+let capped = ratio.pow(new Decimal(0.91).div((player.p.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
         },
         effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },
@@ -383,7 +383,7 @@ let raw = base.pow(0.3);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.15);
+let capped = ratio.pow(new Decimal(0.5).div((player.sp.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  
         }, 
@@ -397,7 +397,7 @@ let raw = base.pow(0.35);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = base.div(cap);
-let capped = ratio.pow(0.035);
+let capped = ratio.pow(new Decimal(0.13).div((player.sp.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
         },
         effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },},
@@ -408,11 +408,11 @@ return cap.times(capped);
         unlocked() { return hasUpgrade('sp', 32) }, 
             effect() {
         let base = player.sp.points.add(1);
-let raw = base.pow(0.025);
+let raw = base.pow(0.25);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.0125);
+let capped = ratio.pow(new Decimal(0.5).div((player.sp.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     34: {
@@ -425,10 +425,10 @@ let raw = base.pow(0.33);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.165);
-return cap.times(capped);},
-   effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
-   35: {
+let capped = ratio.pow(new Decimal(0.66).div((player.sp.points.add(1).log10().add(1).log10().add(1))));
+return cap.times(capped);
+    },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
+    35: {
         title: "15",
         description: "基于你的sp点提升点数获取。",
         cost: new Decimal(1e38),  
@@ -438,7 +438,7 @@ let raw = base.pow(0.25);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.125);
+let capped = ratio.pow(new Decimal(0.5).div((player.sp.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);},
    effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
    41: {
@@ -673,7 +673,7 @@ passiveGeneration: function() {
         limited = raw;
     } else {
         let ratio = raw.div(cap);
-        let capped = ratio.pow(0.78);
+        let capped = ratio.pow(new Decimal(1.3).div((player.a.points.add(1).log10().add(1).log10().add(1)).pow(0.3)));
         limited = cap.times(capped);
     }
 
@@ -890,7 +890,7 @@ let raw = base.pow(2);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.78);
+let capped = ratio.pow(new Decimal(0.78).div((player.lw.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     13: {
@@ -911,7 +911,7 @@ let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.13);
+let capped = ratio.pow(new Decimal(0.13).div((player.lw.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },   }, 
     15: {
@@ -1017,7 +1017,7 @@ let raw = base.pow(2);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.78);
+let capped = ratio.pow(new Decimal(0.78).div((player.sa.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     13: {
@@ -1038,7 +1038,7 @@ let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.13);
+let capped = ratio.pow(new Decimal(0.13).div((player.sa.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
 
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },   }, 
@@ -1144,7 +1144,7 @@ let raw = base.pow(2);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.78);
+let capped = ratio.pow(new Decimal(0.78).div((player.re.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
 
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },    
@@ -1166,7 +1166,7 @@ let raw = base.pow(1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.13);
+let capped = ratio.pow(new Decimal(0.13).div((player.re.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);
 
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },   },  
@@ -1257,7 +1257,7 @@ update(diff) {
                 let cap = new Decimal("1e38");
                 if (raw.lte(cap)) return raw;
                 let ratio = raw.div(cap);
-                let capped = ratio.pow(0.78);
+                let capped = ratio.pow(new Decimal(0.78).div((player.tp.points.add(1).log10().add(1).log10().add(1))));
                 return cap.times(capped);
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" },
@@ -1278,7 +1278,7 @@ update(diff) {
                 let cap = new Decimal("1e38");
                 if (raw.lte(cap)) return raw;
                 let ratio = raw.div(cap);
-                let capped = ratio.pow(0.114514);
+                let capped = ratio.pow(new Decimal(0.114514).div((player.tp.points.add(1).log10().add(1).log10().add(1))));
                 return cap.times(capped);
             },
              unlocked() { return hasUpgrade('tp', 12) }, 
