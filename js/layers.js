@@ -143,30 +143,30 @@ return cap.times(capped);
              },
      23: {
         title: "08",
-        description: "p点获取*p点^0.015",
+        description: "p点获取*p点^0.1",
         cost: new Decimal(1e12),  
         unlocked() { return hasUpgrade('p', 22) }, 
              effect() {
         let base = player.p.points.add(1);
-let raw = base.pow(0.015);
+let raw = base.pow(0.1);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.0075);
+let capped = ratio.pow(0.05);
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     24: {
         title: "09",
-        description: "p点获取*p点^0.025.",
+        description: "p点获取*p点^0.05.",
         cost: new Decimal(1e20),  
         unlocked() { return hasUpgrade('p', 23) }, 
              effect() {
         let base = player.p.points.add(1);
-let raw = base.pow(0.025);
+let raw = base.pow(0.05);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.0125);
+let capped = ratio.pow(0.025);
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     25: {
@@ -185,16 +185,16 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     31: {
         title: "多出来的升级?",
-        description: "点数获取*点数^0.025",
+        description: "点数获取*点数^0.05",
         cost: new Decimal(1e38),  
         unlocked() { return hasUpgrade('p', 25) }, 
              effect() {
         let base = player.points.add(1);
-let raw = base.pow(0.025);
+let raw = base.pow(0.05);
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
-let capped = ratio.pow(0.0125);
+let capped = ratio.pow(0.025);
 return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     32: {
@@ -214,12 +214,12 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
 33: {
         title: "更进一歩!",
-        description: "二重软上限后点数获取*(1+lg(点数+1))^{1+lg(lg(点数+1)+1)}",
+        description: "二重软上限后点数获取*(1+lg(点数+1))^{1.919810+lg(lg(点数+1)+1)}",
         cost: new Decimal("1e455"),  
         unlocked() { return hasUpgrade('p', 32)  }, 
              effect() {
                 let base = player.points.add(1).log10().add(1);
-let raw = base.pow(player.points.add(1).log10().add(1).log10().add(1))
+let raw = base.pow(player.points.add(1).log10().add(1).log10().add(1.919810))
 let cap = new Decimal("1e38");
 if (raw.lte(cap)) return raw;
 let ratio = raw.div(cap);
@@ -229,7 +229,7 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
     34: {
         title: "升级18太弱了!",
-        description: "升级18效果^2.5(有神秘小彩蛋哦)",
+        description: "升级18效果^2.88(有神秘小彩蛋哦)",
         cost: new Decimal("1e465"),  
         unlocked() { return hasUpgrade('p', 33)  },  },
     35: {
@@ -452,7 +452,7 @@ return cap.times(capped);},
 let cap = new Decimal("0.5");
 if (raw.lte(cap)) return raw;
 let ratio = raw.pow(0.01).log10();
-let capped = ratio.sub(0.25);
+let capped = ratio.sub(0.2);
 return cap.add(capped);
 },
    effectDisplay() { return "+"+format(upgradeEffect(this.layer, this.id)) },  },
@@ -478,14 +478,14 @@ return cap.times(capped);},
     let base = player.sp.points.add(1);
     let raw = base.pow(0.0066);                 
     if (hasUpgrade('p', 34)) {
-        raw = raw.pow(2.5);                     
+        raw = raw.pow(2.88);                     
     }
     let cap = new Decimal("1e38");
     if (raw.lte(cap)) return raw;
     let ratio = raw.div(cap);
     let capped = ratio.pow(0.0033);   
     if (hasUpgrade('p', 34)) {
-        capped = capped.pow(1.25);              //       没想到吧?升级34还会影响这个软上限的弱化程度(✿◡‿◡)
+        capped = capped.pow(1.44);              //       没想到吧?升级34还会影响这个软上限的弱化程度(✿◡‿◡)
     }          
     return cap.times(capped);
 
@@ -522,7 +522,7 @@ let base = safePoints.add(1).log10().div(1000).add(1);
 let cap = new Decimal("0.5");
 if (raw.lte(cap)) return raw;
 let ratio = raw.pow(0.033).log10();
-let capped = ratio.sub(0.25);
+let capped = ratio.sub(0.2);
 return cap.add(capped);
     },
     effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
@@ -535,12 +535,12 @@ return cap.add(capped);
     effect() {
         let safePoints = player.sp.points.max(1);
 let base = safePoints.add(1).log10().div(666).add(1);
-    let powResult = base.pow(0.12);
+    let powResult = base.pow(0.15);
     let raw = powResult.add(-1);
 let cap = new Decimal("0.75");
 if (raw.lte(cap)) return raw;
-let ratio = raw.pow(0.06).log10();
-let capped = ratio.sub(0.375);
+let ratio = raw.pow(0.075).log10();
+let capped = ratio.sub(0.2);
 return cap.add(capped);
     },
     effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
@@ -552,19 +552,19 @@ return cap.add(capped);
     unlocked() { return hasUpgrade('sp', 53)  },
     effect() {let safePoints = player.sp.points.max(1);
 let base = safePoints.add(1).log10().div(444).add(1);
-    let powResult = base.pow(0.05);
+    let powResult = base.pow(0.066);
     let raw = powResult.add(-1);
 let cap = new Decimal("0.25");
 if (raw.lte(cap)) return raw;
-let ratio = raw.pow(0.025).log10();
-let capped = ratio.sub(0.125);
+let ratio = raw.pow(0.033).log10();
+let capped = ratio.sub(0.1);
 return cap.add(capped);
     },
     effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
 },
 55: {
     title: "千禧之刻",
-    description: "二重软上限延迟lg(前两行点数+1)之和,二重软上限后点数获取*1000,解锁一个新的RE升级",
+    description: "二重软上限延迟lg(前两行点数+1)之积,二重软上限后点数获取*1000,解锁一个新的RE升级",
     cost: new Decimal("1e1000"),
     unlocked() { return hasUpgrade('sp', 54)  },
     effect() {let safePointsp = player.p.points.max(1);
@@ -573,11 +573,11 @@ return cap.add(capped);
 let basep = safePointsp.add(1).log10();
 let basesp = safePointssp.add(1).log10();
 let basea = safePointsa.add(1).log10();
-    let raw = basep.add(basesp).add(basea);
-let cap = new Decimal("1000");
+    let raw = basep.times(basesp).times(basea);
+let cap = new Decimal("1e9");
 if (raw.lte(cap)) return raw;
 let ratio = raw.sub(cap);
-let capped = ratio.pow(0.5);
+let capped = ratio.pow(0.91);
 return cap.add(capped);
     },
     effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id)) },
