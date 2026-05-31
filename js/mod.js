@@ -36,8 +36,12 @@ function canGenPoints(){
     return true
 }
 // You can add non-layer related variables that should to into "player" and be saved here, along with default values
-function addedPlayerData() { return {
-}}
+function addedPlayerData() {
+    return {
+        
+        // 其他原有字段...
+    };
+}
 // 根据升级和里程碑计算增益
 function getPointGen() {
     if (!canGenPoints()) return new Decimal(0);
@@ -109,6 +113,7 @@ function getPointGen() {
                 if (hasUpgrade('re', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('p', 35)) exponent = exponent.times(1.14514);
 if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
+if (hasUpgrade('tp', 25)) exponent = exponent.times(1.025);
 let eclipseMult1 = getEclipseMultiplier(1);
 exponent = exponent.times(eclipseMult1);
                 // 确保 exponent 是正有限数
@@ -155,6 +160,7 @@ exponent = exponent.times(eclipseMult1);
         if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
         if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
         if(hasUpgrade('tp', 11)) doubleExponent = doubleExponent.times(1.25);
+        if(hasUpgrade('tp', 25)) doubleExponent = doubleExponent.times(1.05);
         let eclipseMult2 = getEclipseMultiplier(2);
 doubleExponent = doubleExponent.times(eclipseMult2);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
@@ -183,6 +189,7 @@ doubleExponent = doubleExponent.times(eclipseMult2);
         let Log10PostTriple = (doubleCappedGain.div(triplepointmax).add(1)).log10();
         let Log10Log10PostTriple = (Log10PostTriple.add(1)).log10();
         let tripleExponent = new Decimal(6.9).div(new Decimal(10.78).plus(Log10Log10PostTriple));
+        if (hasUpgrade('tp', 25)) tripleExponent = tripleExponent.times(1.075);
 let eclipseMult3 = getEclipseMultiplier(3);
 tripleExponent = tripleExponent.times(eclipseMult3);
         let tripleCappedExcess = tripleExcess.pow(tripleExponent);
@@ -201,8 +208,7 @@ if (tripleCappedGain.gt(quadrupleSoftcapThreshold)) {
     let Log10PostQuad = (tripleCappedGain.div(quadruplepointmax).add(1)).log10();
     let Log10Log10PostQuad = (Log10PostQuad.add(1)).log10();
     let quadrupleExponent = new Decimal(114514).div(new Decimal(1919810).plus(Log10Log10PostQuad));
-    // 如果有升级影响可在此添加，例如：
-    // if (hasUpgrade('xx', xx)) quadrupleExponent = quadrupleExponent.times(1.05);
+    if (hasUpgrade('tp', 25)) quadrupleExponent = quadrupleExponent.times(1.1);
     let quadrupleCappedExcess = quadrupleExcess.pow(quadrupleExponent);
     let quadrupleCappedGain = quadrupleSoftcapThreshold.plus(quadrupleCappedExcess);
     
@@ -226,36 +232,15 @@ if (tripleCappedGain.gt(quadrupleSoftcapThreshold)) {
 
 }
 // You can add non-layer related variables that should go into "player" and be saved here, along with default values
-function addedPlayerData() { return { // 全局挑战奖励加成乘数
-}}
 
 // Display extra things at the top of the page
 
 var displayThings = [
 ]
-// 在mod.js的某个每帧调用的函数中
-// function autoBuyUpgrades() {
-//     if (hasMilestone('sp', 3)) {
-//         // 自动购买P层可购买的升级
-//         for (let id in layers.p.upgrades) {
-//             let upg = layers.p.upgrades[id];
-//             if (upg.unlocked && upg.unlocked() && !hasUpgrade('p', id)) {
-//                 if (player.p.points.gte(upg.cost)) {
-//                     // 执行购买
-//                     player.p.points = player.p.points.minus(upg.cost);
-//                     player.p.upgrades[id] = true;
-//                     console.log(`自动购买了P层升级 ${id}`);
-//                 }
-//             }
-//         }
-//     }
-// }
-
-// 确保这个函数被添加到doNotCallTheseFunctionsEveryTick数组
 // doNotCallTheseFunctionsEveryTick.push("autoBuyUpgrades");
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte(new Decimal("1e1000"))
+	return player.points.gte(new Decimal("1e114514"))
 }
 
 
@@ -282,7 +267,7 @@ function getTimeCrystalLimitBonus() {
 
 function getTimeFragmentBaseLimit() {
     // 基础上限 100
-    return new Decimal(100).times(new Decimal(1.25).pow(getTimeCrystalLimitBonus()).add(1));
+    return new Decimal(100).times(new Decimal(1.425).pow(getTimeCrystalLimitBonus()).add(1));
 }
 function getEclipseCount() {
     return player.tp?.buyables?.[13] || new Decimal(0);
@@ -300,3 +285,21 @@ function getEclipseMultiplier(level) {
     if (level === 3) return Decimal.pow(1.03, cnt);
     return new Decimal(1);
 }
+// 注册显示组件
+Vue.component('times-power-display', {
+    template: `
+        <div style="margin: 10px 0;">
+            时间之力: {{format(player.timesPower || new Decimal(0))}}<br>
+            TP获取倍数: {{format(getTimesPowerMultiplier())}}x
+        </div>
+    `,
+    methods: {
+        getTimesPowerMultiplier() {
+            let tp = player.timesPower;
+            if (!tp || !(tp instanceof Decimal)) tp = new Decimal(0);
+            let tpr = new Decimal(1.3);
+            if (hasUpgrade('tp', 23)) tpr = new Decimal(2.026);
+            return tp.add(1).pow(tpr);
+        }
+    }
+});

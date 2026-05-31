@@ -260,34 +260,33 @@ function NaNcheck(data) {
 	}
 }
 function exportSave() {
-	//if (NaNalert) return
-	let str = btoa(JSON.stringify(player));
-
-	const el = document.createElement("textarea");
-	el.value = str;
-	document.body.appendChild(el);
-	el.select();
-	el.setSelectionRange(0, 99999);
-	document.execCommand("copy");
-	document.body.removeChild(el);
+    let str = btoa(unescape(encodeURIComponent(JSON.stringify(player))));
+    const el = document.createElement("textarea");
+    el.value = str;
+    document.body.appendChild(el);
+    el.select();
+    el.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    document.body.removeChild(el);
 }
 function importSave(imported = undefined, forced = false) {
-	if (imported === undefined)
-		imported = prompt("Paste your save here");
-	try {
-		tempPlr = Object.assign(getStartPlayer(), JSON.parse(atob(imported)));
-		if (tempPlr.versionType != getModID() && !forced && !confirm("This save appears to be for a different mod! Are you sure you want to import?")) // Wrong save (use "Forced" to force it to accept.)
-			return;
-		player = tempPlr;
-		player.versionType = getModID();
-		fixSave();
-		versionCheck();
-		NaNcheck(save)
-		save();
-		window.location.reload();
-	} catch (e) {
-		return;
-	}
+    if (imported === undefined)
+        imported = prompt("Paste your save here");
+    try {
+        let decoded = decodeURIComponent(escape(atob(imported)));
+        tempPlr = Object.assign(getStartPlayer(), JSON.parse(decoded));
+        if (tempPlr.versionType != getModID() && !forced && !confirm("This save appears to be for a different mod! Are you sure you want to import?"))
+            return;
+        player = tempPlr;
+        player.versionType = getModID();
+        fixSave();
+        versionCheck();
+        NaNcheck(save)
+        save();
+        window.location.reload();
+    } catch (e) {
+        return;
+    }
 }
 function versionCheck() {
 	let setVersion = true;

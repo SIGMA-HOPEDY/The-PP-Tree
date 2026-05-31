@@ -30,7 +30,7 @@ addLayer("p", {
     },
     gainMult() {
         let mult = new Decimal(1)
-        if (hasUpgrade('p', 13)) mult = mult.times(upgradeEffect('p', 13))
+      if (hasUpgrade('p', 13)) mult = mult.times(upgradeEffect('p', 13))
         if (hasUpgrade('p', 14)) mult = mult.times(upgradeEffect('p', 14))
     if (hasUpgrade('sp', 31)) mult = mult.times(2)
         if (hasUpgrade('sp', 32)) mult = mult.times(upgradeEffect('sp', 32))
@@ -56,9 +56,13 @@ tabFormat: {
             content: ["main-display", "prestige-button", "blank", "upgrades"]
         },
     },
-    layerShown(){return true},    upgrades: {        11: {    title: "01",
-    description: "双倍点数获取.",
-    cost: new Decimal(1),
+    layerShown(){return true},    
+    autoUpgrade: function() { return hasMilestone('tp', 1); }, 
+   upgrades: {
+       11: {
+           title: "01",
+           description: "双倍点数获取.",
+           cost: new Decimal(1),
 
         },       
      12: {
@@ -369,6 +373,7 @@ tabFormat: {
     layerShown() {
         return player.p.points.gte(100) || player.sp.points.gte(1) ||hasUpgrade('sp', 31)// 可以根据解锁状态调整，例如：return player.sp.unlocked
     },
+    autoUpgrade: function() { return hasMilestone('tp', 2); }, 
     upgrades: {31: {    title: "11",
     description: "双倍p点获取,基于你的sp点小幅度提升点数获取.",
     cost: new Decimal(1),
@@ -620,7 +625,7 @@ addLayer("a", {
         },
         
     },
-    
+    autoUpgrade: function() { return hasMilestone('tp', 3); }, 
     gainMult() {
         let mult = new Decimal(1)
         if(hasUpgrade('sp', 43)) mult = mult.times(upgradeEffect('sp', 43))
@@ -1180,11 +1185,12 @@ addLayer("tp", {
     symbol: "TP",
     position: 0,
     startData() {
-        return {
-            unlocked: false,
-            points: new Decimal(0),
-        }
-    },
+    return {
+        unlocked: false,
+        points: new Decimal(0),
+        timesPower: new Decimal(0),   // 新增子资源
+    };
+},
     color: "rgba(255, 0, 221, 1)",
     requires: new Decimal("1e1000"),
     resource: "Time points",
@@ -1192,12 +1198,16 @@ addLayer("tp", {
     baseAmount() { return player.points },
     type: "normal",
     exponent: function() {
-        return new Decimal(0.01);
+        return new Decimal(0.012345);
     },
     milestonePopups: false,
     milestones: {},
     gainMult() { let mult = new Decimal(1)
         if(hasUpgrade('tp', 13)) mult = mult.times(upgradeEffect('tp', 13)); 
+        if (player.timesPower && player.timesPower instanceof Decimal) {
+        let timesPowerBonus = player.timesPower.add(1).pow(1.3);
+        mult = mult.times(timesPowerBonus);
+    }
         return mult },
     gainExp() { return new Decimal(1) },
     row: 3,
@@ -1209,11 +1219,24 @@ addLayer("tp", {
     layerShown() {
         return hasUpgrade('a', 75) || player.tp.points.gte(1) || hasUpgrade('tp', 11)
     },
+update(diff) {
+    if (!(player.timesPower instanceof Decimal)) {
+        player.timesPower = new Decimal(player.timesPower || 0);
+    }
+    if (hasUpgrade('tp', 21)) {
+        let tpPoints = player.tp.points;
+        let gainpow = new Decimal(1.14514);
+        if(hasUpgrade('tp', 22)) gainpow = new Decimal(1.919810);
+        let gainPerSecond = tpPoints.add(1).log10().pow(gainpow);
+        let gain = gainPerSecond.times(diff);
+        if (hasUpgrade('tp', 24)) gain = gain.times(upgradeEffect('tp', 24));
+        player.timesPower = player.timesPower.add(gain);
+    }
+},
 
-    // 标签页格式 – 增加一个 Buyables 页
     tabFormat: {
         "Upgrades": {
-            content: ["main-display", "prestige-button", "blank", "upgrades"]
+            content: ["main-display", "prestige-button", "blank", "times-power-display", "upgrades"]
         },
         "Milestones": {
             content: ["main-display", "prestige-button", "blank", "milestones"]
@@ -1273,6 +1296,62 @@ addLayer("tp", {
             cost: new Decimal(114514),
             unlocked() { return hasUpgrade('tp', 14) }
         },
+         21: {
+        title: "时间之力",
+        description: "解锁 Times power,自动获得 +[log10(TP+1)]^1.14514/秒,基于(tpr+1)^1.3给TP一个获取倍数",
+        cost: new Decimal(1e9),   // 根据平衡调整成本
+        unlocked() { return hasUpgrade('tp', 15); }, // 可根据需要调整前置
+        effectDisplay() {
+            let tpPoints = player.tp.points;
+        let gainpow = new Decimal(1.14514);
+        if(hasUpgrade('tp', 22)) gainpow = new Decimal(1.919810);
+            let gainPerSec = tpPoints.add(1).log10().pow(gainpow);
+            if(hasUpgrade('tp', 24)) gainPerSec = gainPerSec.times(upgradeEffect('tp', 24));
+            return `+${format(gainPerSec)}/s`;
+        }
+
+    },
+    22: {
+        title: "优化时间",
+        description: "优化Tpr自动获得指数为1.919810",
+        cost: new Decimal(1e16),   // 根据平衡调整成本
+        unlocked() { return hasUpgrade('tp', 21); }, // 可根据需要调整前置
+        
+    },
+    23: {
+        title: "时间浮动",
+        description: "优化Tpr效果指数为2.026",
+        cost: new Decimal(1e25),   // 根据平衡调整成本
+        unlocked() { return hasUpgrade('tp', 22); }, // 可根据需要调整前置
+        
+    },
+    24: {
+        title: "时间扭曲",
+        description: "Tpr自动获得*(tpr+1)^0.1919810",
+        cost: new Decimal(1e36),   // 根据平衡调整成本
+        unlocked() { return hasUpgrade('tp', 23); }, // 可根据需要调整前置
+        effect() {
+    // 确保 timesPower 是 Decimal 对象
+    let tp = player.timesPower;
+    if (!tp || !(tp instanceof Decimal)) tp = new Decimal(0);
+    let base = tp.add(1);
+    let raw = base.pow(0.1919810);
+    let cap = new Decimal("1e38");
+    if (raw.lte(cap)) return raw;
+    let ratio = raw.div(cap);
+    let capped = ratio.pow(0.114514);
+    return cap.times(capped);
+},
+             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" },
+        
+    },
+    25: {
+        title: "时间侵蚀",
+        description: "软上限(一重、二重、三重、四重)指数分别乘以1.025,1.05,1.075,1.1",
+        cost: new Decimal(1e49),   // 根据平衡调整成本
+        unlocked() { return hasUpgrade('tp', 24); }, // 可根据需要调整前置
+        
+    },
     },
 
     
@@ -1337,7 +1416,7 @@ addLayer("tp", {
     let x = player[this.layer].buyables[this.id] || new Decimal(0);
     let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
     let discount = getTimeCrystalDiscount();
-    let limitBonus = new Decimal(1.25).pow(getTimeCrystalLimitBonus()).add(1);
+    let limitBonus = new Decimal(1.425).pow(getTimeCrystalLimitBonus()).add(1);
     return `花费: ${format(cost)} 时间碎片\n已购买: ${formatWhole(x)} / 4\n效果: 时间碎片成本 x${format(discount, 4, true)}，上限 *${format(limitBonus, 4, true)}`;
 },
         canAfford() {
@@ -1391,4 +1470,35 @@ addLayer("tp", {
     },
     purchaseLimit: 10,   // 框架可能自动使用该值，双重保障
 }
-}})
+},milestones: {
+        1: {
+            requirementDescription: "1 tp",
+            effectDescription: "自动购买p层升级",
+            done() { 
+                return player.tp.points.gte(1) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 1 tp");
+            }
+        },
+        2: {
+            requirementDescription: "3 tp",
+            effectDescription: "自动购买sp层升级",
+            done() { 
+                return player.tp.points.gte(3) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 3 tp");
+            }
+        },
+        3: {
+            requirementDescription: "5 tp",
+            effectDescription: "自动购买a层升级",
+            done() { 
+                return player.tp.points.gte(5) 
+            },
+            onComplete() {
+                console.log("里程碑解锁: 5 tp");
+            }
+        },
+    },})
