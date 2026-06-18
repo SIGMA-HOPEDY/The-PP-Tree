@@ -214,7 +214,7 @@ return cap.times(capped);
     },  effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
 33: {
         title: "更进一歩!",
-        description: "二重软上限后点数获取*(1+lg(点数+1))^{1.919810+lg(lg(点数+1)+1)}",
+        description: "二重软上限后点数获取*(1+lg(点数+1))^ {1.919810+lg(lg(点数+1)+1)}",
         cost: new Decimal("1e455"),  
         unlocked() { return hasUpgrade('p', 32)  }, 
              effect() {
@@ -441,21 +441,23 @@ let ratio = raw.div(cap);
 let capped = ratio.pow(new Decimal(0.5).div((player.sp.points.add(1).log10().add(1).log10().add(1))));
 return cap.times(capped);},
    effectDisplay() { return format(upgradeEffect(this.layer, this.id))+"x" },  },
-   41: {
-        title: "16",
-        description: "基于你的sp点提升sp点获取指数。",
-        cost: new Decimal(1e100),  
-        unlocked() {  return hasUpgrade('sp', 35)}, 
-            effect() {let base = player.sp.points.add(1);
-    let powResult = base.pow(0.0001);
-    let raw = powResult.sub(1);
-let cap = new Decimal("0.5");
-if (raw.lte(cap)) return raw;
-let ratio = raw.pow(0.01).log10();
-let capped = ratio.sub(0.2);
-return cap.add(capped);
+  41: {
+    title: "16",
+    description: "基于你的sp点提升sp点获取指数。",
+    cost: new Decimal(1e100),  
+    unlocked() { return hasUpgrade('sp', 35); }, 
+    effect() {
+        let base = player.sp.points.add(1);
+        let powResult = base.pow(0.0001);
+        let raw = powResult.sub(1);
+        let cap = new Decimal("0.5");
+        if (raw.lte(cap)) return raw;
+        let power = new Decimal(0.0005).div((player.sp.points.add(1).log10().add(1).log10().add(1)));
+        let capped = cap.times(raw.div(cap).pow(power));
+        return capped;
+    },
+    effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)); },
 },
-   effectDisplay() { return "+"+format(upgradeEffect(this.layer, this.id)) },  },
    42: {
         title: "17",
         description: "基于你的点数提升sp点获取。",
@@ -519,11 +521,11 @@ return cap.times(capped);},
 let base = safePoints.add(1).log10().div(1000).add(1);
     let powResult = base.pow(0.066);
     let raw = powResult.add(-1);
-let cap = new Decimal("0.5");
-if (raw.lte(cap)) return raw;
-let ratio = raw.pow(0.033).log10();
-let capped = ratio.sub(0.2);
-return cap.add(capped);
+let cap = new Decimal("0.15");
+ if (raw.lte(cap)) return raw;
+        let power = new Decimal(0.0005).div((player.sp.points.add(1).log10().add(1).log10().add(1)));
+        let capped = cap.times(raw.div(cap).pow(power));
+        return capped;
     },
     effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
 },
@@ -537,11 +539,11 @@ return cap.add(capped);
 let base = safePoints.add(1).log10().div(666).add(1);
     let powResult = base.pow(0.15);
     let raw = powResult.add(-1);
-let cap = new Decimal("0.75");
-if (raw.lte(cap)) return raw;
-let ratio = raw.pow(0.075).log10();
-let capped = ratio.sub(0.2);
-return cap.add(capped);
+let cap = new Decimal("0.66");
+ if (raw.lte(cap)) return raw;
+        let power = new Decimal(0.0005).div((player.sp.points.add(1).log10().add(1).log10().add(1)));
+        let capped = cap.times(raw.div(cap).pow(power));
+        return capped;
     },
     effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
 },
@@ -554,11 +556,11 @@ return cap.add(capped);
 let base = safePoints.add(1).log10().div(444).add(1);
     let powResult = base.pow(0.066);
     let raw = powResult.add(-1);
-let cap = new Decimal("0.25");
-if (raw.lte(cap)) return raw;
-let ratio = raw.pow(0.033).log10();
-let capped = ratio.sub(0.1);
-return cap.add(capped);
+let cap = new Decimal("0.17");
+ if (raw.lte(cap)) return raw;
+        let power = new Decimal(0.00005).div((player.sp.points.add(1).log10().add(1).log10().add(1)));
+        let capped = cap.times(raw.div(cap).pow(power));
+        return capped;
     },
     effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) },
 },
@@ -626,6 +628,7 @@ addLayer("a", {
         
     },
     autoUpgrade: function() { return hasMilestone('tp', 3); }, 
+
     gainMult() {
         let mult = new Decimal(1)
         if(hasUpgrade('sp', 43)) mult = mult.times(upgradeEffect('sp', 43))
@@ -664,8 +667,8 @@ passiveGeneration: function() {
         cost: new Decimal(1),  
         effect() {
     let base = player.a.points.add(1).times(10);
-    let raw = base.pow(1); 
-
+let buyableEff = tmp.tp.buyables?.[11]?.effect ?? new Decimal(1);
+let raw = base.pow(buyableEff); 
     // 可选：调整软上限
     let cap = new Decimal("1e38");
     let limited;
@@ -673,14 +676,10 @@ passiveGeneration: function() {
         limited = raw;
     } else {
         let ratio = raw.div(cap);
-        let capped = ratio.pow(new Decimal(1.3).div((player.a.points.add(1).log10().add(1).log10().add(1)).pow(0.3)));
+        let capped = ratio.pow(new Decimal(1.25).div((player.a.points.add(1).log10().add(1).log10().add(1)).pow(0.33)));
         limited = cap.times(capped);
     }
-
-    // 获取 buyable 效果（默认1）
-    let buyableEff = tmp.tp.buyables?.[11]?.effect ?? new Decimal(1);
-    // 最终效果 = 基础值 ^ buyableEff
-    return Decimal.pow(limited, buyableEff);
+    return limited;
 },
             effectDisplay() {
     let eff = tmp.tp.buyables?.[11]?.effect ?? new Decimal(1);
@@ -817,9 +816,14 @@ addLayer("lw", {
         let exp = new Decimal(0.01);
         return exp;
     },
+        autoUpgrade: function() { return hasUpgrade('pp', 13); }, 
     // 禁用里程碑弹窗
     milestonePopups: false,
-    
+    passiveGeneration: function() {
+        let passiveGeneration = 0;
+        if (hasMilestone('pp', 0)) passiveGeneration = passiveGeneration+0.001;
+        return passiveGeneration;
+    },
     // 里程碑定义
     milestones: {
        0: {
@@ -946,9 +950,14 @@ addLayer("sa", {
 
         return exp;
     },
+        autoUpgrade: function() { return hasUpgrade('pp', 13); }, 
     // 禁用里程碑弹窗
     milestonePopups: false,
-    
+    passiveGeneration: function() {
+        let passiveGeneration = 0;
+        if (hasMilestone('pp', 0)) passiveGeneration = passiveGeneration+0.001;
+        return passiveGeneration;
+    },
     // 里程碑定义
     milestones: {
         0: {
@@ -1076,7 +1085,7 @@ addLayer("re", {
     },
     // 禁用里程碑弹窗
     milestonePopups: false,
-    
+        autoUpgrade: function() { return hasUpgrade('pp', 13); }, 
     // 里程碑定义
     milestones: {
        0: {
@@ -1101,7 +1110,11 @@ addLayer("re", {
         },
         
     },
-    
+    passiveGeneration: function() {
+        let passiveGeneration = 0;
+        if (hasMilestone('pp', 0)) passiveGeneration = passiveGeneration+0.001;
+        return passiveGeneration;
+    },
     gainMult() {
         let mult = new Decimal(1)
         if(hasUpgrade('re', 14)) mult = mult.times(upgradeEffect('re', 14)); 
@@ -1347,7 +1360,7 @@ update(diff) {
     },
     25: {
         title: "时间侵蚀",
-        description: "软上限(一重、二重、三重、四重)指数分别乘以1.025,1.05,1.075,1.1",
+        description: "软上限(一重、二重、三重、四重)指数分别乘以1.02,1.03,1.04,1.05,至1e7000points解锁新内容",
         cost: new Decimal(1e36),   // 根据平衡调整成本
         unlocked() { return hasUpgrade('tp', 24); }, // 可根据需要调整前置
         
@@ -1502,3 +1515,129 @@ update(diff) {
             }
         },
     },})
+    addLayer("pp", {
+    name: "Points Power",
+    symbol: "PP",
+    position: 0,
+    startData() {
+        return {
+            unlocked: false,
+            points: new Decimal(0),      // 当前 PP 点数
+            bestPoints: new Decimal(0),  // 历史最高点数（用于计算上限）
+        };
+    },
+    color: "#fd6868ff",
+    requires: new Decimal("1e7000"),    // 需要 1e7000 点数才能解锁
+    resource: "PP 点",
+    baseResource: "points",
+    baseAmount() { return player.points; },
+    type: "normal",
+    
+    // 重置时获得 PP 点的公式：log10(points+1)，但受上限限制
+    getResetGain() {
+        let currentPP = player.pp.points;
+        let maxPoints = player.pp.bestPoints.max(player.points); // 历史最高点数
+        let cap = maxPoints.add(1).log10();                       // 上限 = log10(最高点数+1)
+        let rawGain = player.points.add(1).log10();               // 理论获得值
+        let gain = rawGain.sub(currentPP).max(0);                 // 不超过上限的部分
+        if (currentPP.add(gain).gt(cap)) gain = cap.sub(currentPP).max(0);
+        return gain.floor().max(0);
+    },
+    
+    exponent: function() { return new Decimal(1); },  // PP 层本身获取不受其他加成影响（可选）
+    gainMult() { return new Decimal(1); },
+    gainExp() { return new Decimal(1); },
+    row: 4,
+    hotkeys: [
+        { key: "P", description: "P: Reset for PP points", onPress(){ if(canReset(this.layer)) doReset(this.layer); } }
+    ],
+    layerShown() { 
+        return player.points.gte("1e7000") || player.pp?.points?.gte(1); 
+    },
+    tabFormat: {
+        "Upgrades": { content: ["main-display", "prestige-button", "blank", "upgrades"] },
+        "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] }
+    },
+    
+    // 每次重置前更新 bestPoints
+    onPrestige(gain) {
+        player.pp.bestPoints = player.pp.bestPoints.max(player.points);
+    },
+    
+    upgrades: {11: {
+    title: "点数指数",
+    description: "每秒点数获取^(pp+1)^ {(1+lg(lg(pp+1)+1))/ (2(lg(pp+1)+10))},先于软上限生效",
+    cost: new Decimal(7000), 
+    unlocked() { return true; }, // 始终解锁（或根据你的条件）
+    effect() {
+        let x = player.pp.points;
+        if (x.eq(0)) return new Decimal(1); // 防止无意义计算
+        // 计算 log10(x+1)
+        let logX = x.add(1).log10();
+        // 计算 log10(log10(x+1)+1)
+        let logLog = logX.add(1).log10();
+        // 指数 numerator = 1 + logLog
+        let numerator = new Decimal(1).add(logLog);
+        // 分母 denominator = 2 * (logX + 10)
+        let denominator = new Decimal(4).times(logX.add(10));
+        // 最终指数 exponent = numerator / denominator
+        let exponent = numerator.div(denominator);
+        // 返回 y = (x+1)^exponent
+        let y = x.add(1).pow(exponent);
+        // 防止过大，可加软上限（可选）
+        let cap = new Decimal("9"); // 或更大
+        if (y.gt(cap)) y = cap;
+        return y;
+    },
+    effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id)); }
+},
+    12: {
+        title: "指数软化",
+        description: "软上限(三重、四重)指数再分别乘以1.3,1.4",
+        cost: new Decimal(7000),   // 根据平衡调整成本
+        unlocked() { return hasUpgrade('pp', 11); }, // 可根据需要调整前置
+        
+    },    
+    13: {
+        title: "指数自动",
+        description: "自动购买sa,lw,re层升级",
+        cost: new Decimal(7000),   // 根据平衡调整成本
+        unlocked() { return hasUpgrade('pp', 12); }, // 可根据需要调整前置
+        
+    },   
+        // 更多升级可继续添加
+    },
+    
+    milestones: {
+        0: {
+            requirementDescription: "7000 PP 点",
+            effectDescription: "每秒获得重置时sa,lw,re的0.1%.",
+            done() { return player.pp.points.gte(7000); },
+        },
+        
+    },
+});
+addLayer("ach", {
+    name: "Achievements",
+    symbol: "A",
+    position: 0,
+    row: "side",
+    color: "#fbff00ff",
+    resource: "achievements",
+    type: "none",
+
+    startData() { return { unlocked: true, points: new Decimal(0) } },
+    layerShown() { return true },
+
+    achievements: {
+        // 行1：入门
+        11: {
+            name: "第一步",
+            tooltip: "首次 prestige",
+            done() { return player.p.total.gte(1) },
+        },
+            12: {name: "继续前进", tooltip: "prestige 10 次", done() { return player.p.total.gte(10) }},
+            13: {name: "不屈不挠", tooltip: "prestige 100 次", done() { return player.p.total.gte(100) }},
+
+    },
+});

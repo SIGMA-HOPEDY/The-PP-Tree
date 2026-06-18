@@ -67,7 +67,7 @@ function getPointGen() {
     if (hasMilestone('lw', 0)) gain = gain.times(100);
     if (hasMilestone('re', 0)) gain = gain.times(100);
     if (hasMilestone('sa', 0)) gain = gain.times(100);
-
+if (hasUpgrade('pp', 11)) gain = gain.pow(upgradeEffect('pp', 11));
     // 安全函数：确保值有效
     function isValidDecimal(v) {
         return v instanceof Decimal && v.isFinite() && !v.isNan();
@@ -113,7 +113,7 @@ function getPointGen() {
                 if (hasUpgrade('re', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('p', 35)) exponent = exponent.times(1.14514);
 if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
-if (hasUpgrade('tp', 25)) exponent = exponent.times(1.025);
+if (hasUpgrade('tp', 25)) exponent = exponent.times(1.02);
 let eclipseMult1 = getEclipseMultiplier(1);
 exponent = exponent.times(eclipseMult1);
                 // 确保 exponent 是正有限数
@@ -160,7 +160,7 @@ exponent = exponent.times(eclipseMult1);
         if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
         if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
         if(hasUpgrade('tp', 11)) doubleExponent = doubleExponent.times(1.25);
-        if(hasUpgrade('tp', 25)) doubleExponent = doubleExponent.times(1.05);
+        if(hasUpgrade('tp', 25)) doubleExponent = doubleExponent.times(1.03);
         let eclipseMult2 = getEclipseMultiplier(2);
 doubleExponent = doubleExponent.times(eclipseMult2);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
@@ -189,7 +189,8 @@ doubleExponent = doubleExponent.times(eclipseMult2);
         let Log10PostTriple = (doubleCappedGain.div(triplepointmax).add(1)).log10();
         let Log10Log10PostTriple = (Log10PostTriple.add(1)).log10();
         let tripleExponent = new Decimal(6.9).div(new Decimal(10.78).plus(Log10Log10PostTriple));
-        if (hasUpgrade('tp', 25)) tripleExponent = tripleExponent.times(1.075);
+        if (hasUpgrade('tp', 25)) tripleExponent = tripleExponent.times(1.04);
+        if (hasUpgrade('pp', 12)) tripleExponent = tripleExponent.times(1.3);
 let eclipseMult3 = getEclipseMultiplier(3);
 tripleExponent = tripleExponent.times(eclipseMult3);
         let tripleCappedExcess = tripleExcess.pow(tripleExponent);
@@ -200,15 +201,16 @@ tripleExponent = tripleExponent.times(eclipseMult3);
             tmp.other.tripleSoftcapHint = "由于你的点数获取大于"+ triplepointmax+",点数获取受到三重软上限!(效果：超过部分^" + tripleExponent + ")";
         }
         // 四重软上限检查
-let quadruplepointmax = new Decimal("1e114514");
+let quadruplepointmax = new Decimal("1e7000");
 const quadrupleSoftcapThreshold = new Decimal(quadruplepointmax);
 if (tripleCappedGain.gt(quadrupleSoftcapThreshold)) {
     let quadrupleExcess = tripleCappedGain.minus(quadrupleSoftcapThreshold);
     // 使用对数压缩公式，与前三重风格一致
     let Log10PostQuad = (tripleCappedGain.div(quadruplepointmax).add(1)).log10();
     let Log10Log10PostQuad = (Log10PostQuad.add(1)).log10();
-    let quadrupleExponent = new Decimal(114514).div(new Decimal(1919810).plus(Log10Log10PostQuad));
-    if (hasUpgrade('tp', 25)) quadrupleExponent = quadrupleExponent.times(1.1);
+    let quadrupleExponent = new Decimal(7.8).div(new Decimal(17).plus(Log10Log10PostQuad));
+    if (hasUpgrade('tp', 25)) quadrupleExponent = quadrupleExponent.times(1.05);
+    if (hasUpgrade('pp', 12)) quadrupleExponent = quadrupleExponent.times(1.4);
     let quadrupleCappedExcess = quadrupleExcess.pow(quadrupleExponent);
     let quadrupleCappedGain = quadrupleSoftcapThreshold.plus(quadrupleCappedExcess);
     
