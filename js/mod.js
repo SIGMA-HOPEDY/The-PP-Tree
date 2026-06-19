@@ -41,9 +41,13 @@ function getPointGen() {
     if (!canGenPoints()) return new Decimal(0);
 
     let gain = new Decimal(0);
-    if (hasUpgrade('A', 11)) gain = gain.add(upgradeEffect('A', 11));
+    if (hasUpgrade('A', 11)) gain = gain.add(1);
     if (hasUpgrade('A', 12)) gain = gain.add(upgradeEffect('A', 12));
     if (hasUpgrade('A', 13)) gain = gain.add(upgradeEffect('A', 13));
+    if (hasUpgrade('A', 14)) gain = gain.times(upgradeEffect('A', 14));
+    if (hasUpgrade('A', 15)) gain = gain.times(upgradeEffect('A', 15));
+     if (hasUpgrade('A', 11)) gain = gain.times(upgradeEffect('A', 11));
+    if (hasUpgrade('A', 21)) gain = gain.pow(upgradeEffect('A', 21));
 
     if (hasBuyables('A', 11)) gain = gain.add(buyableEffect('A', 11));
     if (hasBuyables('A', 12)) gain = gain.times(buyableEffect('A', 12));
@@ -168,7 +172,7 @@ function hasBuyables(layer, id) {
 
 
 function getLimit() {
-    return new Decimal(100)
+    return new Decimal('100')
 }
 
 function getEclipseCount() {
