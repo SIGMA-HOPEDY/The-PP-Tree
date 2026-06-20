@@ -1533,7 +1533,7 @@ update(diff) {
     baseAmount() { return player.points; },
     type: "normal",
     
-    // 重置时获得 PP 点的公式：log10(points+1)，但受上限限制
+    // 公式：log10(points+1)，但受上限限制
     getResetGain() {
         let currentPP = player.pp.points;
         let maxPoints = player.pp.bestPoints.max(player.points); // 历史最高点数
