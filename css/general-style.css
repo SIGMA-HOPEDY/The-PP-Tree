@@ -1,11 +1,14 @@
 /* Global things */
+:root {
+    --background: #0f0f0f;
+    --color: #dfdfdf;
+    --points: #ffffff;
+}
+
 body {
-	color: var(--color);
-	overflow: hidden;
-	--background: #0f0f0f;
-	--color: #dfdfdf;
-	--points: #ffffff;
-	background: var(--background)
+    color: var(--color);
+    overflow: hidden;
+    background: var(--background);
 }
 
 /* General text */

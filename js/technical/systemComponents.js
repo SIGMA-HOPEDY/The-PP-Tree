@@ -118,11 +118,15 @@ var systemComponents = {
         <br>
         <span v-if="canGenPoints()" class="overlayThing">
             ({{tmp.other.oompsMag != 0 ? format(tmp.other.oomps) + " OOM" + (tmp.other.oompsMag < 0 ? "^OOM" : tmp.other.oompsMag > 1 ? "^" + tmp.other.oompsMag : "") + "s" : formatSmall(getPointGen())}}/sec)
-        </span>
-        <span v-if="tmp.other.softcapHint" class="overlayThing"><br> {{tmp.other.softcapHint}}</span>
-        <span v-if="tmp.other.doubleSoftcapHint" class="overlayThing" style="color: #fcb1b1ff;"><br> {{tmp.other.doubleSoftcapHint}}</span>
-        <span v-if="tmp.other.tripleSoftcapHint" class="overlayThing" style="color: #f87979ff;"><br> {{tmp.other.tripleSoftcapHint}}</span>
-		<span v-if="tmp.other.quadrupleSoftcapHint" class="overlayThing" style="color: #fa4c4cff; font-weight: bold;"><br> {{tmp.other.quadrupleSoftcapHint}}</span>
+      <span v-if="tmp.other.softcapHint" class="overlayThing" style="color: #ffffff; font-weight: bold;"><br> {{tmp.other.softcapHint}}</span>
+<span v-if="tmp.other.doubleSoftcapHint" class="overlayThing" style="color: #ffe5e5; font-weight: bold;"><br> {{tmp.other.doubleSoftcapHint}}</span>
+<span v-if="tmp.other.tripleSoftcapHint" class="overlayThing" style="color: #ffcccc; font-weight: bold;"><br> {{tmp.other.tripleSoftcapHint}}</span>
+<span v-if="tmp.other.quadrupleSoftcapHint" class="overlayThing" style="color: #ffb3b3; font-weight: bold;"><br> {{tmp.other.quadrupleSoftcapHint}}</span>
+<span v-if="tmp.other.quintupleSoftcapHint" class="overlayThing" style="color: #ff9999; font-weight: bold;"><br> {{tmp.other.quintupleSoftcapHint}}</span>
+<span v-if="tmp.other.sextupleSoftcapHint" class="overlayThing" style="color: #ff8080; font-weight: bold;"><br> {{tmp.other.sextupleSoftcapHint}}</span>
+<span v-if="tmp.other.septupleSoftcapHint" class="overlayThing" style="color: #ff6666; font-weight: bold;"><br> {{tmp.other.septupleSoftcapHint}}</span>
+<span v-if="tmp.other.octupleSoftcapHint" class="overlayThing" style="color: #ff4d4d; font-weight: bold;"><br> {{tmp.other.octupleSoftcapHint}}</span>
+<span v-if="tmp.other.nonupleSoftcapHint" class="overlayThing" style="color: #ff3333; font-weight: bold;"><br> {{tmp.other.nonupleSoftcapHint}}</span>
         <div v-for="thing in tmp.displayThings" class="overlayThing"><span v-if="thing" v-html="thing"></span></div>
     </div>
     `
@@ -225,4 +229,3 @@ var systemComponents = {
 	}
 
 }
-

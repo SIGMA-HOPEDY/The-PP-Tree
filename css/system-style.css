@@ -3,16 +3,14 @@
 	text-align: center;
 	font-family: "Inconsolata", monospace;
 	font-weight: bold;
-	table-align: center;
 	margin: auto;
 	-webkit-text-size-adjust: none;
 	text-size-adjust: none;
-
 }
 
 *:focus {
 	outline: none;
-	webkit-outline: none;
+	
 }
 
 html, body {
@@ -248,4 +246,6 @@ button > * {
 	background-image: none !important;
 	--background: transparent !important;
 }
-
+.display-text {
+    white-space: pre-line;
+}
