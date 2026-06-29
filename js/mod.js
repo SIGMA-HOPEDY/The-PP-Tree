@@ -109,7 +109,7 @@ function getPointGen() {
                 if (hasUpgrade('p', 35)) exponent = exponent.times(1.14514);
                 if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
                 if (hasUpgrade('tp', 25)) exponent = exponent.times(1.02);
-                if (hasUpgrade('pp', 25)) exponent = exponent.times(1.05);
+                if (hasUpgrade('pp', 25)) exponent = exponent.times(1.04);
                 let eclipseMult1 = getEclipseMultiplier(1);
                 exponent = exponent.times(eclipseMult1);
                 if (!isValidDecimal(exponent) || exponent.lte(0)) {
@@ -154,7 +154,7 @@ function getPointGen() {
         if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
         if(hasUpgrade('tp', 11)) doubleExponent = doubleExponent.times(1.25);
         if(hasUpgrade('tp', 25)) doubleExponent = doubleExponent.times(1.03);
-        if(hasUpgrade('pp', 25)) doubleExponent = doubleExponent.times(1.05);
+        if(hasUpgrade('pp', 25)) doubleExponent = doubleExponent.times(1.03);
         let eclipseMult2 = getEclipseMultiplier(2);
         doubleExponent = doubleExponent.times(eclipseMult2);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
@@ -183,7 +183,7 @@ function getPointGen() {
         let tripleExponent = new Decimal(6.9).div(new Decimal(10.78).plus(Log10Log10PostTriple));
         if (hasUpgrade('tp', 25)) tripleExponent = tripleExponent.times(1.04);
         if (hasUpgrade('pp', 12)) tripleExponent = tripleExponent.times(1.3);
-        if (hasUpgrade('pp', 25)) tripleExponent = tripleExponent.times(1.05);
+        if (hasUpgrade('pp', 25)) tripleExponent = tripleExponent.times(1.02);
         let eclipseMult3 = getEclipseMultiplier(3);
         tripleExponent = tripleExponent.times(eclipseMult3);
         let tripleCappedExcess = tripleExcess.pow(tripleExponent);
@@ -210,7 +210,7 @@ function getPointGen() {
         let quadrupleExponent = new Decimal(7.8).div(new Decimal(17).plus(Log10Log10PostQuad));
         if (hasUpgrade('tp', 25)) quadrupleExponent = quadrupleExponent.times(1.05);
         if (hasUpgrade('pp', 12)) quadrupleExponent = quadrupleExponent.times(1.4);
-        if (hasUpgrade('pp', 25)) quadrupleExponent = quadrupleExponent.times(1.05);
+        if (hasUpgrade('pp', 25)) quadrupleExponent = quadrupleExponent.times(1.01);
         let quadrupleCappedExcess = quadrupleExcess.pow(quadrupleExponent);
         quadrupleCappedGain = quadrupleSoftcapThreshold.plus(quadrupleCappedExcess);
         if (tmp && tmp.other) {

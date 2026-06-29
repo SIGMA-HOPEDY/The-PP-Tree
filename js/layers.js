@@ -1694,13 +1694,12 @@ update(diff) {
     // 在 getPointGen 中读取本升级后动态修改 exponent
 },25: {
     title: "软上限抵抗",
-    description: "前四重软上限指数弱化1.05",
+    description: "前四重软上限指数弱化1.04,1.03,1.02,1.01",
     cost: new Decimal(1024),
     currencyDisplayName: "Points Power",
     currencyInternalName: "pointsPower",
     currencyLayer: "pp",
     unlocked() { return hasUpgrade('pp', 24); },
-    // 在 getPointGen 的每一重指数计算后额外乘此效果
 },
     },
     
