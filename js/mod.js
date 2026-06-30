@@ -74,7 +74,10 @@ function getPointGen() {
     if (hasMilestone('sa', 0)) gain = gain.times(100);
     if (hasUpgrade('pp', 11)) gain = gain.pow(upgradeEffect('pp', 11));
     if (hasUpgrade('pp', 21)) {gain = gain.pow(upgradeEffect('pp', 21));  }
-
+// PP 挑战限制
+if (player.pp.activeChallenge == 11) {
+    gain = gain.pow(0.6);
+}
     // 计算软上限阈值（第一重）
     let pointmax = new Decimal(1e9);
     if (hasUpgrade('sa', 13)) pointmax = pointmax.times(1e9);
@@ -232,6 +235,7 @@ function getPointGen() {
         let Log10PostQuint = (quadrupleCappedGain.div(quintuplePointMax).add(1)).log10();
         let Log10Log10PostQuint = (Log10PostQuint.add(1)).log10();
         let quintupleExponent = new Decimal(6.5).div(new Decimal(25).plus(Log10Log10PostQuint));
+       
         let quintupleCappedExcess = quintupleExcess.pow(quintupleExponent);
         quintupleCappedGain = quintupleSoftcapThreshold.plus(quintupleCappedExcess);
         if (tmp && tmp.other) {

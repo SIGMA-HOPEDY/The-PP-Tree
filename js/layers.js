@@ -482,12 +482,14 @@ return cap.times(capped);},
     if (hasUpgrade('p', 34)) {
         raw = raw.pow(2.88);                     
     }
+     if (hasChallenge('pp', 11))raw = raw.pow(5);
     let cap = new Decimal("1e38");
     if (raw.lte(cap)) return raw;
     let ratio = raw.div(cap);
     let capped = ratio.pow(0.0033);   
     if (hasUpgrade('p', 34)) {
-        capped = capped.pow(1.44);              //       没想到吧?升级34还会影响这个软上限的弱化程度(✿◡‿◡)
+        capped = capped.pow(1.44);  
+         if (hasChallenge('pp', 11)) capped = capped.pow(2.5);
     }          
     return cap.times(capped);
 
@@ -576,10 +578,11 @@ let basep = safePointsp.add(1).log10();
 let basesp = safePointssp.add(1).log10();
 let basea = safePointsa.add(1).log10();
     let raw = basep.times(basesp).times(basea);
+    if (hasChallenge('pp', 11)) raw = raw.pow(10);
 let cap = new Decimal("1e9");
 if (raw.lte(cap)) return raw;
 let ratio = raw.sub(cap);
-let capped = ratio.pow(0.91);
+let capped = ratio.pow(0.99);
 return cap.add(capped);
     },
     effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id)) },
@@ -1563,6 +1566,7 @@ update(diff) {
             let mult = new Decimal(1);
             if (hasUpgrade('pp', 22)) mult = mult.times(4);
             if (hasUpgrade('pp', 23)) mult = mult.times(8);
+            if (hasChallenge('pp', 11)) mult = mult.times(player.points.add(1).log10().pow(0.5));
             let exp = new Decimal(1);
             let gainPerSecond = base.times(mult).pow(exp);
             let gain = gainPerSecond.times(diff);
@@ -1578,25 +1582,32 @@ update(diff) {
     },
     
     tabFormat: {
-        "Upgrades": {
-            content: [
-                "main-display",
-                "prestige-button",
-                "blank",
-                // 显示 Points Power 子资源及每秒获取
-                ["display-text", function() {
-                    let amt = player.pp.pointsPower;
-                    let gain = tmp.pp?.pointsPowerGain || new Decimal(0);
-                    return `Points Power: ${format(amt)} (+${format(gain)}/s)`;
-                }],
-                "blank",
-                "upgrades"
-            ]
-        },
-        "Milestones": {
-            content: ["main-display", "prestige-button", "blank", "milestones"]
-        }
+    "Upgrades": {
+        content: [
+            "main-display",
+            "prestige-button",
+            "blank",
+            ["display-text", function() {
+                let amt = player.pp.pointsPower;
+                let gain = tmp.pp?.pointsPowerGain || new Decimal(0);
+                return `Points Power: ${format(amt)} (+${format(gain)}/s)`;
+            }],
+            "blank",
+            "upgrades"
+        ]
     },
+    "Milestones": {
+        content: ["main-display", "prestige-button", "blank", "milestones"]
+    },
+    "Challenges": {
+        content: [
+            "main-display",
+            "prestige-button",
+            "blank",
+            "challenges"
+        ]
+    }
+},
     
     upgrades: {
         11: {
@@ -1639,7 +1650,7 @@ update(diff) {
         },
         15: {
             title: "次级之力",
-            description: "解锁 Points Power 子资源，基于 PP 点自动生成 Points Power。",
+            description: "解锁一个挑战,解锁 Points Power 子资源，基于 PP 点自动生成 Points Power。",
             cost: new Decimal(10000),   
             unlocked() { return hasUpgrade('pp', 14); },
         },
@@ -1715,6 +1726,20 @@ update(diff) {
             done() { return player.pp.points.gte(10000); },
         },
     },
+    challenges: {
+    11: {
+        name: "指数坍缩I",
+        challengeDescription:"你的点数获取速度被压缩为^0.6",
+        goal: new Decimal("1e10000"),
+        rewardDescription: function() {
+    if (typeof player === 'undefined' || !player || !player.points) return "根据点数增幅Points Power获取";
+    return "SP-23效果^5,SP-35效果^10,且根据点数增幅Points Power获取,当前:*" + format(player.points.add(1).log10().pow(0.2));},
+    onComplete() {
+        },
+        unlocked() { return hasUpgrade('pp', 15); }  // 需要解锁 Points Power 后才可开启
+    },
+    // 后续可继续添加 12, 13...
+},
 });
 addLayer("ach", {
     name: "Achievements",
