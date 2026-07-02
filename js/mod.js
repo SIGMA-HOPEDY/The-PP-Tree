@@ -1,70 +1,86 @@
 let modInfo = {
-	name: "The PP Tree",
-	author: "sigma",
-	pointsName: "points",
-	modFiles: ["layers.js", "tree.js"],
-
-	discordName: "",
-	discordLink: "",
-	initialStartPoints: new Decimal (10), // Used for hard resets and new players
-	offlineLimit: 5,  // In hours
+    name: "The PP Tree",
+    author: "sigma",
+    pointsName: "points",
+    modFiles: ["layers.js", "tree.js"],
+    discordName: "",
+    discordLink: "",
+    initialStartPoints: new Decimal(10),
+    offlineLimit: 5,
 }
 
-// Set your version in num and name
 let VERSION = {
-	num: "0.0",
-	name: "Literally nothing",
+    num: "0.0",
+    name: "Literally nothing",
 }
 
 let changelog = `<h1>Changelog:</h1><br>
-	<h3>v0.0</h3><br>
-		- Added things.<br>
-		- Added stuff.`
+    <h3>v0.0</h3><br>
+        - Added things.<br>
+        - Added stuff.`
 
 let winText = `这便是终点...了?`
 
-// If you add new functions anywhere inside of a layer, and those functions have an effect when called, add them here.
-// (The ones here are examples, all official functions are already taken care of)
 var doNotCallTheseFunctionsEveryTick = ["blowUpEverything"]
 
-function getStartPoints(){
+function getStartPoints() {
     return new Decimal(modInfo.initialStartPoints)
 }
 
-// Determines if it should show points/sec
-function canGenPoints(){
+function canGenPoints() {
     return true
 }
-// You can add non-layer related variables that should to into "player" and be saved here, along with default values
+
 function addedPlayerData() {
     return {
-        
-        // 其他原有字段...
+        cleanedUpgrades: false   // 新增：升级清理标志
     };
 }
-// 根据升级和里程碑计算增益
+// 清理非法升级ID（仅保留 11‑15, 21‑25, 31‑35 … 格式）
+function cleanUpgrades() {
+    for (let layer in layers) {
+        if (layers[layer].upgrades) {
+            const upgradeKeys = Object.keys(layers[layer].upgrades);
+            // 构建合法ID集合（十位1‑9，个位1‑5）
+            const valid = new Set();
+            for (let ten = 1; ten <= 3; ten++) {
+                for (let one = 1; one <= 5; one++) {
+                    valid.add(ten * 10 + one);
+                }
+            }
+            // 过滤玩家已购买的升级
+            if (player[layer] && player[layer].upgrades) {
+                player[layer].upgrades = player[layer].upgrades.filter(id => valid.has(id));
+            }
+        }
+    }
+}
+
 function getPointGen() {
+      // 一次性清理旧升级
+    if (!player.cleanedUpgrades) {
+        cleanUpgrades();
+        player.cleanedUpgrades = true;
+    }
     if (!canGenPoints()) return new Decimal(0);
 
-    // 安全函数：确保值有效
     function isValidDecimal(v) {
         return v instanceof Decimal && v.isFinite() && !v.isNan();
     }
 
     let gain = new Decimal(1);
-    // 应用各种加成（保持不变）
     if (hasUpgrade('p', 11)) gain = gain.times(2);
     if (hasUpgrade('p', 12)) gain = gain.times(upgradeEffect('p', 12));
     if (hasUpgrade('p', 21)) gain = gain.times(upgradeEffect('p', 21));
     if (hasUpgrade('p', 25)) gain = gain.times(upgradeEffect('p', 25));
     if (hasUpgrade('p', 31)) gain = gain.times(upgradeEffect('p', 31));
-    if (hasUpgrade('sp', 31)) gain = gain.times(upgradeEffect('sp', 31));
-    if (hasUpgrade('sp', 34)) gain = gain.times(upgradeEffect('sp', 34));
-    if (hasUpgrade('sp', 35)) gain = gain.times(upgradeEffect('sp', 35));
-    if (hasUpgrade('a', 51)) gain = gain.times(upgradeEffect('a', 51));
-    if (hasUpgrade('a', 72)) gain = gain.times(1e9);
-    if (hasUpgrade('a', 73)) gain = gain.times(1e9);
-    if (hasUpgrade('a', 74)) gain = gain.times(upgradeEffect('a', 74));
+    if (hasUpgrade('sp', 11)) gain = gain.times(upgradeEffect('sp', 11));
+    if (hasUpgrade('sp', 14)) gain = gain.times(upgradeEffect('sp', 14));
+    if (hasUpgrade('sp', 15)) gain = gain.times(upgradeEffect('sp', 15)); // 修复为15
+    if (hasUpgrade('a', 11)) gain = gain.times(upgradeEffect('a', 11));
+    if (hasUpgrade('a', 32)) gain = gain.times(1e9);
+    if (hasUpgrade('a', 33)) gain = gain.times(1e9);
+    if (hasUpgrade('a', 34)) gain = gain.times(upgradeEffect('a', 34));
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasMilestone('sp', 5)) gain = gain.times(10);
@@ -73,12 +89,13 @@ function getPointGen() {
     if (hasMilestone('re', 0)) gain = gain.times(100);
     if (hasMilestone('sa', 0)) gain = gain.times(100);
     if (hasUpgrade('pp', 11)) gain = gain.pow(upgradeEffect('pp', 11));
-    if (hasUpgrade('pp', 21)) {gain = gain.pow(upgradeEffect('pp', 21));  }
-// PP 挑战限制
-if (player.pp.activeChallenge == 11) {
-    gain = gain.pow(0.6);
-}
-    // 计算软上限阈值（第一重）
+    if (hasUpgrade('pp', 21)) gain = gain.pow(upgradeEffect('pp', 21));
+    if (hasUpgrade('p', 45)) gain = gain.pow(upgradeEffect('p', 45));
+
+    if (player.pp.activeChallenge == 11) gain = gain.pow(0.6);
+    if (player.pp.activeChallenge == 12) gain = gain.pow(0.5);
+
+    // 一重软上限
     let pointmax = new Decimal(1e9);
     if (hasUpgrade('sa', 13)) pointmax = pointmax.times(1e9);
     if (hasUpgrade('lw', 13)) pointmax = pointmax.times(1e9);
@@ -100,12 +117,12 @@ if (player.pp.activeChallenge == 11) {
                 postSoftcapGain = softcapThreshold.plus(excess);
             } else {
                 let exponent = new Decimal(8.2).div(new Decimal(9).plus(Log10Log10Gain));
-                if (hasUpgrade('a', 61)) exponent = exponent.times(1.05);
-                if (hasUpgrade('sp', 44)) exponent = exponent.times(1.05);
-                if (hasUpgrade('sp', 45)) exponent = exponent.times(1.05);
-                if (hasUpgrade('sp', 51)) exponent = exponent.times(1.05);
-                if (hasUpgrade('a', 71)) exponent = exponent.times(1.05);
-                if (hasUpgrade('a', 73)) exponent = exponent.times(1.05);
+                if (hasUpgrade('a', 21)) exponent = exponent.times(1.05); // a-61->21
+                if (hasUpgrade('sp', 24)) exponent = exponent.times(1.05);
+                if (hasUpgrade('sp', 25)) exponent = exponent.times(1.05);
+                if (hasUpgrade('sp', 31)) exponent = exponent.times(1.05);
+                if (hasUpgrade('a', 31)) exponent = exponent.times(1.05); // a-71->31
+                if (hasUpgrade('a', 33)) exponent = exponent.times(1.05);
                 if (hasUpgrade('sa', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('lw', 12)) exponent = exponent.times(1.05);
                 if (hasUpgrade('re', 12)) exponent = exponent.times(1.05);
@@ -113,19 +130,14 @@ if (player.pp.activeChallenge == 11) {
                 if (hasUpgrade('tp', 11)) exponent = exponent.times(1.25);
                 if (hasUpgrade('tp', 25)) exponent = exponent.times(1.02);
                 if (hasUpgrade('pp', 25)) exponent = exponent.times(1.04);
+                if (hasUpgrade('p', 44)) exponent = exponent.times(1.04);
                 let eclipseMult1 = getEclipseMultiplier(1);
                 exponent = exponent.times(eclipseMult1);
-                if (!isValidDecimal(exponent) || exponent.lte(0)) {
-                    exponent = new Decimal(0.9);
-                }
-
+                if (!isValidDecimal(exponent) || exponent.lte(0)) exponent = new Decimal(0.9);
                 let cappedExcess = excess.pow(exponent);
-                if (!isValidDecimal(cappedExcess)) {
-                    cappedExcess = excess;
-                }
+                if (!isValidDecimal(cappedExcess)) cappedExcess = excess;
                 postSoftcapGain = softcapThreshold.plus(cappedExcess);
                 if (hasUpgrade('p', 32)) postSoftcapGain = postSoftcapGain.times(upgradeEffect('p', 32));
-
                 if (tmp && tmp.other) {
                     tmp.other.softcapHint = "点数获取大于" + format(pointmax,3,true) + "后,受到软上限!(^" + format(exponent,9,true) + ")";
                     tmp.other.softcappedPointGen = postSoftcapGain;
@@ -142,41 +154,40 @@ if (player.pp.activeChallenge == 11) {
 
     // 二重软上限
     let doublepointmax = new Decimal("1e308");
-    if(hasUpgrade('re', 14)) doublepointmax = doublepointmax.times(10);
-    if(hasUpgrade('sp', 55)) doublepointmax = doublepointmax.times(upgradeEffect('sp', 55));
+    if (hasUpgrade('re', 14)) doublepointmax = doublepointmax.times(10);
+    if (hasUpgrade('sp', 35)) doublepointmax = doublepointmax.times(upgradeEffect('sp', 35));
     const doubleSoftcapThreshold = new Decimal(doublepointmax);
     let doubleCappedGain;
     if (postSoftcapGain.gt(doubleSoftcapThreshold)) {
         let doubleExcess = postSoftcapGain.minus(doubleSoftcapThreshold);
         let Log10Post = (postSoftcapGain.div(doublepointmax).add(1)).log10();
         let Log10Log10Post = (Log10Post.add(1)).log10();
-        let doubleExponent = new Decimal(8).div(new Decimal(9.1).plus(Log10Log10Post)); 
-        if(hasUpgrade('sa', 12)) doubleExponent = doubleExponent.times(1.05);
-        if(hasUpgrade('lw', 12)) doubleExponent = doubleExponent.times(1.05);
-        if(hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
-        if(hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
-        if(hasUpgrade('tp', 11)) doubleExponent = doubleExponent.times(1.25);
-        if(hasUpgrade('tp', 25)) doubleExponent = doubleExponent.times(1.03);
-        if(hasUpgrade('pp', 25)) doubleExponent = doubleExponent.times(1.03);
+        let doubleExponent = new Decimal(8).div(new Decimal(9.1).plus(Log10Log10Post));
+        if (hasUpgrade('sa', 12)) doubleExponent = doubleExponent.times(1.05);
+        if (hasUpgrade('lw', 12)) doubleExponent = doubleExponent.times(1.05);
+        if (hasUpgrade('re', 12)) doubleExponent = doubleExponent.times(1.05);
+        if (hasUpgrade('sa', 13)) doubleExponent = doubleExponent.times(1.01);
+        if (hasUpgrade('tp', 11)) doubleExponent = doubleExponent.times(1.25);
+        if (hasUpgrade('tp', 25)) doubleExponent = doubleExponent.times(1.03);
+        if (hasUpgrade('pp', 25)) doubleExponent = doubleExponent.times(1.03);
+        if (hasUpgrade('p', 44)) doubleExponent = doubleExponent.times(1.04);
         let eclipseMult2 = getEclipseMultiplier(2);
         doubleExponent = doubleExponent.times(eclipseMult2);
         let doubleCappedExcess = doubleExcess.pow(doubleExponent);
         doubleCappedGain = doubleSoftcapThreshold.plus(doubleCappedExcess);
         if (hasUpgrade('p', 33)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('p', 33));
-        if (hasUpgrade('sp', 55)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('sp', 55));
+        if (hasUpgrade('sp', 35)) doubleCappedGain = doubleCappedGain.times(upgradeEffect('sp', 35));
         if (tmp && tmp.other) {
             tmp.other.doubleSoftcapHint = "点数获取大于" + format(doublepointmax,3,true) + "后,受到二重软上限!(^" + format(doubleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.doubleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.doubleSoftcapHint = "";
         doubleCappedGain = postSoftcapGain;
     }
 
     // 三重软上限
     let triplepointmax = new Decimal("1e1000");
-    if(hasUpgrade('tp', 12)) triplepointmax = triplepointmax.times('1e314');
+    if (hasUpgrade('tp', 12)) triplepointmax = triplepointmax.times('1e314');
     const tripleSoftcapThreshold = new Decimal(triplepointmax);
     let tripleCappedGain;
     if (doubleCappedGain.gt(tripleSoftcapThreshold)) {
@@ -187,6 +198,7 @@ if (player.pp.activeChallenge == 11) {
         if (hasUpgrade('tp', 25)) tripleExponent = tripleExponent.times(1.04);
         if (hasUpgrade('pp', 12)) tripleExponent = tripleExponent.times(1.3);
         if (hasUpgrade('pp', 25)) tripleExponent = tripleExponent.times(1.02);
+        if (hasUpgrade('p', 44)) tripleExponent = tripleExponent.times(1.04);
         let eclipseMult3 = getEclipseMultiplier(3);
         tripleExponent = tripleExponent.times(eclipseMult3);
         let tripleCappedExcess = tripleExcess.pow(tripleExponent);
@@ -195,15 +207,13 @@ if (player.pp.activeChallenge == 11) {
             tmp.other.tripleSoftcapHint = "点数获取大于" + format(triplepointmax,3,true) + "后,受到三重软上限!(^" + format(tripleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.tripleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.tripleSoftcapHint = "";
         tripleCappedGain = doubleCappedGain;
     }
 
     // 四重软上限
     let quadruplepointmax = new Decimal("1e7000");
-    if(hasUpgrade('pp', 14)) quadruplepointmax = quadruplepointmax.times('1e3000');
+    if (hasUpgrade('pp', 14)) quadruplepointmax = quadruplepointmax.times('1e3000');
     const quadrupleSoftcapThreshold = new Decimal(quadruplepointmax);
     let quadrupleCappedGain;
     if (tripleCappedGain.gt(quadrupleSoftcapThreshold)) {
@@ -214,15 +224,14 @@ if (player.pp.activeChallenge == 11) {
         if (hasUpgrade('tp', 25)) quadrupleExponent = quadrupleExponent.times(1.05);
         if (hasUpgrade('pp', 12)) quadrupleExponent = quadrupleExponent.times(1.4);
         if (hasUpgrade('pp', 25)) quadrupleExponent = quadrupleExponent.times(1.01);
+        if (hasUpgrade('p', 44)) quadrupleExponent = quadrupleExponent.times(1.04);
         let quadrupleCappedExcess = quadrupleExcess.pow(quadrupleExponent);
         quadrupleCappedGain = quadrupleSoftcapThreshold.plus(quadrupleCappedExcess);
         if (tmp && tmp.other) {
             tmp.other.quadrupleSoftcapHint = "点数获取大于" + format(quadruplepointmax,3,true) + "后,受到四重软上限!(^" + format(quadrupleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.quadrupleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.quadrupleSoftcapHint = "";
         quadrupleCappedGain = tripleCappedGain;
     }
 
@@ -235,16 +244,15 @@ if (player.pp.activeChallenge == 11) {
         let Log10PostQuint = (quadrupleCappedGain.div(quintuplePointMax).add(1)).log10();
         let Log10Log10PostQuint = (Log10PostQuint.add(1)).log10();
         let quintupleExponent = new Decimal(6.5).div(new Decimal(25).plus(Log10Log10PostQuint));
-       
+        if (hasUpgrade('p', 43)) quintupleExponent = quintupleExponent.times(2);
+        if (hasUpgrade('p', 44)) quintupleExponent = quintupleExponent.times(1.04);
         let quintupleCappedExcess = quintupleExcess.pow(quintupleExponent);
         quintupleCappedGain = quintupleSoftcapThreshold.plus(quintupleCappedExcess);
         if (tmp && tmp.other) {
             tmp.other.quintupleSoftcapHint = "点数获取大于" + format(quintuplePointMax,3,true) + "后,受到五重软上限!(^" + format(quintupleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.quintupleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.quintupleSoftcapHint = "";
         quintupleCappedGain = quadrupleCappedGain;
     }
 
@@ -263,9 +271,7 @@ if (player.pp.activeChallenge == 11) {
             tmp.other.sextupleSoftcapHint = "点数获取大于" + format(sextuplePointMax,3,true) + "后,受到六重软上限!(^" + format(sextupleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.sextupleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.sextupleSoftcapHint = "";
         sextupleCappedGain = quintupleCappedGain;
     }
 
@@ -284,9 +290,7 @@ if (player.pp.activeChallenge == 11) {
             tmp.other.septupleSoftcapHint = "点数获取大于" + format(septuplePointMax,3,true) + "后,受到七重软上限!(^" + format(septupleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.septupleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.septupleSoftcapHint = "";
         septupleCappedGain = sextupleCappedGain;
     }
 
@@ -305,9 +309,7 @@ if (player.pp.activeChallenge == 11) {
             tmp.other.octupleSoftcapHint = "点数获取大于" + format(octuplePointMax,3,true) + "后,受到八重软上限!(^" + format(octupleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.octupleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.octupleSoftcapHint = "";
         octupleCappedGain = septupleCappedGain;
     }
 
@@ -326,37 +328,25 @@ if (player.pp.activeChallenge == 11) {
             tmp.other.nonupleSoftcapHint = "点数获取大于" + format(nonuplePointMax,3,true) + "后,受到九重软上限!(^" + format(nonupleExponent,9,true) + ")";
         }
     } else {
-        if (tmp && tmp.other) {
-            tmp.other.nonupleSoftcapHint = "";
-        }
+        if (tmp && tmp.other) tmp.other.nonupleSoftcapHint = "";
         nonupleCappedGain = octupleCappedGain;
     }
 
     return nonupleCappedGain;
-}// You can add non-layer related variables that should go into "player" and be saved here, along with default values
+}
 
-// Display extra things at the top of the page
+var displayThings = [];
 
-var displayThings = [
-]
-// doNotCallTheseFunctionsEveryTick.push("autoBuyUpgrades");
-// Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte(new Decimal("1e50000"))
+    return player.points.gte(new Decimal("1e50000"))
 }
 
+var backgroundStyle = {};
 
-
-// Less important things beyond this point!
-
-// Style for the background, can be a function
-var backgroundStyle = {
-
-}  
-// You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
-	return(3600) // Default is 1 hour which is just arbitrarily large
+    return 3600;
 }
+
 function getTimeCrystalDiscount() {
     let crystals = player.tp?.buyables?.[12] || new Decimal(0);
     return Decimal.pow(crystals.div(114514), crystals);
@@ -368,11 +358,7 @@ function getTimeCrystalLimitBonus() {
 }
 
 function getTimeFragmentBaseLimit() {
-    // 基础上限 100
     return new Decimal(100).times(new Decimal(1.425).pow(getTimeCrystalLimitBonus()).add(1));
-}
-function getEclipseCount() {
-    return player.tp?.buyables?.[13] || new Decimal(0);
 }
 
 function getEclipseCount() {
@@ -380,28 +366,18 @@ function getEclipseCount() {
 }
 
 function getEclipseMultiplier(level) {
-    // level: 1 表示一重软上限，2 表示二重，3 表示三重
     let cnt = getEclipseCount();
     if (level === 1) return Decimal.pow(1.01, cnt);
     if (level === 2) return Decimal.pow(1.02, cnt);
     if (level === 3) return Decimal.pow(1.03, cnt);
     return new Decimal(1);
 }
-// 注册显示组件
-Vue.component('times-power-display', {
-    template: `
-        <div style="margin: 10px 0;">
-            时间之力: {{format(player.timesPower || new Decimal(0))}}<br>
-            TP获取倍数: {{format(getTimesPowerMultiplier())}}x
-        </div>
-    `,
-    methods: {
-        getTimesPowerMultiplier() {
-            let tp = player.timesPower;
-            if (!tp || !(tp instanceof Decimal)) tp = new Decimal(0);
-            let tpr = new Decimal(1.3);
-            if (hasUpgrade('tp', 23)) tpr = new Decimal(2.026);
-            return tp.add(1).pow(tpr);
-        }
-    }
-});
+
+
+function getTimesPowerMultiplier() {
+    let tp = player.timesPower;
+    if (!tp || !(tp instanceof Decimal)) tp = new Decimal(0);
+    let tpr = new Decimal(1.3);
+    if (hasUpgrade('tp', 23)) tpr = new Decimal(2.026);
+    return tp.add(1).pow(tpr);
+}
