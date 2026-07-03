@@ -283,11 +283,11 @@ addLayer("p", {
             unlocked() { return hasUpgrade('p', 43) }
         },
         45: {
-            title: "终极增幅-P", description: "点数获取^lg(P 点 + 1)/1e5(不低于1,硬上限为1.5),解锁一个PP挑战", cost: new Decimal("1e96855"),
+            title: "终极增幅-P", description: "点数获取^lg(P 点 + 1)/1e5(不低于1,硬上限为2),解锁一个PP挑战", cost: new Decimal("1e96855"),
             unlocked() { return hasUpgrade('p', 44) },
             effect() {
-                let exp = Decimal.max(player.p.points.add(1).log10().div(1e5), 1);
-                let cap = new Decimal("1.5");
+                let exp = player.p.points.add(1).log10().div(1e5).add(1);
+                let cap = new Decimal("2");
                 if (exp.gt(cap)) exp = cap;
                 return exp;
             },
