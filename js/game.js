@@ -130,7 +130,7 @@ function rowReset(row, layer) {
     // 定义保留升级的规则：key 为 "触发层_被重置层"，value 为判断函数
     const keepRules = {
         "sp_p": () => hasMilestone('sp', 3),
-        "a_p": () => hasUpgrade('a', 55),
+        "a_p": () => hasUpgrade('a', 15),
         "sa_p": () => hasMilestone('sa', 1) || hasUpgrade('sa', 15), 
         "lw_p": () => hasUpgrade('lw', 15), 
         "re_p": () => hasUpgrade('re', 15),
