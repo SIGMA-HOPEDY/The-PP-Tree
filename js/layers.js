@@ -545,7 +545,7 @@ addLayer("sp", {
             unlocked() { return hasChallenge('pp', 12) || hasUpgrade('sp', 35) }
         },
         42: {
-            title: "经典常谈", description: "基于SP点提升P点产量。", cost: new Decimal("1e163188"), unlocked() { return hasUpgrade('sp', 41) },
+            title: "经典常谈", description: "基于SP点提升P点产量。", cost: new Decimal("1e163088"), unlocked() { return hasUpgrade('sp', 41) },
             effect() {
                 let raw = player.sp.points.add(1).pow(0.21);
                 let cap = new Decimal("1e38");
@@ -554,7 +554,7 @@ addLayer("sp", {
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         },
         43: {
-            title: "自增^2", description: "基于自增器个数提升自增器效果底数。", cost: new Decimal("1e173000"), unlocked() { return hasUpgrade('sp', 42) },
+            title: "自增^2", description: "基于自增器个数提升自增器效果底数。", cost: new Decimal("1e172000"), unlocked() { return hasUpgrade('sp', 42) },
             effect() {
                 let buy11 = player.p.buyables[11] || new Decimal(0);
                 let base = buy11.add(1).log2().add(1);
@@ -565,7 +565,7 @@ addLayer("sp", {
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         },
         44: {
-            title: "自增凝聚", description: "基于凝聚器个数提升自增器效果底数。", cost: new Decimal("1e177000"), unlocked() { return hasUpgrade('sp', 43) },
+            title: "自增凝聚", description: "基于凝聚器个数提升自增器效果底数。", cost: new Decimal("1e175000"), unlocked() { return hasUpgrade('sp', 43) },
             effect() {
                 let buy11sp = player.sp.buyables[11] || new Decimal(0);
                 let base = buy11sp.add(1).log(1.5).add(1);
@@ -576,7 +576,7 @@ addLayer("sp", {
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         },
         45: {
-            title: "凝聚自增", description: "基于自增器个数提升凝聚器效果底数,解锁一个PP挑战", cost: new Decimal("1e184000"), unlocked() { return hasUpgrade('sp', 44) },
+            title: "凝聚自增", description: "基于自增器个数提升凝聚器效果底数,解锁一个PP挑战", cost: new Decimal("1e182000"), unlocked() { return hasUpgrade('sp', 44) },
             effect() {
                 let buy11 = player.p.buyables[11] || new Decimal(0);
                 let base = buy11.add(1).log(3).add(1);
@@ -693,7 +693,7 @@ addLayer("a", {
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         },
         35: { title: "新的层级?", description: "解锁新的层级", cost: new Decimal(1.79e308), unlocked() { return hasUpgrade('a', 34) } },
-        41: { title: "突破五重", description: "五重软上限弱化1.16", cost: new Decimal('1e25750'), unlocked() { return hasChallenge('pp', 13) } },
+        41: { title: "突破五重", description: "五重软上限弱化1.16", cost: new Decimal('1e25700'), unlocked() { return hasChallenge('pp', 13) } },
         42: { 
             title: "放大时间", description: "基于你的Amplifier提升TP点获取(加成不低于2)", cost: new Decimal('1e49700'), unlocked() { return hasUpgrade('a', 41) } 
        , effect() {
