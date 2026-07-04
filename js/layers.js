@@ -40,6 +40,7 @@ addLayer("p", {
         let exp = new Decimal(0.52);
         if (hasUpgrade('a', 12)) exp = exp.times(1.01);
         if (hasUpgrade('sp', 33)) exp = exp.add(upgradeEffect('sp', 33));
+        if (hasUpgrade('sa', 21)) exp = exp.add(upgradeEffect('sa', 21));
         return exp;
     },
     passiveGeneration: function() {
@@ -70,6 +71,9 @@ addLayer("p", {
         if (hasUpgrade('sp', 42)) m = m.times(upgradeEffect('sp', 42));
         if (hasMilestone('tp', 0)) m = m.times(1e20);
         if (hasChallenge('pp', 12)) m = m.times(1e100);
+        if (hasUpgrade('lw', 21)) m = m.times(upgradeEffect('lw', 21));
+        if (hasUpgrade('re', 21)) m = m.times(upgradeEffect('re', 21));
+        if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
         let buyEff = tmp.p?.buyables?.[11]?.effect;
         if (buyEff) m = m.times(buyEff);
         return m;
@@ -328,14 +332,18 @@ addLayer("sp", {
         let m = new Decimal(1);
         if (hasUpgrade('p', 15)) m = m.times(upgradeEffect('p', 15));
         if (hasUpgrade('a', 11)) m = m.times(upgradeEffect('a', 11));
+        if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
         if (hasUpgrade('a', 13)) m = m.times(upgradeEffect('a', 13));
         if (hasUpgrade('sp', 22)) m = m.times(upgradeEffect('sp', 22));
         if (hasUpgrade('sp', 13)) m = m.times(upgradeEffect('sp', 13));
         if (hasUpgrade('lw', 12)) m = m.times(upgradeEffect('lw', 12));
         if (hasUpgrade('tp', 11)) m = m.times(upgradeEffect('tp', 11));
+        if (hasUpgrade('sa', 22)) m = m.times(upgradeEffect('sa', 22));
         if (hasChallenge('pp', 12)) m = m.times(1e38);
         if (hasMilestone('tp', 1)) m = m.times(1e10);
         if (hasChallenge('pp', 13)) m = m.times(1e100);
+        if (hasUpgrade('lw', 22)) m = m.times(upgradeEffect('lw', 22));
+        if (hasUpgrade('re', 22)) m = m.times(upgradeEffect('re', 22));
         let buyEff = tmp.sp?.buyables?.[11]?.effect;
         if (buyEff) m = m.times(buyEff);
         return m;
@@ -392,7 +400,7 @@ addLayer("sp", {
                 updateTemp();
             },
             buyMax() { buyMaxForBuyable(this.layer, this.id) },
-            unlocked() { return hasUpgrade('sp', 41) }
+            unlocked() { return hasUpgrade('sp', 41)|| player.pp.activeChallenge == 14 }
         }
     },
     upgrades: {
@@ -614,6 +622,7 @@ addLayer("a", {
     gainMult() {
         let m = new Decimal(1);
         if (hasUpgrade('sp', 23)) m = m.times(upgradeEffect('sp', 23));
+        if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
         if (hasUpgrade('re', 12)) m = m.times(upgradeEffect('re', 12));
         if (hasUpgrade('a', 34)) m = m.times((upgradeEffect('a', 34)).add(1).log10().add(1).pow(1.44));
         if (hasUpgrade('tp', 11)) m = m.times(upgradeEffect('tp', 11));
@@ -622,6 +631,10 @@ addLayer("a", {
         if (hasChallenge('pp', 12)) m = m.times(1e9);
         if (hasChallenge('pp', 13)) m = m.times(1e38);
           if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+          if (hasUpgrade('lw', 24)) m = m.times(upgradeEffect('lw', 24));
+          if (hasChallenge('pp', 14)) m = m.times(1e100);
+          if (hasUpgrade('sa', 24)) m = m.times(upgradeEffect('sa', 24));
+        if (hasUpgrade('re', 24)) m = m.times(upgradeEffect('re', 24));
         return m;
     },
     gainExp() { return new Decimal(1) },
@@ -733,7 +746,7 @@ addLayer("a", {
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" } },
 45: { 
-            title: "时间乱流", description: "基于你的TP和时间碎片提升SA,LW,RE,Amplifier和TP获取",
+            title: "时间乱流", description: "基于你的TP和时间碎片提升SA,LW,RE,Amplifier和TP获取,解锁一个PP挑战",
              cost: new Decimal('1e50000'), unlocked() { return hasUpgrade('a', 44) } 
        , effect() {
                 let raw = player.tp.points.add(1).pow(player.tp.buyables[11].add(1).log2().div(50).add(0.4));
@@ -773,8 +786,10 @@ addLayer("lw", {
         let m = new Decimal(1);
         if (hasUpgrade('lw', 14)) m = m.times(upgradeEffect('lw', 14));
         if (hasUpgrade('tp', 11)) m = m.times(upgradeEffect('tp', 11));
+        if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
         if (hasChallenge('pp', 13)) m = m.times(1e9);
-          if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+        if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+        if (hasChallenge('pp', 14)) m = m.times(1e38);
         return m;
     },
     gainExp() { return new Decimal(1) },
@@ -786,6 +801,9 @@ addLayer("lw", {
         "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] }
     },
     upgrades: {
+        rows: 3,
+        cols: 5,
+        // 第一行（原有）
         11: { title: "始", description: "每秒再获得重置时SP点的150%", cost: new Decimal(1) },
         12: {
             title: "破限", description: "基于lw提升SP点获取(不低于100),软上限弱化1.05,二重软上限弱化1.05.", cost: new Decimal(1), unlocked() { return hasUpgrade('lw', 11) },
@@ -806,7 +824,42 @@ addLayer("lw", {
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         },
-        15: { title: "更多...", description: "lw重置时不重置前两行,解锁更多sp层升级", cost: new Decimal(1e20), unlocked() { return hasUpgrade('lw', 14) && hasUpgrade('sa', 15) && hasUpgrade('p', 35) }, effect() {} }
+        15: { title: "更多...", description: "lw重置时不重置前两行,解锁更多sp层升级", cost: new Decimal(1e20), unlocked() { return hasUpgrade('lw', 14) && hasUpgrade('sa', 15) && hasUpgrade('p', 35) }, effect() {} },
+
+        // 第二行（新增中期）
+        21: {
+            title: "律令·P", description: "基于LW点提升P点获取(不低于5)", cost: new Decimal("1e5650"), unlocked() { return hasUpgrade('sa', 25) || hasUpgrade('lw', 21) },
+            effect() {
+                let raw = player.lw.points.add(1).pow(0.8).times(5);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.4);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        22: {
+            title: "律令·SP", description: "基于LW点提升SP点获取(不低于5)", cost: new Decimal("1e5700"), unlocked() { return hasUpgrade('lw', 21) },
+            effect() {
+                let raw = player.lw.points.add(1).pow(0.6).times(5);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.3);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        23: {
+            title: "律令弱化", description: "前五重软上限指数弱化1.01", cost: new Decimal("1e5720"), unlocked() { return hasUpgrade('lw', 22) }
+        },
+        24: {
+            title: "律令·A", description: "基于LW点提升Amplifier获取(不低于10)", cost: new Decimal("1e6400"), unlocked() { return hasUpgrade('lw', 23) },
+            effect() {
+                let raw = player.lw.points.add(1).pow(0.4).times(10);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.2);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        25: {
+            title: "解锁·回声", description: "解锁新的RE升级", cost: new Decimal("1e6446"), unlocked() { return hasUpgrade('lw', 24) }
+        }
     }
 })
 
@@ -838,9 +891,12 @@ addLayer("sa", {
     gainMult() {
         let m = new Decimal(1);
         if (hasUpgrade('sa', 14)) m = m.times(upgradeEffect('sa', 14));
+        if (hasUpgrade('sa', 34)) m = m.times(upgradeEffect('sa', 34));
+        if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
         if (hasUpgrade('tp', 11)) m = m.times(upgradeEffect('tp', 11));
         if (hasChallenge('pp', 13)) m = m.times(1e9);
-          if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+        if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+        if (hasChallenge('pp', 14)) m = m.times(1e38);
         return m;
     },
     gainExp() { return new Decimal(1) },
@@ -852,6 +908,9 @@ addLayer("sa", {
         "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] }
     },
     upgrades: {
+        rows: 4,
+        cols: 5,
+        // ---- 第一行（原有）----
         11: { title: "始", description: "每秒再获得重置时P点的900%", cost: new Decimal(1) },
         12: {
             title: "破限", description: "基于sa提升P点获取(不低于1e4),软上限弱化1.05,二重软上限弱化1.05", cost: new Decimal(1), unlocked() { return hasUpgrade('sa', 11) },
@@ -872,7 +931,123 @@ addLayer("sa", {
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         },
-        15: { title: "更多...", description: "sa重置时不重置前两行,解锁更多p层升级", cost: new Decimal(1e9), unlocked() { return hasUpgrade('sa', 14) }, effect() {} }
+        15: { title: "更多...", description: "sa重置时不重置前两行,解锁更多p层升级", cost: new Decimal(1e9), unlocked() { return hasUpgrade('sa', 14) }, effect() {} },
+
+        // ---- 第二行（新增中期）----
+        21: {
+            title: "源质增幅·P", description: "基于SA点提升P点获取指数(硬上限+0.5)", cost: new Decimal("1e4500"), unlocked() { return hasChallenge('pp', 14) },
+            effect() {
+                let raw = player.sa.points.add(1).log10().div(50000);
+                let cap = new Decimal("0.5");
+                return Decimal.min(raw, cap);
+            },
+            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) }
+        },
+        22: {
+            title: "源质共鸣", description: "基于SA点提升SP点获取", cost: new Decimal("1e5000"), unlocked() { return hasUpgrade('sa', 21) },
+            effect() {
+                let raw = player.sa.points.add(1).pow(0.3);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.15);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        23: {
+            title: "弱化上限", description: "前五重软上限指数弱化1.01", cost: new Decimal("1e5020"), unlocked() { return hasUpgrade('sa', 22) }
+        },
+        24: {
+            title: "源质·A", description: "基于SA点提升Amplifier获取(不低于10)", cost: new Decimal("1e5225"), unlocked() { return hasUpgrade('sa', 23) },
+            effect() {
+                let raw = player.sa.points.add(1).pow(0.3).times(10);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.5);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        25: {
+            title: "解锁·律令", description: "解锁新的LW升级", cost: new Decimal("1e5500"), unlocked() { return hasUpgrade('sa', 24) }
+        },
+
+        // ---- 第三行（新增后期）----
+        31: {
+            title: "源·律·回", description: "基于SA、LW、RE提升点数获取", cost: new Decimal("1e7478"), unlocked() { return hasUpgrade('re', 25) },
+            effect() {
+                let sa = player.sa.points.add(1).pow(0.9);
+                let lw = player.lw.points.add(1).pow(0.8);
+                let re = player.re.points.add(1).pow(0.7);
+                let raw = sa.times(lw).times(re);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.4);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        32: {
+            title: "针对弱化", description: "五重软上限弱化1.03", cost: new Decimal("1e8100"), unlocked() { return hasUpgrade('sa', 31) }
+        },
+        33: {
+            title: "源质·时", description: "基于SA点提升TP点获取(加成不低于2)", cost: new Decimal("1e9000"), unlocked() { return hasUpgrade('sa', 32) },
+            effect() {
+                let raw = player.sa.points.add(1).pow(0.2);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.5);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        34: {
+            title: "自我共振", description: "SA点获取*(SA+1)^0.3", cost: new Decimal("1e10400"), unlocked() { return hasUpgrade('sa', 33) },
+            effect() {
+                let raw = player.sa.points.add(1).pow(0.3);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.5);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        35: {
+            title: "回声·源质", description: "基于RE点提升SA点获取(加成不低于2)", cost: new Decimal("1e11250"), unlocked() { return hasUpgrade('sa', 34) },
+            effect() {
+                let raw = player.re.points.add(1).pow(0.2);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.5);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+
+        // ---- 第四行（终局）----
+        41: {
+            title: "源质·力", description: "基于SA点提升Points Power产量", cost: new Decimal("1e13000"), unlocked() { return hasUpgrade('sa', 35) },
+            effect() {
+                let raw = player.sa.points.add(1).log10().add(1).pow(0.25);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.5);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        42: {
+            title: "三气归来", description: "基于SA、LW、RE提升前四行所有资源获取(加成不低于100)", cost: new Decimal("1e13400"), unlocked() { return hasUpgrade('sa', 41) },
+            effect() {
+                let sa = player.sa.points.add(1).log2().add(1);
+                let lw = player.lw.points.add(1).log2().add(1);
+                let re = player.re.points.add(1).log2().add(1);
+                let raw = sa.times(lw).times(re).times(100).pow(7);
+                let cap = new Decimal("1e1000");
+                return effectWithSoftcap(raw, cap, 0.6);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        43: {
+            title: "针对弱化·Ⅱ", description: "五重软上限弱化1.05", cost: new Decimal("1e14000"), unlocked() { return hasUpgrade('sa', 42) }
+        },
+        44: {
+            title: "源质延迟", description: "基于SA点延长前五重软上限(硬上限^5)", cost: new Decimal("1e20000"), unlocked() { return hasUpgrade('sa', 43) },
+            effect() {
+                let raw = player.sa.points.add(1).log10().div(1e4).add(1);
+                return Decimal.min(raw, 5);
+            },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true) }
+        },
+        45: {
+            title: "终极源质", description: "解锁一个新的PP挑战(没更新)", cost: new Decimal("1e20500"), unlocked() { return hasUpgrade('sa', 44) }
+        }
     }
 })
 
@@ -904,9 +1079,11 @@ addLayer("re", {
     gainMult() {
         let m = new Decimal(1);
         if (hasUpgrade('re', 14)) m = m.times(upgradeEffect('re', 14));
+        if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
         if (hasUpgrade('tp', 11)) m = m.times(upgradeEffect('tp', 11));
         if (hasChallenge('pp', 13)) m = m.times(1e9);
-          if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+        if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+        if (hasChallenge('pp', 14)) m = m.times(1e38);
         return m;
     },
     gainExp() { return new Decimal(1) },
@@ -918,6 +1095,9 @@ addLayer("re", {
         "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] }
     },
     upgrades: {
+        rows: 3,
+        cols: 5,
+        // 第一行（原有）
         11: { title: "始", description: "每秒获得重置时Amplifier的1%", cost: new Decimal(1) },
         12: {
             title: "破限", description: "基于re提升amplifier获取(不低于100),软上限弱化1.05,二重软上限弱化1.05", cost: new Decimal(1), unlocked() { return hasUpgrade('re', 11) },
@@ -938,7 +1118,42 @@ addLayer("re", {
             },
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         },
-        15: { title: "更多...", description: "re重置时不重置前两行,解锁更多a层升级", cost: new Decimal(1e40), unlocked() { return hasUpgrade('re', 14) && hasUpgrade('sa', 15) && hasUpgrade('lw', 15) && hasUpgrade('sp', 35) }, effect() {} }
+        15: { title: "更多...", description: "re重置时不重置前两行,解锁更多a层升级", cost: new Decimal(1e40), unlocked() { return hasUpgrade('re', 14) && hasUpgrade('sa', 15) && hasUpgrade('lw', 15) && hasUpgrade('sp', 35) }, effect() {} },
+
+        // 第二行（新增中期）
+        21: {
+            title: "回声·P", description: "基于RE点提升P点获取(不低于5)", cost: new Decimal("1e6400"), unlocked() { return hasUpgrade('lw', 25) || hasUpgrade('re', 21) },
+            effect() {
+                let raw = player.re.points.add(1).pow(0.7).times(5);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.35);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        22: {
+            title: "回声·SP", description: "基于RE点提升SP点获取(不低于5)", cost: new Decimal("1e6500"), unlocked() { return hasUpgrade('re', 21) },
+            effect() {
+                let raw = player.re.points.add(1).pow(0.5).times(5);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.25);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        23: {
+            title: "回声弱化", description: "前五重软上限指数弱化1.01", cost: new Decimal("1e6525"), unlocked() { return hasUpgrade('re', 22) }
+        },
+        24: {
+            title: "回声·A", description: "基于RE点提升Amplifier获取(不低于10)", cost: new Decimal("1e7455"), unlocked() { return hasUpgrade('re', 23) },
+            effect() {
+                let raw = player.re.points.add(1).pow(0.3).times(10);
+                let cap = new Decimal("1e38");
+                return effectWithSoftcap(raw, cap, 0.15);
+            },
+            effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
+        },
+        25: {
+            title: "解锁·源质", description: "解锁新的SA升级", cost: new Decimal("1e7474"), unlocked() { return hasUpgrade('re', 24) }
+        }
     }
 })
 
@@ -966,6 +1181,10 @@ addLayer("tp", {
         if (hasUpgrade('a', 42)) m = m.times(upgradeEffect('a', 42));
         if (hasUpgrade('a', 43)) m = m.times(upgradeEffect('a', 43));
         if (hasUpgrade('a', 45)) m = m.times(upgradeEffect('a', 45));
+        if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
+        if (hasChallenge('pp', 14)) m = m.times(1e9);
+        if (hasUpgrade('sa', 33)) m = m.times(upgradeEffect('sa', 33));
+        if (player.pp.activeChallenge == 14) m = m.times(4.44e40);
         if (player.timesPower && player.timesPower instanceof Decimal) {
             m = m.times(player.timesPower.add(1).pow(1.3));
         }
@@ -998,6 +1217,7 @@ addLayer("tp", {
         "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] },
         "Buyables": { content: ["main-display", "prestige-button", "blank", "buyables"] }
     },
+   autoUpgrade: function() { return hasChallenge('pp', 14) },
     upgrades: {
         11: {
             title: "时间的力量...", description: "软上限弱化1.25,二重软上限弱化1.25,之前所有资源获取*(TP+10)^2", cost: new Decimal(1),
@@ -1163,6 +1383,8 @@ addLayer("pp", {
             if (hasChallenge('pp', 11)) mult = mult.times(player.points.add(1).log10().pow(0.2).add(1));
             if (hasChallenge('pp', 12)) mult = mult.times(player.p.points.add(1).log10().pow(0.19).add(1).times(2));
             if (hasChallenge('pp', 13)) mult = mult.times(Decimal.max(player.sp.points.add(10).log10().pow(0.17).times(3), 3));
+if (hasChallenge('pp', 14)) mult = mult.times(Decimal.max(player.a.points.add(10).log10().pow(0.14).times(4), 4));
+if (hasUpgrade('sa', 41)) mult = mult.times(upgradeEffect('sa', 41));
             let gain = base.times(mult).times(diff);
             player.pp.pointsPower = player.pp.pointsPower.add(gain);
             if (!tmp.pp) tmp.pp = {};
@@ -1257,12 +1479,22 @@ addLayer("pp", {
         13: {
             name: "指数坍缩III", challengeDescription: "你的点数获取速度被压缩为^0.4", goal: new Decimal("1e10000"),
             rewardDescription: function() {
-                if (typeof player === 'undefined' || !player || !player.points) return "根据P点增幅Points Power获取";
+                if (typeof player === 'undefined' || !player || !player.points) return "根据SP点增幅Points Power获取";
                 let mult = player.sp.points.add(10).log10().pow(0.17).times(3);
                 return "解锁A层新内容,SP点获取*1e100,A点获取*1e38,SA,LW,RE点获取*1e9,根据SP点增幅Points Power获取(不小于3),当前: *" + format(mult);
             },
             onComplete() {},
             unlocked() { return hasUpgrade('sp', 45) || player.pp.activeChallenge == 13 || hasChallenge('pp', 13) }
+        },
+        14: {
+            name: "指数坍缩IV", challengeDescription: "你的点数获取速度被压缩为^0.3,但提前解锁凝聚器,TP获取*4.44e40", goal: new Decimal("1e11000"),
+            rewardDescription: function() {
+                if (typeof player === 'undefined' || !player || !player.points) return "根据P点增幅Points Power获取";
+                let mult = player.a.points.add(10).log10().pow(0.14).times(4);
+                return "解锁SA层新内容,自动购买TP层升级和时间碎片,A点获取*1e100,SA,LW,RE点获取*1e38,TP点获取*1e9,根据A点增幅Points Power获取(不小于4),当前: *" + format(mult);
+            },
+            onComplete() {},
+            unlocked() { return hasUpgrade('a', 45) || player.pp.activeChallenge == 14 || hasChallenge('pp', 14) }
         }
     }
 })
@@ -1285,7 +1517,7 @@ addLayer("ach", {
     milestones: {
         0: { requirementDescription: "解放双手I (18成就点)", effectDescription: "永久自动购买P,SP,A层升级", done() { return player.ach.points.gte(18) } },
         1: { requirementDescription: "成就优化I (60成就点)", effectDescription: "优化成就点效果公式", done() { return player.ach.points.gte(60) } },
-        2: { requirementDescription: "解放双手II (90成就点)", effectDescription: "永久自动购买P,SP层购买项", done() { return player.ach.points.gte(90) } }
+        2: { requirementDescription: "解放双手II (90成就点)", effectDescription: "永久自动购买P,SP层购买项(100/s)", done() { return player.ach.points.gte(90) } }
     },
     achievements: {
         rows: 10,
@@ -1319,9 +1551,13 @@ addLayer("ach", {
         53: { name: "凝聚之力", tooltip: "购买25个「凝聚器」 奖励:5成就点。", done() { return (player.sp.buyables[11] || new Decimal(0)).gte(25) }, onComplete() { addPoints("ach", 5) } },
         54: { name: "指数坍缩III", tooltip: "完成挑战「指数坍缩III」 奖励:5成就点。", done() { return hasChallenge('pp', 13) }, onComplete() { addPoints("ach", 5) } },
         55: { name: "打破五重!", tooltip: "购买升级「突破五重」 奖励:5成就点。", done() { return hasUpgrade('a', 41) }, onComplete() { addPoints("ach", 5) } },
-        56: { name: "时间侵蚀", tooltip: "购买10个「时蚀之刻」 奖励:5成就点。", done() { return (player.tp.buyables[13] || new Decimal(0)).gte(10) }, onComplete() { addPoints("ach", 5) } }
-    },
-    effect() {
+        56: { name: "时间侵蚀", tooltip: "购买10个「时蚀之刻」 奖励:5成就点。", done() { return (player.tp.buyables[13] || new Decimal(0)).gte(10) }, onComplete() { addPoints("ach", 5) } },
+        61: { name: "指数坍缩IV", tooltip: "完成挑战「指数坍缩IV」 奖励:6成就点。", done() { return hasChallenge('pp', 14) }, onComplete() { addPoints("ach", 6) } },
+        62: { name: "五重弱化I", tooltip: "购买升级「弱化上限」 奖励:6成就点。", done() { return hasUpgrade('sa', 23) }, onComplete() { addPoints("ach", 6) } },
+    63: { name: "五重弱化II", tooltip: "购买升级「律令弱化」 奖励:6成就点。", done() { return hasUpgrade('lw', 23) }, onComplete() { addPoints("ach", 6) } },
+    64: { name: "五重弱化III", tooltip: "购买升级「回声弱化」 奖励:6成就点。", done() { return hasUpgrade('re', 23) }, onComplete() { addPoints("ach", 6) } },
+   65: { name: "什么叫作软上限", tooltip: "购买升级「源质延迟」 奖励:6成就点。", done() { return hasUpgrade('sa', 44) }, onComplete() { addPoints("ach", 6) } },
+     66: { name: "还来?", tooltip: "购买升级「终极源质」 奖励:6成就点。", done() { return hasUpgrade('sa', 45) }, onComplete() { addPoints("ach", 6) } }, },  effect() {
         let base = player.ach.points.add(1);
         if (hasMilestone('ach', 1)) base = base.pow(player.ach.points.div(37.5).add(1));
         return base.pow(player.ach.points.add(1));
@@ -1345,7 +1581,12 @@ const softcapList = [
     { name: "SP-15", cap: "1e38" }, { name: "SP-21", cap: "0.50" }, { name: "SP-22", cap: "1e38" }, { name: "SP-23", cap: "1e38" },
     { name: "SP-32", cap: "0.15" }, { name: "SP-33", cap: "0.66" }, { name: "SP-34", cap: "0.17" }, { name: "SP-35", cap: "1e9" },
     { name: "SP-42", cap: "1e38" }, { name: "SP-43", cap: "1e38" }, { name: "SP-44", cap: "1e38" }, { name: "SP-45", cap: "1e38" },
-    { name: "A-11", cap: "1e38, 1e50000" }, { name: "A-13", cap: "1e38" }, { name: "A-34", cap: "1e38" }, { name: "A-42", cap: "1e38" },{ name: "A-43", cap: "1e38" },{ name: "A-44", cap: "1e38" },{ name: "A-45", cap: "1e38" },
+    { name: "A-11", cap: "1e38, 1e50000" }, { name: "A-13", cap: "1e38" }, { name: "A-34", cap: "1e38" },
+     { name: "A-42", cap: "1e38" },{ name: "A-43", cap: "1e38" },{ name: "A-44", cap: "1e38" },{ name: "A-45", cap: "1e38" },
+    { name: "SA-21", cap: "0.50" },{ name: "SA-22", cap: "1e38" },{ name: "SA-24", cap: "1e38" },
+    { name: "SA-31", cap: "1e38" },{ name: "SA-33", cap: "1e38" },{ name: "SA-34", cap: "1e38" },{ name: "SA-35", cap: "1e38" },{ name: "SA-41", cap: "1e38" },{ name: "SA-42", cap: "1e1000" },
+    { name: "LW-21", cap: "1e38" },{ name: "LW-22", cap: "1e38" },{ name: "LW-24", cap: "1e38" },
+    { name: "RE-21", cap: "1e38" },{ name: "RE-22", cap: "1e38" },{ name: "RE-24", cap: "1e38" },
     { name: "TP-11", cap: "1e38" }, { name: "TP-13", cap: "1e38" }, { name: "TP-24", cap: "1e38" },
     { name: "PP-11", cap: "9" }, { name: "时间碎片", cap: "2" }
 ];

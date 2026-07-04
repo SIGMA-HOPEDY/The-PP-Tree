@@ -134,39 +134,59 @@ function getTimesPowerMultiplier() {
 // ==================== 自动购买相关函数 ====================
 
 // 通用“购买最大数量”逻辑，采用倍增搜索+二分逼近
+// 获取购买项上限
+function getBuyableLimit(layer, id) {
+    // 时间碎片动态上限
+    if (layer === 'tp' && id === 11) {
+        return getTimeFragmentBaseLimit().floor();
+    }
+    // 其他购买项如果有 purchaseLimit 属性
+    let buyable = layers[layer]?.buyables?.[id];
+    if (buyable?.purchaseLimit) {
+        return new Decimal(buyable.purchaseLimit);
+    }
+    return Decimal.infinity;
+}
+
+function buyMaxDirect(layer, id) {
+    let buyable = layers[layer]?.buyables?.[id];
+    if (!buyable || !buyable.unlocked?.()) return;
+    let x = player[layer].buyables[id] || new Decimal(0);
+    let points = player[layer].points;
+    let limit = getBuyableLimit(layer, id);       // 最多能拥有的数量
+    let count = 0;
+    let totalCost = new Decimal(0);
+
+    while (count < 100) {
+        // 达到上限就不再买
+        if (x.add(count).gte(limit)) break;
+
+        let nextCost = buyable.cost(x.add(count));
+        let newTotal = totalCost.add(nextCost);
+        if (points.gte(newTotal)) {
+            totalCost = newTotal;
+            count++;
+        } else {
+            break;
+        }
+    }
+
+    if (count > 0) {
+        player[layer].points = points.sub(totalCost);
+        player[layer].buyables[id] = x.add(count);
+        updateTemp();
+    }
+}
 function autoBuyables() {
     if (!player || !player.ach || !player.p || !player.sp) return;
     if (!hasMilestone('ach', 2)) return;
 
-    function buyMaxDirect(layer, id) {
-        let buyable = layers[layer]?.buyables?.[id];
-        if (!buyable || !buyable.unlocked?.()) return;
-        let x = player[layer].buyables[id] || new Decimal(0);
-        let points = player[layer].points;
-        let count = 0;
-        let totalCost = new Decimal(0);
-
-        // 直接通过 buyable.cost 调用，确保 this 正确
-        while (count < 20) {
-            let nextCost = buyable.cost(x.add(count));   // 计算第 count+1 个新物品的成本
-            let newTotal = totalCost.add(nextCost);
-            if (points.gte(newTotal)) {
-                totalCost = newTotal;
-                count++;
-            } else {
-                break;
-            }
-        }
-
-        if (count > 0) {
-            player[layer].points = points.sub(totalCost);
-            player[layer].buyables[id] = x.add(count);
-            updateTemp();
-        }
+    buyMaxDirect('p', 11);    // 自增器
+    buyMaxDirect('sp', 11);   // 凝聚器
+    
+    if (hasChallenge('pp', 14)) {   // 只有完成挑战14才自动买时间碎片
+        buyMaxDirect('tp', 11);
     }
-
-    buyMaxDirect('p', 11);   // 自增器
-    buyMaxDirect('sp', 11);  // 凝聚器
 }
 
 function getPointGen() {
@@ -193,6 +213,7 @@ function getPointGen() {
     if (hasUpgrade('a', 32)) gain = gain.times(1e9);
     if (hasUpgrade('a', 33)) gain = gain.times(1e9);
     if (hasUpgrade('a', 34)) gain = gain.times(upgradeEffect('a', 34));
+    if (hasUpgrade('sa', 31)) gain = gain.times(upgradeEffect('sa', 31));
 
     // ---- 里程碑 ----
     if (hasMilestone('sp', 0)) gain = gain.times(2);
@@ -213,6 +234,7 @@ function getPointGen() {
     if (player.pp.activeChallenge == 11) gain = gain.pow(0.6);
     if (player.pp.activeChallenge == 12) gain = gain.pow(0.5);
     if (player.pp.activeChallenge == 13) gain = gain.pow(0.4);
+    if (player.pp.activeChallenge == 14) gain = gain.pow(0.3);
 
     // ---- 软上限处理（带提示） ----
     // 一重
@@ -221,6 +243,7 @@ function getPointGen() {
     if (hasUpgrade('lw', 13)) p1 = p1.times(1e9);
     if (hasUpgrade('re', 13)) p1 = p1.times(1e9);
     if (hasUpgrade('p', 35)) p1 = p1.times(1e14);
+    if (hasUpgrade('sa', 44)) p1 = p1.pow(upgradeEffect('sa', 44));
     gain = applySoftcap(gain, p1, 8.2, [
         { cond: () => hasUpgrade('a', 21), mult: 1.05 },
         { cond: () => hasUpgrade('sp', 24), mult: 1.05 },
@@ -236,6 +259,9 @@ function getPointGen() {
         { cond: () => hasUpgrade('tp', 25), mult: 1.02 },
         { cond: () => hasUpgrade('pp', 25), mult: 1.04 },
         { cond: () => hasUpgrade('p', 44), mult: 1.04 },
+        { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('re', 23), mult: 1.01 },
         { cond: () => true, mult: getEclipseMultiplier(1) }
     ], 'softcapHint');
     if (hasUpgrade('p', 32)) gain = gain.times(upgradeEffect('p', 32));
@@ -244,6 +270,7 @@ function getPointGen() {
     let p2 = new Decimal("1e308");
     if(hasUpgrade('re', 14)) p2 = p2.times(10);
     if(hasUpgrade('sp', 35)) p2 = p2.times(upgradeEffect('sp', 35));
+    if (hasUpgrade('sa', 44)) p2 = p2.pow(upgradeEffect('sa', 44));
     gain = applySoftcap(gain, p2, 8, [
         { cond: () => hasUpgrade('sa', 12), mult: 1.05 },
         { cond: () => hasUpgrade('lw', 12), mult: 1.05 },
@@ -253,6 +280,9 @@ function getPointGen() {
         { cond: () => hasUpgrade('tp', 25), mult: 1.03 },
         { cond: () => hasUpgrade('pp', 25), mult: 1.03 },
         { cond: () => hasUpgrade('p', 44), mult: 1.04 },
+        { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('re', 23), mult: 1.01 },
         { cond: () => true, mult: getEclipseMultiplier(2) }
     ], 'doubleSoftcapHint');
     if (hasUpgrade('p', 33)) gain = gain.times(upgradeEffect('p', 33));
@@ -261,42 +291,56 @@ function getPointGen() {
     // 三重
     let p3 = new Decimal("1e1000");
     if(hasUpgrade('tp', 12)) p3 = p3.times('1e314');
+    if (hasUpgrade('sa', 44)) p3 = p3.pow(upgradeEffect('sa', 44));
     gain = applySoftcap(gain, p3, 6.9, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.04 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.3 },
         { cond: () => hasUpgrade('pp', 25), mult: 1.02 },
         { cond: () => hasUpgrade('p', 44), mult: 1.04 },
+        { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('re', 23), mult: 1.01 },
         { cond: () => true, mult: getEclipseMultiplier(3) }
     ], 'tripleSoftcapHint');
 
     // 四重
     let p4 = new Decimal("1e7000");
     if(hasUpgrade('pp', 14)) p4 = p4.times('1e3000');
+    if (hasUpgrade('sa', 44)) p4 = p4.pow(upgradeEffect('sa', 44));
     gain = applySoftcap(gain, p4, 7.8, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.05 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.4 },
         { cond: () => hasUpgrade('pp', 25), mult: 1.01 },
-        { cond: () => hasUpgrade('p', 44), mult: 1.04 }
+        { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('p', 44), mult: 1.04 },
+        { cond: () => hasUpgrade('re', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('sa', 32), mult: 1.03 },
     ], 'quadrupleSoftcapHint');
 
-    // 五重软上限（惩罚 0.8）
+    // 五重软上限（惩罚 0.4）
 let p5 = new Decimal("1e50000");
+if (hasUpgrade('sa', 44)) p5 = p5.pow(upgradeEffect('sa', 44));
 gain = applySoftcap(gain, p5, 6.5, [
     { cond: () => hasUpgrade('p', 43), mult: 1.5 },
     { cond: () => hasUpgrade('p', 44), mult: 1.04 },
-    { cond: () => hasUpgrade('a', 41), mult: 1.16 }
+    { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
+    { cond: () => hasUpgrade('a', 41), mult: 1.16 },
+    { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
+    { cond: () => hasUpgrade('re', 23), mult: 1.01 },
+    { cond: () => hasUpgrade('sa', 43), mult: 1.05 },
 ], 'quintupleSoftcapHint', 0.4);   // ← 加入惩罚因子
 
-// 六重软上限（惩罚 0.7）
+// 六重软上限（惩罚 0.2）
 gain = applySoftcap(gain, new Decimal("1e1e6"), 5.5, [], 'sextupleSoftcapHint', 0.2);
 
-// 七重软上限（惩罚 0.6）
+// 七重软上限（惩罚 0.1）
 gain = applySoftcap(gain, new Decimal("1e1e7"), 4.5, [], 'septupleSoftcapHint', 0.1);
 
-// 八重软上限（惩罚 0.5）
+// 八重软上限（惩罚 0.05）
 gain = applySoftcap(gain, new Decimal("1e1e8"), 3.5, [], 'octupleSoftcapHint', 0.05);
 
-// 九重软上限（惩罚 0.4）
+// 九重软上限（惩罚 0.025）
 gain = applySoftcap(gain, new Decimal("1e1e9"), 2.5, [], 'nonupleSoftcapHint', 0.025);
 
     return gain;
@@ -306,10 +350,14 @@ gain = applySoftcap(gain, new Decimal("1e1e9"), 2.5, [], 'nonupleSoftcapHint', 0
 
 // ==================== 杂项 ====================
 
-var displayThings = [];
+var displayThings = [
+    function() {
+        return '当前残局: 1e720000 点数';
+    }
+];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e125000"))
+    return player.points.gte(new Decimal("1e720000"))
 }
 
 var backgroundStyle = {};
