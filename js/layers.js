@@ -1184,7 +1184,7 @@ addLayer("tp", {
         if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
         if (hasChallenge('pp', 14)) m = m.times(1e9);
         if (hasUpgrade('sa', 33)) m = m.times(upgradeEffect('sa', 33));
-        if (player.pp.activeChallenge == 14) m = m.times(4.44e40);
+        if (player.pp.activeChallenge == 14) m = m.times(4.44e44);
         if (player.timesPower && player.timesPower instanceof Decimal) {
             m = m.times(player.timesPower.add(1).pow(1.3));
         }
@@ -1487,7 +1487,7 @@ if (hasUpgrade('sa', 41)) mult = mult.times(upgradeEffect('sa', 41));
             unlocked() { return hasUpgrade('sp', 45) || player.pp.activeChallenge == 13 || hasChallenge('pp', 13) }
         },
         14: {
-            name: "指数坍缩IV", challengeDescription: "你的点数获取速度被压缩为^0.3,但提前解锁凝聚器,TP获取*4.44e40", goal: new Decimal("1e11000"),
+            name: "指数坍缩IV", challengeDescription: "你的点数获取速度被压缩为^0.3,但提前解锁凝聚器,TP获取*4.44e44", goal: new Decimal("1e11000"),
             rewardDescription: function() {
                 if (typeof player === 'undefined' || !player || !player.points) return "根据P点增幅Points Power获取";
                 let mult = player.a.points.add(10).log10().pow(0.14).times(4);
