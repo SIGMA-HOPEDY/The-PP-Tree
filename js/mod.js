@@ -2,7 +2,7 @@ let modInfo = {
     name: "The PP Tree",
     author: "sigma",
     pointsName: "points",
-    modFiles: ["layers.js", "tree.js"],
+    modFiles: ["globals.js", "layers.js", "tree.js"],
     discordName: "",
     discordLink: "",
     initialStartPoints: new Decimal(10),
@@ -23,8 +23,7 @@ let winText = `这便是终点...了?`
 
 var doNotCallTheseFunctionsEveryTick = ["blowUpEverything"]
 
-// ==================== 基础工具函数 ====================
-
+// 基础
 function getStartPoints() {
     return new Decimal(modInfo.initialStartPoints)
 }
@@ -39,160 +38,25 @@ function addedPlayerData() {
     };
 }
 
-// 清理非法升级ID（仅执行一次）
-function cleanUpgrades() {
-    for (let layer in layers) {
-        if (layers[layer].upgrades && player[layer] && player[layer].upgrades) {
-            const valid = new Set();
-            for (let ten = 1; ten <= 9; ten++) {
-                for (let one = 1; one <= 5; one++) {
-                    valid.add(ten * 10 + one);
-                }
-            }
-            player[layer].upgrades = player[layer].upgrades.filter(id => valid.has(id));
-        }
-    }
-}
-
-function applySoftcap(gain, threshold, baseExponent, upgrades, hintKey, penalty = 1) {
-    let exponentBase = new Decimal(baseExponent);
-    
-    if (gain.lte(threshold)) {
-        if (tmp && tmp.other && hintKey) tmp.other[hintKey] = "";
-        return gain;
-    }
-
-    let excess = gain.minus(threshold);
-    if (excess.lte(0)) return gain;
-
-    let ratio = gain.div(threshold).max(1.0000000001);
-    let logGain = ratio.log10();
-    let loglogGain = logGain.add(1).log10();
-    let exponent = exponentBase.div(new Decimal(9).plus(loglogGain));
-
-    // 应用升级加成
-    if (upgrades) {
-        for (let upg of upgrades) {
-            if (upg.cond()) exponent = exponent.times(upg.mult);
-        }
-    }
-
-    // 应用额外的惩罚因子
-    if (penalty !== 1) {
-        exponent = exponent.times(penalty);
-    }
-
-    // 安全检查
-    if (!exponent.isFinite() || exponent.isNan() || exponent.lte(0)) exponent = new Decimal(0.9);
-
-    let cappedExcess = excess.pow(exponent);
-    let result = threshold.plus(cappedExcess);
-
-    // 设置提示
-    if (tmp && tmp.other && hintKey) {
-        tmp.other[hintKey] = `点数获取大于 ${format(threshold, 3, true)} 后，受到软上限！(^${format(exponent, 9, true)})`;
-        if (hintKey === 'softcapHint') tmp.other.softcappedPointGen = result;
-    }
-
-    return result;
-}
-
-function getTimeCrystalDiscount() {
-    let crystals = player.tp?.buyables?.[12] || new Decimal(0);
-    return Decimal.pow(crystals.div(114514), crystals);
-}
-
-function getTimeCrystalLimitBonus() {
-    let crystals = player.tp?.buyables?.[12] || new Decimal(0);
-    return crystals;
-}
-
-function getTimeFragmentBaseLimit() {
-    return new Decimal(100).times(new Decimal(1.425).pow(getTimeCrystalLimitBonus()).add(1));
-}
-
-function getEclipseCount() {
-    return player.tp?.buyables?.[13] || new Decimal(0);
-}
-
-function getEclipseMultiplier(level) {
-    let cnt = getEclipseCount();
-    if (level === 1) return Decimal.pow(1.01, cnt);
-    if (level === 2) return Decimal.pow(1.02, cnt);
-    if (level === 3) return Decimal.pow(1.03, cnt);
-    return new Decimal(1);
-}
-
-function getTimesPowerMultiplier() {
-    let tp = player.timesPower;
-    if (!tp || !(tp instanceof Decimal)) tp = new Decimal(0);
-    let tpr = new Decimal(1.3);
-    if (hasUpgrade('tp', 23)) tpr = new Decimal(2.026);
-    return tp.add(1).pow(tpr);
-}
-
-// ==================== 自动购买相关函数 ====================
-
-// 通用“购买最大数量”逻辑，采用倍增搜索+二分逼近
-// 获取购买项上限
-function getBuyableLimit(layer, id) {
-    // 时间碎片动态上限
-    if (layer === 'tp' && id === 11) {
-        return getTimeFragmentBaseLimit().floor();
-    }
-    // 其他购买项如果有 purchaseLimit 属性
-    let buyable = layers[layer]?.buyables?.[id];
-    if (buyable?.purchaseLimit) {
-        return new Decimal(buyable.purchaseLimit);
-    }
-    return Decimal.infinity;
-}
-
-function buyMaxDirect(layer, id) {
-    let buyable = layers[layer]?.buyables?.[id];
-    if (!buyable || !buyable.unlocked?.()) return;
-    let x = player[layer].buyables[id] || new Decimal(0);
-    let points = player[layer].points;
-    let limit = getBuyableLimit(layer, id);       // 最多能拥有的数量
-    let count = 0;
-    let totalCost = new Decimal(0);
-
-    while (count < 100) {
-        // 达到上限就不再买
-        if (x.add(count).gte(limit)) break;
-
-        let nextCost = buyable.cost(x.add(count));
-        let newTotal = totalCost.add(nextCost);
-        if (points.gte(newTotal)) {
-            totalCost = newTotal;
-            count++;
-        } else {
-            break;
-        }
-    }
-
-    if (count > 0) {
-        player[layer].points = points.sub(totalCost);
-        player[layer].buyables[id] = x.add(count);
-        updateTemp();
-    }
-}
+// ==================== 自动购买 ====================
 function autoBuyables() {
-    if (!player || !player.ach || !player.p || !player.sp) return;
+    if (!player || !player.ach || !player.p || !player.sp || !player.tp) return;
+    if (!player.sp.buyables) return;          // 新增：防止 buyables 不存在
     if (!hasMilestone('ach', 2)) return;
 
-    buyMaxDirect('p', 11);    // 自增器
-    buyMaxDirect('sp', 11);   // 凝聚器
-    
-    if (hasChallenge('pp', 14)) {   // 只有完成挑战14才自动买时间碎片
-        buyMaxDirect('tp', 11);
+    // 调用各购买项自带的 buyMax 方法，并检查 unlocked()
+    if (layers.p.buyables[11].unlocked()) layers.p.buyables[11].buyMax();
+    if (layers.sp.buyables[11].unlocked()) layers.sp.buyables[11].buyMax();
+
+    if (hasChallenge('pp', 14) && layers.tp.buyables[11].unlocked()) {
+        layers.tp.buyables[11].buyMax();
     }
 }
 
+// ==================== 点数生成 ====================
 function getPointGen() {
     if (!canGenPoints()) return new Decimal(0);
 
-    // 清理旧升级（仅一次）
     if (!player.cleanedUpgrades) {
         cleanUpgrades();
         player.cleanedUpgrades = true;
@@ -218,6 +82,10 @@ function getPointGen() {
     // ---- 里程碑 ----
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
+    if (hasUpgrade('m', 11)) {
+    let eff = upgradeEffect('m', 11);
+    if (eff.points) gain = gain.times(eff.points);
+}
     if (hasMilestone('sp', 5)) gain = gain.times(10);
     if (hasMilestone('a', 0)) gain = gain.times(25);
     if (hasMilestone('lw', 0)) gain = gain.times(100);
@@ -235,8 +103,8 @@ function getPointGen() {
     if (player.pp.activeChallenge == 12) gain = gain.pow(0.5);
     if (player.pp.activeChallenge == 13) gain = gain.pow(0.4);
     if (player.pp.activeChallenge == 14) gain = gain.pow(0.3);
-
-    // ---- 软上限处理（带提示） ----
+    if (player.pp.activeChallenge == 15) gain = gain.pow(0.25);
+    // ---- 软上限处理 ----
     // 一重
     let p1 = new Decimal(1e9);
     if (hasUpgrade('sa', 13)) p1 = p1.times(1e9);
@@ -313,51 +181,42 @@ function getPointGen() {
         { cond: () => hasUpgrade('pp', 25), mult: 1.01 },
         { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
         { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
-        { cond: () => hasUpgrade('p', 44), mult: 1.04 },
         { cond: () => hasUpgrade('re', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('p', 44), mult: 1.04 },
         { cond: () => hasUpgrade('sa', 32), mult: 1.03 },
     ], 'quadrupleSoftcapHint');
 
-    // 五重软上限（惩罚 0.4）
-let p5 = new Decimal("1e50000");
-if (hasUpgrade('sa', 44)) p5 = p5.pow(upgradeEffect('sa', 44));
-gain = applySoftcap(gain, p5, 6.5, [
-    { cond: () => hasUpgrade('p', 43), mult: 1.5 },
-    { cond: () => hasUpgrade('p', 44), mult: 1.04 },
-    { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
-    { cond: () => hasUpgrade('a', 41), mult: 1.16 },
-    { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
-    { cond: () => hasUpgrade('re', 23), mult: 1.01 },
-    { cond: () => hasUpgrade('sa', 43), mult: 1.05 },
-], 'quintupleSoftcapHint', 0.4);   // ← 加入惩罚因子
+    // 五重（加强惩罚）
+    let p5 = new Decimal("1e50000");
+    if (hasUpgrade('sa', 44)) p5 = p5.pow(upgradeEffect('sa', 44));
+    gain = applySoftcap(gain, p5, 6.5, [
+        { cond: () => hasUpgrade('p', 43), mult: 1.5 },
+        { cond: () => hasUpgrade('p', 44), mult: 1.04 },
+        { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('a', 41), mult: 1.16 },
+        { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('re', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('sa', 43), mult: 1.05 },
+    ], 'quintupleSoftcapHint', 0.4);
 
-// 六重软上限（惩罚 0.2）
-gain = applySoftcap(gain, new Decimal("1e1e6"), 5.5, [], 'sextupleSoftcapHint', 0.2);
-
-// 七重软上限（惩罚 0.1）
-gain = applySoftcap(gain, new Decimal("1e1e7"), 4.5, [], 'septupleSoftcapHint', 0.1);
-
-// 八重软上限（惩罚 0.05）
-gain = applySoftcap(gain, new Decimal("1e1e8"), 3.5, [], 'octupleSoftcapHint', 0.05);
-
-// 九重软上限（惩罚 0.025）
-gain = applySoftcap(gain, new Decimal("1e1e9"), 2.5, [], 'nonupleSoftcapHint', 0.025);
+    // 六～九重（递增惩罚）
+    gain = applySoftcap(gain, new Decimal("1e1e6"), 5.5, [], 'sextupleSoftcapHint', 0.2);
+    gain = applySoftcap(gain, new Decimal("1e1e7"), 4.5, [], 'septupleSoftcapHint', 0.1);
+    gain = applySoftcap(gain, new Decimal("1e1e8"), 3.5, [], 'octupleSoftcapHint', 0.05);
+    gain = applySoftcap(gain, new Decimal("1e1e9"), 2.5, [], 'nonupleSoftcapHint', 0.025);
 
     return gain;
 }
 
-
-
 // ==================== 杂项 ====================
-
 var displayThings = [
     function() {
-        return '当前残局: 1e720000 点数';
+        return '当前残局:1e1000000点数+200成就点';
     }
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e720000"))
+    return player.points.gte(new Decimal("1e1000000"))
 }
 
 var backgroundStyle = {};
@@ -366,7 +225,5 @@ function maxTickLength() {
     return 3600;
 }
 
-// ==================== 初始化 ====================
-
 // 启动自动购买循环
-setInterval(autoBuyables, 500);
+setInterval(autoBuyables, 100);
