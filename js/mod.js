@@ -97,6 +97,12 @@ function getPointGen() {
     if (hasUpgrade('pp', 11)) gain = gain.pow(upgradeEffect('pp', 11));
     if (hasUpgrade('pp', 21)) gain = gain.pow(upgradeEffect('pp', 21));
     if (hasUpgrade('p', 45)) gain = gain.pow(upgradeEffect('p', 45));
+    let tpTier = player.tp.buyables[21] || new Decimal(0);
+if (tpTier.gt(0)) {
+    let exp = Decimal.add(1, tpTier.div(5));
+    if (exp.gt(3)) exp = exp.div(2).log10().add(1).times(2);
+    gain = gain.pow(exp);
+}
 
     // ---- 挑战压缩 ----
     if (player.pp.activeChallenge == 11) gain = gain.pow(0.6);
@@ -112,6 +118,7 @@ function getPointGen() {
     if (hasUpgrade('re', 13)) p1 = p1.times(1e9);
     if (hasUpgrade('p', 35)) p1 = p1.times(1e14);
     if (hasUpgrade('sa', 44)) p1 = p1.pow(upgradeEffect('sa', 44));
+    if (hasUpgrade('m', 13)) p1 = p1.pow(upgradeEffect('m', 13));
     gain = applySoftcap(gain, p1, 8.2, [
         { cond: () => hasUpgrade('a', 21), mult: 1.05 },
         { cond: () => hasUpgrade('sp', 24), mult: 1.05 },
@@ -139,6 +146,7 @@ function getPointGen() {
     if(hasUpgrade('re', 14)) p2 = p2.times(10);
     if(hasUpgrade('sp', 35)) p2 = p2.times(upgradeEffect('sp', 35));
     if (hasUpgrade('sa', 44)) p2 = p2.pow(upgradeEffect('sa', 44));
+    if (hasUpgrade('m', 13)) p2 = p2.pow(upgradeEffect('m', 13));
     gain = applySoftcap(gain, p2, 8, [
         { cond: () => hasUpgrade('sa', 12), mult: 1.05 },
         { cond: () => hasUpgrade('lw', 12), mult: 1.05 },
@@ -160,6 +168,7 @@ function getPointGen() {
     let p3 = new Decimal("1e1000");
     if(hasUpgrade('tp', 12)) p3 = p3.times('1e314');
     if (hasUpgrade('sa', 44)) p3 = p3.pow(upgradeEffect('sa', 44));
+    if (hasUpgrade('m', 13)) p3 = p3.pow(upgradeEffect('m', 13));
     gain = applySoftcap(gain, p3, 6.9, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.04 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.3 },
@@ -175,6 +184,7 @@ function getPointGen() {
     let p4 = new Decimal("1e7000");
     if(hasUpgrade('pp', 14)) p4 = p4.times('1e3000');
     if (hasUpgrade('sa', 44)) p4 = p4.pow(upgradeEffect('sa', 44));
+    if (hasUpgrade('m', 13)) p4 = p4.pow(upgradeEffect('m', 13));
     gain = applySoftcap(gain, p4, 7.8, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.05 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.4 },
@@ -189,6 +199,7 @@ function getPointGen() {
     // 五重（加强惩罚）
     let p5 = new Decimal("1e50000");
     if (hasUpgrade('sa', 44)) p5 = p5.pow(upgradeEffect('sa', 44));
+    if (hasUpgrade('m', 13)) p5 = p5.pow(upgradeEffect('m', 13));
     gain = applySoftcap(gain, p5, 6.5, [
         { cond: () => hasUpgrade('p', 43), mult: 1.5 },
         { cond: () => hasUpgrade('p', 44), mult: 1.04 },
@@ -196,14 +207,20 @@ function getPointGen() {
         { cond: () => hasUpgrade('a', 41), mult: 1.16 },
         { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
         { cond: () => hasUpgrade('re', 23), mult: 1.01 },
+        { cond: () => hasUpgrade('m', 15), mult: 1.055 },
         { cond: () => hasUpgrade('sa', 43), mult: 1.05 },
     ], 'quintupleSoftcapHint', 0.4);
 
     // 六～九重（递增惩罚）
-    gain = applySoftcap(gain, new Decimal("1e1e6"), 5.5, [], 'sextupleSoftcapHint', 0.2);
-    gain = applySoftcap(gain, new Decimal("1e1e7"), 4.5, [], 'septupleSoftcapHint', 0.1);
-    gain = applySoftcap(gain, new Decimal("1e1e8"), 3.5, [], 'octupleSoftcapHint', 0.05);
-    gain = applySoftcap(gain, new Decimal("1e1e9"), 2.5, [], 'nonupleSoftcapHint', 0.025);
+    let p6 = new Decimal("1e1e6");
+    if (hasUpgrade('m', 14)) p6 = p6.pow(10);
+    gain = applySoftcap(gain, p6, 5.5, [], 'sextupleSoftcapHint', 0.2);
+    let p7 = new Decimal("1e1e9");
+    gain = applySoftcap(gain, p7, 4.5, [], 'septupleSoftcapHint', 0.1);
+    let p8 = new Decimal("1e1e13");
+    gain = applySoftcap(gain, p8, 3.5, [], 'octupleSoftcapHint', 0.05);
+    let p9 = new Decimal("1e1e25");
+    gain = applySoftcap(gain, p9, 2.5, [], 'nonupleSoftcapHint', 0.025);
 
     return gain;
 }
@@ -211,12 +228,12 @@ function getPointGen() {
 // ==================== 杂项 ====================
 var displayThings = [
     function() {
-        return '当前残局:1e1000000点数+200成就点';
+        return '当前残局:1e10000000点数+216成就点';
     }
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e1000000"))
+    return player.points.gte(new Decimal("1e10000000"))
 }
 
 var backgroundStyle = {};

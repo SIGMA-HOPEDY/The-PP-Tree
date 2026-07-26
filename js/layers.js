@@ -481,7 +481,7 @@ addLayer("sp", {
                 let power = new Decimal(0.0005).div(player.sp.points.add(1).log10().add(1).log10().add(1));
                 return Decimal.min(cap.times(raw.div(cap).pow(power)), 0.75);
             },
-            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) }
+            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id),4,true) }
         },
         22: {
             title: "17", description: "基于你的点数提升sp点获取", cost: new Decimal(1e120), unlocked() { return hasUpgrade('sp', 21) },
@@ -527,7 +527,7 @@ addLayer("sp", {
                 let power = new Decimal(0.0005).div(player.sp.points.add(1).log10().add(1).log10().add(1));
                 return Decimal.min(cap.times(raw.div(cap).pow(power)), 0.3);
             },
-            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) }
+            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id),4,true) }
         },
         33: {
             title: "666还有第三关", description: "基于你的SP点提升P点获取指数(硬上限为+0.88)", cost: new Decimal("6.66e666"), unlocked() { return hasUpgrade('sp', 32) },
@@ -540,7 +540,7 @@ addLayer("sp", {
                 let power = new Decimal(0.0005).div(player.sp.points.add(1).log10().add(1).log10().add(1));
                 return Decimal.min(cap.times(raw.div(cap).pow(power)), 0.88);
             },
-            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) }
+            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id),4,true) }
         },
         34: {
             title: "我勒个高考750分", description: "基于你的SP点提升Amplifier获取指数(硬上限为+0.33)", cost: new Decimal("1e750"), unlocked() { return hasUpgrade('sp', 33) },
@@ -553,7 +553,7 @@ addLayer("sp", {
                 let power = new Decimal(0.00005).div(player.sp.points.add(1).log10().add(1).log10().add(1));
                 return Decimal.min(cap.times(raw.div(cap).pow(power)), 0.33);
             },
-            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id)) }
+            effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id),4,true) }
         },
         35: {
             title: "千禧之刻", description: "二重软上限延迟lg(前两行点数+1)之积,二重软上限后点数获取*1000,解锁一个新的RE升级", cost: new Decimal("1e1000"), unlocked() { return hasUpgrade('sp', 34) },
@@ -1049,8 +1049,10 @@ addLayer("sa", {
         44: {
             title: "源质延迟", description: "基于SA点延长前五重软上限(硬上限^5)", cost: new Decimal("1e20000"), unlocked() { return hasUpgrade('sa', 43) },
             effect() {
+                let max=new Decimal(5)
                 let raw = player.sa.points.add(1).log10().div(1e4).add(1);
-                return Decimal.min(raw, 5);
+                if(hasUpgrade('m',15))max=new Decimal(10)
+                return Decimal.min(raw, max);
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true) }
         },
@@ -1209,6 +1211,10 @@ addLayer("tp", {
     layerShown() { return hasUpgrade('a', 35) || player.tp.points.gte(1) || hasUpgrade('tp', 11) },
     update(diff) {
         if (!(player.timesPower instanceof Decimal)) player.timesPower = new Decimal(player.timesPower || 0);
+    if (!hasUpgrade('tp', 21) || player.tp.points.lt(1)) {
+        player.timesPower = new Decimal(0);
+        return;
+    }
         if (hasUpgrade('tp', 21)) {
             let tpPoints = player.tp.points;
             let gainpow = new Decimal(1.14514);
@@ -1291,11 +1297,17 @@ addLayer("tp", {
         unlocked() { return hasUpgrade('tp', 13) && player.pp.activeChallenge != 15 },
         cost(x) {
             if (x.eq(0)) return new Decimal(1);
-            return Decimal.pow(x.pow(Decimal.min(x.pow(-1).times(1024), 2)), x.pow(Decimal.max(x.div(512), 1).pow(2)))
+            let cost=Decimal.pow(x.pow(Decimal.min(x.pow(-1).times(1024), 2)), x.pow(Decimal.max(x.div(512), 1).pow(2)))
                 .times(getTimeCrystalDiscount()).max(1);
+                if (hasUpgrade('m', 14)) {
+    cost = cost.pow(upgradeEffect('m', 14)).max(1);
+}
+                    return cost
+
         },
         freeCrystals() {
-            return new Decimal(0);   // 时间碎片目前没有免费来源，保留接口
+            let free=new Decimal(0)
+            return free;  
         },
         effect(x) {
             let total = x.add(this.freeCrystals());
@@ -1465,7 +1477,51 @@ display() {
             }
         },
         purchaseLimit: 10
-    }
+    },
+       21: {
+    title: "<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>时间</b><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>密度</b>",
+    unlocked() { return hasUpgrade('m', 12); },
+    cost(x) {
+        if (x.eq(0)) return new Decimal(550);
+        let baseCost = x.times(12.5).pow(1.25).add(550).floor();
+        // 当数量超过 10 时，成本额外进行 1.3 次方运算
+        if (x.gte(10)) {
+            baseCost = baseCost.pow(1.3).floor();
+        }
+        return baseCost;
+    },
+  display() {
+    let x = player[this.layer].buyables[this.id] || new Decimal(0);
+    let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+    let tier = player.tp.buyables[21] || new Decimal(0); 
+    let limit = new Decimal(10);
+    let classExp = Decimal.add(1, tier.div(5));
+    if (classExp.gt(3)) classExp = classExp.div(2).log10().add(1).times(2);
+    let limitText = x.gte(limit) ? "<br><b style='color: #ff4444; text-shadow: 0 0 2px #000, 0 0 2px #000;'>已达上限</b>" : "";
+    return `<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>花费:${format(cost)}时间碎片</b><br><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>当前:${formatWhole(x)}/10${limitText}</b><br>` +
+           `<b style='color: #ff0000ff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>购买后重置第一行购买项</b><br>` +
+           `<b style='color: #ff4444; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>点数获取^${format(classExp, 4, true)}</b>`;
+},
+    canAfford() {
+        let x = player.tp.buyables[21] || new Decimal(0);
+        let limit = new Decimal(10);
+        if (x.gte(limit)) return false;
+        let cost = tmp[this.layer].buyables[this.id]?.cost;
+        return cost !== undefined && player.tp.buyables[11].gte(cost);
+    },
+    buy() {
+        let x = player.tp.buyables[21] || new Decimal(0);
+        let limit = new Decimal(10);
+        if (x.gte(limit)) return;
+            let cost = tmp.tp.buyables[21].cost;
+            player.tp.buyables[11] = player.tp.buyables[11].sub(cost);
+            player.tp.buyables[11] = new Decimal(0);   
+            player.tp.buyables[12] = new Decimal(0);
+            player.tp.buyables[13] = new Decimal(0);
+            player.tp.buyables[21] = x.add(1);
+            updateTemp();
+        }
+    },
 }
 })
 
@@ -1568,18 +1624,20 @@ addLayer("pp", {
                 let pp = player.pp.pointsPower || new Decimal(0);
                 let exp = new Decimal(0.05);
                 if (hasUpgrade('pp', 24)) exp = exp.add(0.025);
+                if(hasUpgrade('m',15))exp= exp.add(0.025);
                 return Decimal.min(Decimal.pow(Decimal.log10(pp.add(10)), exp), 2);
             },
             effectDisplay() {
                 let pp = player.pp.pointsPower || new Decimal(0);
                 let exp = new Decimal(0.05);
                 if (hasUpgrade('pp', 24)) exp = exp.add(0.025);
+                if(hasUpgrade('m',15))exp= exp.add(0.025);
                 return "^" + format(Decimal.min(Decimal.pow(Decimal.log10(pp.add(10)), exp), 2), 4, true);
             }
         },
         22: { title: "力量涌动", description: "Points Power 产量 *4", cost: new Decimal(10), currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp", unlocked() { return hasUpgrade('pp', 21) } },
         23: { title: "力量共鸣", description: "Points Power产量*8", cost: new Decimal(50), currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp", unlocked() { return hasUpgrade('pp', 22) } },
-        24: { title: "对数解放", description: "Points Power 效果Ⅰ的指数公式中^0.05+0.025", cost: new Decimal(250), currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp", unlocked() { return hasUpgrade('pp', 23) } },
+        24: { title: "对数解放", description: "Points Power 效果I的指数公式中^0.05+0.025", cost: new Decimal(250), currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp", unlocked() { return hasUpgrade('pp', 23) } },
         25: { title: "软上限抵抗", description: "前四重软上限指数弱化1.04,1.03,1.02,1.01", cost: new Decimal(1250), currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp", unlocked() { return hasUpgrade('pp', 24) } },
         31: { title: "次元解锁", description: "解锁P层的新东西", cost: new Decimal(10000), currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp", unlocked() { return hasUpgrade('pp', 25) } }
     },
@@ -1661,9 +1719,10 @@ addLayer("ach", {
     },
     milestones: {
         0: { requirementDescription: "解放双手I (18成就点)", effectDescription: "永久自动购买P,SP,A层升级", done() { return player.ach.points.gte(18) } },
-        1: { requirementDescription: "成就优化I (60成就点)", effectDescription: "优化成就点效果公式", done() { return player.ach.points.gte(60) } },
-        2: { requirementDescription: "解放双手II (90成就点)", effectDescription: "永久自动购买P,SP层购买项(100/100ms)", done() { return player.ach.points.gte(90) } },
-        3: { requirementDescription: "自动获取I (168成就点)", effectDescription: "每秒获取重置时TP的4%,重置时SA,LW,RE的5%", done() { return player.ach.points.gte(168) } },
+        1: { requirementDescription: "成就优化I (36成就点)", effectDescription: "优化成就点效果公式", done() { return player.ach.points.gte(36) } },
+        2: { requirementDescription: "成就优化II (60成就点)", effectDescription: "优化成就点效果公式", done() { return player.ach.points.gte(60) } },
+        3: { requirementDescription: "解放双手II (90成就点)", effectDescription: "永久自动购买P,SP层购买项(100/100ms)", done() { return player.ach.points.gte(90) } },
+        4: { requirementDescription: "自动获取I (168成就点)", effectDescription: "每秒获取重置时TP的4%,重置时SA,LW,RE的5%", done() { return player.ach.points.gte(168) } },
     },
     achievements: {
         rows: 10, cols: 6,
@@ -1713,20 +1772,22 @@ addLayer("ach", {
     82: { name: "!?锻体器?!", tooltip: "购买5个质量生成器 奖励:8成就点。", done() { return player.m.buyables[11].gte(5) }, onComplete() { addPoints("ach", 8) } },
     83: { name: "!?助推器?!", tooltip: "购买5个质量倍增器 奖励:8成就点。", done() { return player.m.buyables[12].gte(5) }, onComplete() { addPoints("ach", 8) } },
     84: { name: "!?强化器?!", tooltip: "购买5个质量强化器 奖励:8成就点。", done() { return player.m.buyables[13].gte(5) }, onComplete() { addPoints("ach", 8) } },
-
+    85: { name:  "<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>时间</b><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>密度</b>", tooltip: "购买1个 <b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>时间</b><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>密度</b>, 奖励:8成就点。", done() { return player.tp.buyables[21].gte(1) }, onComplete() { addPoints("ach", 8) } },
+    86: { name: "打破六重", tooltip: "购买升级「打破六重」 奖励:8成就点。", done() { return hasUpgrade('m',14) }, onComplete() { addPoints("ach", 8) } },
 },
     effect() {
-        let base = player.ach.points.add(1);
-        if (hasMilestone('ach', 1)) base = base.pow(player.ach.points.div(37.5).add(1));
+        let base = new Decimal(1.01);
+        if (hasMilestone('ach', 1)) base = base.add(player.ach.points);
+        if (hasMilestone('ach', 2)) base = base.pow(player.ach.points.div(37.5).add(1));
         let raw=base.pow(player.ach.points.add(1));
-        let cap = new Decimal('1e2500');
-        return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
+        let cap = new Decimal('1e2000');
+        let raw1=raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
+        return raw1;
     },
     effectDescription() {
-        return "成就点数使点数获取*" + format(tmp.ach.effect);
+        return "成就点数使点数获取*" + format(tmp.ach.effect,4,true);
     }
 })
-
 // 软上限显示侧层
 const fmt = (v) => {
     let val = typeof v === "function" ? v() : v;
@@ -1784,7 +1845,7 @@ addLayer("m", {
     type: "normal",
     branches: ['pp'],
     exponent: function() {
-        return new Decimal(0.05);
+        return new Decimal(0.5);
     },
     gainMult() {
         let m = new Decimal(1);
@@ -1829,7 +1890,7 @@ addLayer("m", {
         if (buy13Eff) mult = mult.pow(buy13Eff);
         let exp = new Decimal(1);
         let tier = player.m.buyables[21] || new Decimal(0);
-        if (tier.gt(0)) exp = exp.add(tier.div(100));
+        if (tier.gt(0)) exp = exp.add(tier.div(4));
         
         let gainPerSecond = base.times(mult).pow(exp);
         let gain = gainPerSecond.times(diff);
@@ -1862,7 +1923,7 @@ addLayer("m", {
 },
 
     upgrades: {
-        rows: 1,
+        rows: 5,
         cols: 5,
         11: {
     title: "质量转化",
@@ -1874,12 +1935,14 @@ addLayer("m", {
             // 大幅提升点数获取
             points: (function() {
                 let raw = mass.add(1).pow(5);
+                if(hasUpgrade('m',15))raw=raw.pow(13)
                 let cap = new Decimal("1e100");
                 return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
             })(),
             // 小幅提升时间之力产量
             timePower: (function() {
                 let raw = mass.add(10).pow(0.5);
+                if(hasUpgrade('m',15))raw=raw.pow(7)
                 let cap = new Decimal("1e38");
                 return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.25));
             })(),
@@ -1888,6 +1951,7 @@ addLayer("m", {
                 if (mass.lte(0)) return new Decimal(1);
                 let log2e = new Decimal(Math.log2(Math.E));
                 let raw = mass.add(2).log10().div(log2e).max(1);
+                if(hasUpgrade('m',15))raw=raw.pow(5)
                 let cap = new Decimal("1e9");
                 return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
             })(),
@@ -1897,7 +1961,49 @@ addLayer("m", {
         let eff = upgradeEffect(this.layer, this.id);
         return `点数*${format(eff.points, 4, true)},时间之力*${format(eff.timePower, 4, true)},Points Power*${format(eff.ppPower, 4, true)}`;
     },
-},
+}, 12: {
+    title: "时间质量",
+    description: "解锁一个TP购买项",
+    cost: new Decimal(2),
+    unlocked() { return hasUpgrade('m', 11); },
+}, 13: {
+    title: "回滞之律",
+    description: "基于LW,RE点延长前五重软上限(硬上限^5)",
+    cost: new Decimal(3),
+    unlocked() { return hasUpgrade('m', 12); },
+    effect() {
+        let max=new Decimal(5)
+        let raw1 = player.lw.points.add(1).log10().div(1e4).add(1);
+        let raw2 = player.re.points.add(1).log10().div(1e4).add(1);
+        let raw = raw1.add(raw2).div(2);
+        if(hasUpgrade('m',15))max=new Decimal(10)
+        return Decimal.min(raw, max);
+    },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true) }
+        },
+14: {
+    title: "打破六重",
+    description: "六重软上限延迟^10,解锁Points Power效果II,时间碎片价格^{0.5/(lg(10+Points Power)^{0.0521})}(硬上限为^0.05)",
+    cost: new Decimal(4),
+    unlocked() { return hasUpgrade('m', 13); },
+    effect() {
+                let pp = player.pp.pointsPower || new Decimal(0);
+                let exp = new Decimal(0.0521);
+                return Decimal.max(Decimal.pow(Decimal.log10(pp.add(10)), exp).pow(-1).times(0.5),0.05);
+            },
+            effectDisplay() {
+                let pp = player.pp.pointsPower || new Decimal(0);
+                let exp = new Decimal(0.0521);
+                return "^" + format(Decimal.max(Decimal.pow(Decimal.log10(pp.add(10)), exp).pow(-1).times(0.5), 0.05), 6, true);
+            }
+},15: {
+    title: "提高效率",
+    description: "MU-1的效果分别^13,^7,^5,MU-2,SAU-19硬上限延迟至10,Points Power效果I的公式指数+0.025,弱化五重软上限1.055,质量阶级对质量倍增器生效,但是效果^0.5",
+    cost: new Decimal(5),
+    unlocked() { return hasUpgrade('m', 14); },
+}, 
+
+
     },
 
    buyables: {
@@ -1908,6 +2014,7 @@ addLayer("m", {
             let base = Decimal.pow(x.add(1).log10().add(1.01), x.times(1.01))
                 .floor()
                 .times(Decimal.pow(10, x.div(20).floor().sub(1).max(0)));
+                if(x.gte(100))base=base.pow(x.div(100))
             return base.max(1);
         },
         freeAmount() { return new Decimal(0); },
@@ -1968,13 +2075,17 @@ addLayer("m", {
             let base = Decimal.pow(x.add(1).log10().add(2.2), x.times(1.2))
                 .times(10).floor()
                 .times(Decimal.pow(100, x.div(10).floor().sub(1).max(0)));
+                if(x.gte(50))base=base.pow(x.div(50))
             return base.max(10); },
         freeAmount() { return new Decimal(0); },
         effect(x) { let total = x.add(this.freeAmount());
             if (total.eq(0)) return new Decimal(1);
             let exp = new Decimal(2);
             let raw = total.add(1).pow(exp);
-            if (raw.gt(1e88)) {
+            let tier = player.m.buyables[21] || new Decimal(0);
+            let exptier = tier.div(4).add(1).pow(0.5);
+            if(hasUpgrade('m',15))raw=raw.pow(exptier)
+            if (raw.gt(1e38)) {
                 return raw.sqrt();
             }
             return raw; },
@@ -1982,9 +2093,9 @@ addLayer("m", {
     let bought = getBuyableAmount(this.layer, this.id);
     let free = this.freeAmount();
     let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
-    let eff12_raw = tmp.m?.buyables?.[12]?.effect || new Decimal(1);
+    let eff12_real = tmp.m?.buyables?.[12]?.effect || new Decimal(1);   // 实际生效值（已含阶级加成）
     let eff13_raw = tmp.m?.buyables?.[13]?.effect || new Decimal(1);
-    let currentMult = eff12_raw.pow(eff13_raw);
+    let currentMult = eff12_real.pow(eff13_raw);                       // 真实的乘数
     return `花费: ${format(cost)} Mass\n已购买: ${formatWhole(bought)}+${formatWhole(free)}\n` +
            `质量生产器效果*<b>${format(currentMult, 4, true)}</b>`;
 },
@@ -2023,16 +2134,17 @@ addLayer("m", {
         title: "质量强化器",
         unlocked() { return hasMilestone('m', 3); },
         cost(x) {  if (x.eq(0)) return new Decimal(100);
-            let base = Decimal.pow(x.times(0.056).add(4.4), x.times(1.3))
+            let base = Decimal.pow(x.times(0.05).add(4.4), x.times(1.3))
                 .times(100).floor()
                 .times(Decimal.pow(1000, x.div(5).floor().sub(1).max(0)));
+                if(x.gte(25))base=base.pow(x.div(25))
             return base.max(100); },
         freeAmount() { return new Decimal(0); },
         effect(x) { let total = x.add(this.freeAmount());
             if (total.eq(0)) return new Decimal(1);
-            let raw = total.div(30).add(1).pow(0.78);
-            if (raw.gt(2)) {
-                return raw.times(10).log10().sqrt().add(1);
+            let raw = total.div(13).add(1).pow(0.78);
+            if (raw.gt(5)) {
+                return raw.div(5).add(10).log10().sqrt().times(5);
             }
             return raw; },
        display() {
@@ -2079,7 +2191,9 @@ addLayer("m", {
         unlocked() { return hasUpgrade('m', 11); },
         cost(x) {
             if (x.eq(0)) return new Decimal(100);
-            return Decimal.pow(x.div(10).add(10), x.pow(2).add(2)).floor();
+           let base=Decimal.pow(x.div(10).add(10), x.pow(2).add(2)).floor();
+           if(x.gte(10))base=base.pow(x.div(10))
+            return base
         },
         effect(x) {
             return new Decimal(1);
@@ -2088,7 +2202,7 @@ addLayer("m", {
     let x = player[this.layer].buyables[this.id] || new Decimal(0);
     let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
     let tier = player.m.buyables[21] || new Decimal(0);
-    let classExp = Decimal.add(1, tier.div(100));
+    let classExp = Decimal.add(1, tier.div(4));
     if (classExp.gt(5)) classExp = classExp.div(5).log10().add(1).times(5);
     return `花费: ${format(cost)} Mass\n当前阶级: ${formatWhole(x)}\n` +
            `购买后重置第一行购买项\n` +
