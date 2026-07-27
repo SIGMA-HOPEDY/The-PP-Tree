@@ -142,9 +142,27 @@ function rowReset(row, layer) {
         "lw_a": () => hasUpgrade('lw', 15),
     };
 
+    // 新增：定义保留挑战的规则
+    const keepChallengesRules = {
+        "m_pp": () => hasUpgrade('m', 24),   // M 重置时保留 PP 挑战
+        // 可以继续添加其他规则，例如：
+        // "anotherLayer_targetLayer": () => someCondition(),
+    };
+
     for (lr in ROW_LAYERS[row]) {
+        // 检查是否需要保留挑战
+        const challengeRuleKey = `${layer}_${lr}`;
+        const shouldKeepChallenges = keepChallengesRules[challengeRuleKey] 
+            ? keepChallengesRules[challengeRuleKey]() 
+            : false;
+
         if (layers[lr].doReset) {
-            if (!isNaN(row)) Vue.set(player[lr], "activeChallenge", null);
+            if (!isNaN(row)) {
+                // 如果 M 重置 PP 且拥有 M-24，保留挑战
+                if (!shouldKeepChallenges) {
+                    Vue.set(player[lr], "activeChallenge", null);
+                }
+            }
             run(layers[lr].doReset, layers[lr], layer);
         } else if (tmp[layer].row > tmp[lr].row && !isNaN(row)) {
             const ruleKey = `${layer}_${lr}`;
@@ -152,10 +170,21 @@ function rowReset(row, layer) {
 
             if (shouldKeep) {
                 let savedUpgrades = player[lr].upgrades ? player[lr].upgrades.slice() : [];
+                // 新增：如果需要保留挑战，也保存挑战数据
+                let savedChallenges = shouldKeepChallenges ? player[lr].challenges : null;
                 layerDataReset(lr);
                 player[lr].upgrades = savedUpgrades;
+                // 恢复挑战数据
+                if (savedChallenges) {
+                    player[lr].challenges = savedChallenges;
+                }
             } else {
+                // 新增：如果需要保留挑战，在完全重置前保存
+                let savedChallenges = shouldKeepChallenges ? player[lr].challenges : null;
                 layerDataReset(lr);
+                if (savedChallenges) {
+                    player[lr].challenges = savedChallenges;
+                }
             }
         }
     }

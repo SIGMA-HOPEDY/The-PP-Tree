@@ -83,9 +83,9 @@ function getPointGen() {
     if (hasMilestone('sp', 0)) gain = gain.times(2);
     if (hasMilestone('sp', 2)) gain = gain.times(5);
     if (hasUpgrade('m', 11)) {
-    let eff = upgradeEffect('m', 11);
-    if (eff.points) gain = gain.times(eff.points);
-}
+        let eff = upgradeEffect('m', 11);
+        if (eff.points) gain = gain.times(eff.points);
+    }
     if (hasMilestone('sp', 5)) gain = gain.times(10);
     if (hasMilestone('a', 0)) gain = gain.times(25);
     if (hasMilestone('lw', 0)) gain = gain.times(100);
@@ -93,16 +93,53 @@ function getPointGen() {
     if (hasMilestone('sa', 0)) gain = gain.times(100);
     if (tmp.ach?.effect) gain = gain.times(tmp.ach.effect);
 
+    // ---- M-22: 将原本弱化/延迟一重软上限的效果转换为直接对 gain 的加成 ----
+    if (hasUpgrade('m', 22)) {
+         if (hasUpgrade('p', 32)) gain = gain.times(upgradeEffect('p', 32))
+         // 延迟类（原 multiply threshold）：改为 gain*effect
+        function delay(eff) {
+            gain = gain.times(eff);
+        }
+        // 原本延长一重软上限的升级，现在改为直接乘法
+        if (hasUpgrade('sa', 13)) delay(1e9);
+        if (hasUpgrade('lw', 13)) delay(1e9);
+        if (hasUpgrade('re', 13)) delay(1e9);
+        if (hasUpgrade('p', 35)) delay(1e14);
+        // 弱化类（原 multiply exponent）：改为 gain^effect（但效果^0.5）
+        function weaken(eff) {
+            let x = Decimal.pow(eff, 0.5); // 效果^0.5
+            gain = gain.pow(x);
+        }
+        if (hasUpgrade('a', 21)) weaken(1.05);
+        if (hasUpgrade('sp', 24)) weaken(1.05);
+        if (hasUpgrade('sp', 25)) weaken(1.05);
+        if (hasUpgrade('sp', 31)) weaken(1.05);
+        if (hasUpgrade('a', 31)) weaken(1.05);
+        if (hasUpgrade('a', 33)) weaken(1.05);
+        if (hasUpgrade('sa', 12)) weaken(1.05);
+        if (hasUpgrade('lw', 12)) weaken(1.05);
+        if (hasUpgrade('re', 12)) weaken(1.05);
+        if (hasUpgrade('p', 35)) weaken(1.14514);
+        if (hasUpgrade('tp', 11)) weaken(1.25);
+        if (hasUpgrade('tp', 25)) weaken(1.02);
+        if (hasUpgrade('pp', 25)) weaken(1.04);
+        if (hasUpgrade('p', 44)) weaken(1.04);
+        if (hasUpgrade('sa', 23)) weaken(1.01);
+        if (hasUpgrade('lw', 23)) weaken(1.01);
+        if (hasUpgrade('re', 23)) weaken(1.01);
+        weaken(getEclipseMultiplier(1));
+    }
+
     // ---- 指数加成（软上限前） ----
     if (hasUpgrade('pp', 11)) gain = gain.pow(upgradeEffect('pp', 11));
     if (hasUpgrade('pp', 21)) gain = gain.pow(upgradeEffect('pp', 21));
     if (hasUpgrade('p', 45)) gain = gain.pow(upgradeEffect('p', 45));
     let tpTier = player.tp.buyables[21] || new Decimal(0);
-if (tpTier.gt(0)) {
-    let exp = Decimal.add(1, tpTier.div(5));
-    if (exp.gt(3)) exp = exp.div(2).log10().add(1).times(2);
-    gain = gain.pow(exp);
-}
+    if (tpTier.gt(0)) {
+        let exp = Decimal.add(1, tpTier.div(5));
+        if (exp.gt(3)) exp = exp.div(2).log10().add(1).times(2);
+        gain = gain.pow(exp);
+    }
 
     // ---- 挑战压缩 ----
     if (player.pp.activeChallenge == 11) gain = gain.pow(0.6);
@@ -110,43 +147,51 @@ if (tpTier.gt(0)) {
     if (player.pp.activeChallenge == 13) gain = gain.pow(0.4);
     if (player.pp.activeChallenge == 14) gain = gain.pow(0.3);
     if (player.pp.activeChallenge == 15) gain = gain.pow(0.25);
+    if (player.m.activeChallenge == 11) gain = gain.pow(0.01);
+
     // ---- 软上限处理 ----
-    // 一重
-    let p1 = new Decimal(1e9);
-    if (hasUpgrade('sa', 13)) p1 = p1.times(1e9);
-    if (hasUpgrade('lw', 13)) p1 = p1.times(1e9);
-    if (hasUpgrade('re', 13)) p1 = p1.times(1e9);
-    if (hasUpgrade('p', 35)) p1 = p1.times(1e14);
-    if (hasUpgrade('sa', 44)) p1 = p1.pow(upgradeEffect('sa', 44));
-    if (hasUpgrade('m', 13)) p1 = p1.pow(upgradeEffect('m', 13));
-    gain = applySoftcap(gain, p1, 8.2, [
-        { cond: () => hasUpgrade('a', 21), mult: 1.05 },
-        { cond: () => hasUpgrade('sp', 24), mult: 1.05 },
-        { cond: () => hasUpgrade('sp', 25), mult: 1.05 },
-        { cond: () => hasUpgrade('sp', 31), mult: 1.05 },
-        { cond: () => hasUpgrade('a', 31), mult: 1.05 },
-        { cond: () => hasUpgrade('a', 33), mult: 1.05 },
-        { cond: () => hasUpgrade('sa', 12), mult: 1.05 },
-        { cond: () => hasUpgrade('lw', 12), mult: 1.05 },
-        { cond: () => hasUpgrade('re', 12), mult: 1.05 },
-        { cond: () => hasUpgrade('p', 35), mult: 1.14514 },
-        { cond: () => hasUpgrade('tp', 11), mult: 1.25 },
-        { cond: () => hasUpgrade('tp', 25), mult: 1.02 },
-        { cond: () => hasUpgrade('pp', 25), mult: 1.04 },
-        { cond: () => hasUpgrade('p', 44), mult: 1.04 },
-        { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
-        { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
-        { cond: () => hasUpgrade('re', 23), mult: 1.01 },
-        { cond: () => true, mult: getEclipseMultiplier(1) }
-    ], 'softcapHint');
-    if (hasUpgrade('p', 32)) gain = gain.times(upgradeEffect('p', 32));
+
+    // 如果 M-22 已购买，跳过一重软上限
+    if (!hasUpgrade('m', 22)) {
+        // 一重
+        let p1 = new Decimal(1e9);
+        if (hasUpgrade('sa', 13)) p1 = p1.times(1e9);
+        if (hasUpgrade('lw', 13)) p1 = p1.times(1e9);
+        if (hasUpgrade('re', 13)) p1 = p1.times(1e9);
+        if (hasUpgrade('p', 35)) p1 = p1.times(1e14);
+        if (hasUpgrade('sa', 44)) p1 = p1.pow(upgradeEffect('sa', 44));
+        if (hasUpgrade('m', 13)) p1 = p1.pow(upgradeEffect('m', 13));
+        gain = applySoftcap(gain, p1, 8.2, [
+            { cond: () => hasUpgrade('a', 21), mult: 1.05 },
+            { cond: () => hasUpgrade('sp', 24), mult: 1.05 },
+            { cond: () => hasUpgrade('sp', 25), mult: 1.05 },
+            { cond: () => hasUpgrade('sp', 31), mult: 1.05 },
+            { cond: () => hasUpgrade('a', 31), mult: 1.05 },
+            { cond: () => hasUpgrade('a', 33), mult: 1.05 },
+            { cond: () => hasUpgrade('sa', 12), mult: 1.05 },
+            { cond: () => hasUpgrade('lw', 12), mult: 1.05 },
+            { cond: () => hasUpgrade('re', 12), mult: 1.05 },
+            { cond: () => hasUpgrade('p', 35), mult: 1.14514 },
+            { cond: () => hasUpgrade('tp', 11), mult: 1.25 },
+            { cond: () => hasUpgrade('tp', 25), mult: 1.02 },
+            { cond: () => hasUpgrade('pp', 25), mult: 1.04 },
+            { cond: () => hasUpgrade('p', 44), mult: 1.04 },
+            { cond: () => hasUpgrade('sa', 23), mult: 1.01 },
+            { cond: () => hasUpgrade('lw', 23), mult: 1.01 },
+            { cond: () => hasUpgrade('re', 23), mult: 1.01 },
+            { cond: () => true, mult: getEclipseMultiplier(1) }
+        ], 'softcapHint');
+        if (hasUpgrade('p', 32)) gain = gain.times(upgradeEffect('p', 32));
+    }
 
     // 二重
     let p2 = new Decimal("1e308");
-    if(hasUpgrade('re', 14)) p2 = p2.times(10);
-    if(hasUpgrade('sp', 35)) p2 = p2.times(upgradeEffect('sp', 35));
+    if (hasUpgrade('re', 14)) p2 = p2.times(10);
+    if (hasUpgrade('sp', 35)) p2 = p2.times(upgradeEffect('sp', 35));
     if (hasUpgrade('sa', 44)) p2 = p2.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p2 = p2.pow(upgradeEffect('m', 13));
+    if (hasUpgrade('m', 22)) p2 = p2.pow(10);
+    if (hasChallenge('m', 11))p2=p2.pow(player.points.add(10).log10().pow(0.025));
     gain = applySoftcap(gain, p2, 8, [
         { cond: () => hasUpgrade('sa', 12), mult: 1.05 },
         { cond: () => hasUpgrade('lw', 12), mult: 1.05 },
@@ -166,9 +211,11 @@ if (tpTier.gt(0)) {
 
     // 三重
     let p3 = new Decimal("1e1000");
-    if(hasUpgrade('tp', 12)) p3 = p3.times('1e314');
+    if (hasUpgrade('tp', 12)) p3 = p3.times('1e314');
     if (hasUpgrade('sa', 44)) p3 = p3.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p3 = p3.pow(upgradeEffect('m', 13));
+    if (hasUpgrade('m', 22)) p3 = p3.pow(10);
+    if (hasChallenge('m', 11))p3=p3.pow(player.points.add(10).log10().pow(0.025));
     gain = applySoftcap(gain, p3, 6.9, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.04 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.3 },
@@ -182,9 +229,11 @@ if (tpTier.gt(0)) {
 
     // 四重
     let p4 = new Decimal("1e7000");
-    if(hasUpgrade('pp', 14)) p4 = p4.times('1e3000');
+    if (hasUpgrade('pp', 14)) p4 = p4.times('1e3000');
     if (hasUpgrade('sa', 44)) p4 = p4.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p4 = p4.pow(upgradeEffect('m', 13));
+    if (hasUpgrade('m', 22)) p4 = p4.pow(10);
+    if (hasChallenge('m', 11))p4=p4.pow(player.points.add(10).log10().pow(0.025));
     gain = applySoftcap(gain, p4, 7.8, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.05 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.4 },
@@ -196,10 +245,12 @@ if (tpTier.gt(0)) {
         { cond: () => hasUpgrade('sa', 32), mult: 1.03 },
     ], 'quadrupleSoftcapHint');
 
-    // 五重（加强惩罚）
+    // 五重
     let p5 = new Decimal("1e50000");
     if (hasUpgrade('sa', 44)) p5 = p5.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p5 = p5.pow(upgradeEffect('m', 13));
+    if (hasUpgrade('m', 22)) p5 = p5.pow(10);
+    if (hasChallenge('m', 11))p5=p5.pow(player.points.add(10).log10().pow(0.025));
     gain = applySoftcap(gain, p5, 6.5, [
         { cond: () => hasUpgrade('p', 43), mult: 1.5 },
         { cond: () => hasUpgrade('p', 44), mult: 1.04 },
@@ -210,17 +261,24 @@ if (tpTier.gt(0)) {
         { cond: () => hasUpgrade('m', 15), mult: 1.055 },
         { cond: () => hasUpgrade('sa', 43), mult: 1.05 },
     ], 'quintupleSoftcapHint', 0.4);
+    let pen6 = hasUpgrade('m', 22) ? 0.02 : 0.2; 
+    let pen7 = hasUpgrade('m', 22) ? 0.01 : 0.1;
+    let pen8 = hasUpgrade('m', 22) ? 0.005 : 0.05;
+    let pen9 = hasUpgrade('m', 22) ? 0.0025 : 0.025;
 
-    // 六～九重（递增惩罚）
     let p6 = new Decimal("1e1e6");
     if (hasUpgrade('m', 14)) p6 = p6.pow(10);
-    gain = applySoftcap(gain, p6, 5.5, [], 'sextupleSoftcapHint', 0.2);
+    if (hasUpgrade('m', 22)) p6 = p6.pow(10);
+    gain = applySoftcap(gain, p6, 5.5, [], 'sextupleSoftcapHint', pen6);
+
     let p7 = new Decimal("1e1e9");
-    gain = applySoftcap(gain, p7, 4.5, [], 'septupleSoftcapHint', 0.1);
+    gain = applySoftcap(gain, p7, 4.5, [], 'septupleSoftcapHint', pen7);
+
     let p8 = new Decimal("1e1e13");
-    gain = applySoftcap(gain, p8, 3.5, [], 'octupleSoftcapHint', 0.05);
+    gain = applySoftcap(gain, p8, 3.5, [], 'octupleSoftcapHint', pen8);
+
     let p9 = new Decimal("1e1e25");
-    gain = applySoftcap(gain, p9, 2.5, [], 'nonupleSoftcapHint', 0.025);
+    gain = applySoftcap(gain, p9, 2.5, [], 'nonupleSoftcapHint', pen9);
 
     return gain;
 }
@@ -228,12 +286,12 @@ if (tpTier.gt(0)) {
 // ==================== 杂项 ====================
 var displayThings = [
     function() {
-        return '当前残局:1e10000000点数+216成就点';
+        return '当前残局:完成CM-1,并达1e78773382点数';
     }
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e10000000"))
+    return player.points.gte(new Decimal("1e78773382"))
 }
 
 var backgroundStyle = {};
