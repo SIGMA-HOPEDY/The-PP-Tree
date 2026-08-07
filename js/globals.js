@@ -117,3 +117,16 @@ function cleanUpgrades() {
         }
     }
 }
+// 安全批量购买（已足够，无须添加）
+function safeBuyMax(layer, id) {
+    if (layers[layer].buyables[id].unlocked() && layers[layer].buyables[id].canAfford()) {
+        layers[layer].buyables[id].buyMax();
+    }
+}
+// 能量延长软上限因子（可在显示和计算中复用）
+function getEnergySoftcapFactor() {
+    let energy = player.m.energy || new Decimal(0);
+    let base = new Decimal(2);
+    if (hasUpgrade('m', 35)) base = base.add(1);
+    return Decimal.pow(base, Decimal.log10(energy.add(1)));
+}

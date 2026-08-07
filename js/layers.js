@@ -1,4 +1,3 @@
-// ========================== 层级定义 ==========================
 addLayer("p", {
     name: "prestige",
     symbol: "P",
@@ -16,6 +15,7 @@ addLayer("p", {
         if (hasUpgrade('a', 12)) exp = exp.times(1.01);
         if (hasUpgrade('sp', 33)) exp = exp.add(upgradeEffect('sp', 33));
         if (hasUpgrade('sa', 21)) exp = exp.add(upgradeEffect('sa', 21));
+        if (hasUpgrade('m', 62)) exp = exp.times(upgradeEffect('m', 62));
         return exp;
     },
     passiveGeneration: function() {
@@ -27,6 +27,7 @@ addLayer("p", {
         if (hasMilestone('ach', 3)) p += 90;
         return p;
     },
+    autoUpgrade: function() { return hasMilestone('ach', 0) && player.autoPUpgrade; },
     gainMult() {
         let m = new Decimal(1);
         if (hasUpgrade('p', 13)) m = m.times(upgradeEffect('p', 13));
@@ -69,7 +70,6 @@ addLayer("p", {
     }
 },
     layerShown() { return true },
-    autoUpgrade: function() { return hasMilestone('ach', 0) },
 buyables: {
         11: {
             title: "自增器",
@@ -140,7 +140,11 @@ buyables: {
             title: "02", description: "基于你的p点提升点数获取", cost: new Decimal(5),
             unlocked() { return hasUpgrade('p', 11) },
             effect() {
+                if (inChallenge('m', 13)) {
+        return new Decimal(1);
+    }
                 let raw = player.p.points.add(1).pow(0.5);
+                if (hasChallenge('m', 13)) raw=raw.pow(1.004)
                 let cap = new Decimal("1e38");
                 return effectWithSoftcap(raw, cap, new Decimal(0.91).div(player.p.points.add(1).log10().add(1).log10().add(1)));
             },
@@ -302,12 +306,11 @@ buyables: {
         }
     }
 })
-
 addLayer("sp", {
     name: "second prestige",
     symbol: "SP",
     position: 0,
-    startData() { return { unlocked: false, points: new Decimal(0) } },
+    startData() { return { unlocked: false, points: new Decimal(0)} },
     color: "#ffc400",
     requires: new Decimal(100),
     resource: "second prestige points",
@@ -321,6 +324,7 @@ addLayer("sp", {
         if (hasMilestone('sp', 4)) exp = exp.add(0.05);
         if (hasUpgrade('sp', 21)) exp = exp.add(upgradeEffect('sp', 21));
         if (hasUpgrade('sp', 32)) exp = exp.add(upgradeEffect('sp', 32));
+         if (hasUpgrade('m', 63)) exp = exp.times(upgradeEffect('m', 63));
         return exp;
     },
     milestonePopups: false,
@@ -365,7 +369,7 @@ addLayer("sp", {
     row: 1,
     hotkeys: [{ key: "s", description: "S: Reset for second prestige points", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
     layerShown() { return player.p.points.gte(100) || player.sp.points.gte(1) || hasUpgrade('sp', 11) },
-    autoUpgrade: function() { return hasMilestone('ach', 0) },
+   autoUpgrade: function() { return hasMilestone('ach', 0) && player.autoSPUpgrade; },
     tabFormat: {
     "Upgrades": { content: ["main-display", "prestige-button", "blank", "upgrades"] },
     "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] },
@@ -439,7 +443,11 @@ addLayer("sp", {
         11: {
             title: "11", description: "双倍p点获取,基于你的sp点小幅度提升点数获取", cost: new Decimal(1),
             effect() {
+                 if (inChallenge('m', 12)||inChallenge('m', 13)) {
+        return new Decimal(1);
+    }
                 let raw = player.sp.points.add(1).pow(0.3);
+                 if (hasChallenge('m', 12)) raw=raw.pow(1.002)
                 let cap = new Decimal("1e38");
                 return effectWithSoftcap(raw, cap, new Decimal(0.5).div(player.sp.points.add(1).log10().add(1).log10().add(1)));
             },
@@ -626,7 +634,6 @@ addLayer("sp", {
         }
     }
 })
-
 addLayer("a", {
     name: "amplifier",
     symbol: "A",
@@ -643,13 +650,14 @@ addLayer("a", {
         let exp = new Decimal(0.025);
         if (hasUpgrade('p', 22)) exp = exp.add(0.03);
         if (hasUpgrade('sp', 34)) exp = exp.add(upgradeEffect('sp', 34));
+        if (hasUpgrade('m', 64)) exp = exp.times(upgradeEffect('m', 64));
         return exp;
     },
     milestonePopups: false,
     milestones: {
-        0: { requirementDescription: "1 amplifier", effectDescription: "点数获取速度×25", done() { return player.a.points.gte(1) } }
+        0: { requirementDescription: "1 amplifier", effectDescription: "点数获取速度*25", done() { return player.a.points.gte(1) } }
     },
-    autoUpgrade: function() { return hasMilestone('ach', 0) },
+   autoUpgrade: function() { return hasMilestone('ach', 0) && player.autoAUpgrade; },
     gainMult() {let m = new Decimal(1);
         if (hasUpgrade('sp', 23)) m = m.times(upgradeEffect('sp', 23));
         if (hasUpgrade('sa', 42)) m = m.times(upgradeEffect('sa', 42));
@@ -687,8 +695,8 @@ addLayer("a", {
         11: {
             title: "21", description: "基于你的amplifier提升点数,P点,sp点获取(加成不低于10)", cost: new Decimal(1),
             effect() {
-    // 如果挑战 11 正在活跃中，禁用效果
-    if (inChallenge('m', 11)) {
+    // 如果挑战正在活跃中，禁用效果
+    if (inChallenge('m', 11)||inChallenge('m', 12)||inChallenge('m', 13)) {
         return new Decimal(1);
     }
 
@@ -802,7 +810,6 @@ addLayer("a", {
         }
     }
 })
-
 addLayer("lw", {
     name: "Law Weaving",
     symbol: "LW",
@@ -817,7 +824,7 @@ addLayer("lw", {
     branches: ["sp", "a"],
    
     exponent: function() { return new Decimal(0.01) },
-    autoUpgrade: function() { return hasUpgrade('pp', 13) },
+    autoUpgrade: function() { return (hasMilestone('ach', 5) ||hasUpgrade('pp', 13) )&& player.autoLWUpgrade},
     milestonePopups: false,
     passiveGeneration: function() {
         let p = 0;
@@ -907,7 +914,6 @@ addLayer("lw", {
         }
     }
 })
-
 addLayer("sa", {
     name: "Source Amplification",
     symbol: "SA",
@@ -920,7 +926,7 @@ addLayer("sa", {
     baseAmount() { return player.points },
     type: "normal",
     exponent: function() { return new Decimal(0.01) },
-    autoUpgrade: function() { return hasUpgrade('pp', 13) },
+    autoUpgrade: function() { return (hasMilestone('ach', 5) ||hasUpgrade('pp', 13)) && player.autoSAUpgrade},
     milestonePopups: false,
     passiveGeneration: function() {
         let p = 0;
@@ -1090,12 +1096,11 @@ addLayer("sa", {
         }
     }
 })
-
 addLayer("re", {
     name: "Recursive Echo",
     symbol: "RE",
     position: 0,
-    startData() { return { unlocked: false, points: new Decimal(0) } },
+    startData() { return { unlocked: false, points: new Decimal(0),} },
     color: "rgba(0, 89, 255, 1)",
     requires: new Decimal(1e308),
     resource: "Recursive Echo",
@@ -1104,7 +1109,9 @@ addLayer("re", {
     type: "normal",
     exponent: function() { return new Decimal(0.01) },
     milestonePopups: false,
-    autoUpgrade: function() { return hasUpgrade('pp', 13) },
+    autoUpgrade: function() { 
+    return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) && player.autoREUpgrade;
+},
     milestones: {
         0: { requirementDescription: "1 Recursive Echo", effectDescription: "点数获取速度*100", done() { return player.re.points.gte(1) } },
         1: { requirementDescription: "3 Recursive Echo", effectDescription: "re重置时不重置Amplifier层升级", done() { return player.re.points.gte(3) } }
@@ -1193,12 +1200,18 @@ addLayer("re", {
         }
     }
 })
-
 addLayer("tp", {
     name: "Time Points",
     symbol: "TP",
     position: 0,
-    startData() { return { unlocked: false, points: new Decimal(0), timesPower: new Decimal(0) } },
+    startData() {
+    return {
+        unlocked: false,
+        points: new Decimal(0),
+        timesPower: new Decimal(0),
+        autoCrystalTime: new Decimal(0)   // 必须添加这一行
+    };
+},
     color: "rgba(255, 0, 221, 1)",
     requires: new Decimal("1e1000"),
     resource: "Time points",
@@ -1256,6 +1269,20 @@ addLayer("tp", {
 }
             player.timesPower = player.timesPower.add(gain);
         }
+       if (hasMilestone('ach', 6) && player.autoTPCrystalEclipse) {
+    if (!player.tp.autoCrystalTime) player.tp.autoCrystalTime = new Decimal(0);
+    player.tp.autoCrystalTime = player.tp.autoCrystalTime.add(diff);
+    if (player.tp.autoCrystalTime.gte(0.1)) {
+        let times = Decimal.floor(player.tp.autoCrystalTime.div(0.1)).toNumber();
+        player.tp.autoCrystalTime = player.tp.autoCrystalTime.sub(times * 0.1);
+        for (let i = 0; i < times; i++) {
+            if (layers.tp.buyables[12].unlocked() && layers.tp.buyables[12].canAfford())
+                layers.tp.buyables[12].buyMax();
+            if (layers.tp.buyables[13].unlocked() && layers.tp.buyables[13].canAfford())
+                layers.tp.buyables[13].buyMax();
+        }
+    }
+}
     },
    tabFormat: {
     "Upgrades": {
@@ -1278,7 +1305,7 @@ addLayer("tp", {
         unlocked() { return hasUpgrade('tp', 13); }
     }
 },
-    autoUpgrade: function() { return hasChallenge('pp', 14) },
+    autoUpgrade: function() { return hasChallenge('pp', 14) && player.autoTPFragment; },
     upgrades: {
         rows: 3, cols: 5,
         11: {
@@ -1342,6 +1369,12 @@ addLayer("tp", {
 }
  if (hasChallenge('m', 11)){
     cost = cost.pow(0.5).max(1);
+ }
+ if (hasChallenge('m', 12)){
+    cost = cost.pow(0.25).max(1);
+ }
+ if (hasChallenge('m', 13)){
+    cost = cost.pow(0.125).max(1);
  }
                     return cost
 
@@ -1522,27 +1555,53 @@ display() {
        21: {
     title: "<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>时间</b><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>密度</b>",
     unlocked() { return hasUpgrade('m', 12); },
+
     cost(x) {
         if (x.eq(0)) return new Decimal(550);
         let baseCost = x.times(12.5).pow(1.25).add(550).floor();
-        // 当数量超过 10 时，成本额外进行 1.3 次方运算
         if (x.gte(10)) {
             baseCost = baseCost.pow(1.3).floor();
         }
         return baseCost;
     },
-  display() {
-    let x = player[this.layer].buyables[this.id] || new Decimal(0);
-    let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
-    let tier = player.tp.buyables[21] || new Decimal(0); 
-    let limit = new Decimal(10);
-    let classExp = Decimal.add(1, tier.div(5));
-    if (classExp.gt(3)) classExp = classExp.div(2).log10().add(1).times(2);
-    let limitText = x.gte(limit) ? "<br><b style='color: #ff4444; text-shadow: 0 0 2px #000, 0 0 2px #000;'>已达上限</b>" : "";
-    return `<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>花费:${format(cost)}时间碎片</b><br><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>当前:${formatWhole(x)}/10${limitText}</b><br>` +
-           `<b style='color: #ff0000ff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>购买后重置第一行购买项</b><br>` +
-           `<b style='color: #ff4444; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>点数获取^${format(classExp, 4, true)}</b>`;
-},
+
+    // ── 核心效果：返回最终指数 ──
+    effect(x) {
+        let tier = x;  // 已购买数量
+        let effbase = new Decimal(0.2);
+
+        // 升级 M‑31 加成
+        if (hasUpgrade('m', 31)) effbase = effbase.add(0.002);
+
+        // 升级 M‑33 根据能量进一步加成
+        if (hasUpgrade('m', 33)) {
+            let e = player.m.energy || new Decimal(0);
+            let raw = e.add(1).log10().div('520');
+            effbase = effbase.add(raw);
+        }
+
+        let exp = effbase.times(tier).add(1);
+
+        // 软上限：指数超过 10 后压缩
+        if (exp.gt(10)) exp = exp.div(10).log10().add(1).times(10);
+
+        return exp;
+    },
+
+    // ── 显示：调用 effect 并渲染 ──
+    display() {
+        let x = player[this.layer].buyables[this.id] || new Decimal(0);
+        let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+        let eff = tmp[this.layer].buyables[this.id]?.effect || new Decimal(1);
+        let limit = new Decimal(10);
+        let limitText = x.gte(limit) ? "<br><b style='color: #ff4444; text-shadow: 0 0 2px #000, 0 0 2px #000;'>已达上限</b>" : "";
+
+        return `<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>花费:${format(cost)}时间碎片</b><br>` +
+               `<b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>当前:${formatWhole(x)}/10${limitText}</b><br>` +
+               `<b style='color: #ff0000ff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>购买后重置第一行购买项</b><br>` +
+               `<b style='color: #ff4444; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>点数获取^${format(eff, 4, true)}</b>`;
+    },
+
     canAfford() {
         let x = player.tp.buyables[21] || new Decimal(0);
         let limit = new Decimal(10);
@@ -1550,22 +1609,22 @@ display() {
         let cost = tmp[this.layer].buyables[this.id]?.cost;
         return cost !== undefined && player.tp.buyables[11].gte(cost);
     },
+
     buy() {
         let x = player.tp.buyables[21] || new Decimal(0);
         let limit = new Decimal(10);
         if (x.gte(limit)) return;
-            let cost = tmp.tp.buyables[21].cost;
-            player.tp.buyables[11] = player.tp.buyables[11].sub(cost);
-            player.tp.buyables[11] = new Decimal(0);   
-            player.tp.buyables[12] = new Decimal(0);
-            player.tp.buyables[13] = new Decimal(0);
-            player.tp.buyables[21] = x.add(1);
-            updateTemp();
-        }
+        let cost = tmp.tp.buyables[21].cost;
+        player.tp.buyables[11] = player.tp.buyables[11].sub(cost);
+        player.tp.buyables[11] = new Decimal(0);   
+        player.tp.buyables[12] = new Decimal(0);
+        player.tp.buyables[13] = new Decimal(0);
+        player.tp.buyables[21] = x.add(1);
+        updateTemp();
     },
+},
 }
 })
-
 addLayer("pp", {
     name: "Points Power",
     symbol: "PP",
@@ -1576,7 +1635,8 @@ addLayer("pp", {
             points: new Decimal(0),
             bestPoints: new Decimal(0),
             pointsPower: new Decimal(0),
-            time: new Decimal(0),               // 用于时间驱动的自动购买
+            time: new Decimal(0),    
+            autoPointsPowerUpg: false           // 用于时间驱动的自动购买
         };
     },
     color: "#fd6868ff",
@@ -1639,7 +1699,11 @@ addLayer("pp", {
         if (hasUpgrade('m', 21)) {
             let points = player.points;
             let pp = player.pp.points.max(1);
-            let gainPerSecond = points.add(1).log10().div(pp.add(1).log10().add(1).times(2));
+            let gainPerSecond = points.add(1).log10().div(pp.add(1).log10().add(1).pow(0.5));
+            if (hasUpgrade('m', 65)) {
+                let e = player.m.energy || new Decimal(0);
+                gainPerSecond = gainPerSecond.times(pp.add(1).log10().add(1).pow(0.5)).times(e.add(1).log10().add(1).pow(2));
+            }
             let gain = gainPerSecond.times(diff);
             player.pp.points = player.pp.points.add(gain);
             player.pp.bestPoints = player.pp.bestPoints.max(player.pp.points);
@@ -1647,36 +1711,37 @@ addLayer("pp", {
             tmp.pp.ppGain = gainPerSecond;
         }
 
-        // 3. 时间驱动的批量自动购买（可选，替换 setInterval）
-        if (hasMilestone('ach', 2)) {
-            if (!player.pp.time) player.pp.time = new Decimal(0);
-            let speed = 1;
-            if (hasMilestone('ach', 3)) speed *= 10;
-            player.pp.time = player.pp.time.add(diff * speed);
-            if (player.pp.time.gte(1)) {
-                let times = Decimal.floor(player.pp.time).toNumber();
-                player.pp.time = player.pp.time.sub(times);
-                for (let i = 0; i < times; i++) {
-                    if (layers.p.buyables[11].unlocked() && layers.p.buyables[11].canAfford())
-                        layers.p.buyables[11].buy();
-                    if (layers.sp.buyables[11].unlocked() && layers.sp.buyables[11].canAfford())
-                        layers.sp.buyables[11].buy();
-                }
-            }
+       if (hasMilestone('ach', 2)) {
+    if (!player.pp.time) player.pp.time = new Decimal(0);
+    let speed = 1;
+    if (hasMilestone('ach', 3)) speed *= 10;
+    player.pp.time = player.pp.time.add(diff * speed);
+    if (player.pp.time.gte(1)) {
+        let times = Decimal.floor(player.pp.time).toNumber();
+        player.pp.time = player.pp.time.sub(times);
+        for (let i = 0; i < times; i++) {
+            if (player.autoPBuyable && layers.p.buyables[11].unlocked() && layers.p.buyables[11].canAfford())
+                layers.p.buyables[11].buyMax();
+            if (player.autoSPBuyable && layers.sp.buyables[11].unlocked() && layers.sp.buyables[11].canAfford())
+                layers.sp.buyables[11].buyMax();
+            if (hasChallenge('pp', 14) && player.autoTPFragment && layers.tp.buyables[11].unlocked() && layers.tp.buyables[11].canAfford())
+                layers.tp.buyables[11].buyMax();
         }
+    }
+}
     },
 
     onPrestige(gain) { player.pp.bestPoints = player.pp.bestPoints.max(player.points) },
 
     // ────────── 标签页 ──────────
- tabFormat: {
+tabFormat: {
     "Upgrades": {
         content: [
             "main-display",
             ["raw-html", function() {
                 if (hasUpgrade('m', 21)) {
                     let gain = tmp.pp?.ppGain || new Decimal(0);
-                    return `你每秒获得 <h2 style="color: #fd6868ff; text-shadow: 0px 0px 10px #fd6868ff;">${format(gain)}</h2> PP点`;
+                    return `你每秒获得 <h2 style="color: #fd6868ff; text-shadow: 0px 0px 10px #fd6868ff;">${format(gain,4,true)}</h2> PP点`;
                 }
                 return "";
             }],
@@ -1691,10 +1756,22 @@ addLayer("pp", {
             "upgrades"
         ]
     },
-    "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] },
+    "Milestones": {
+        content: [
+            "main-display",
+            function() { if (!hasUpgrade('m', 21)) return "prestige-button"; },
+            "blank",
+            "milestones"
+        ]
+    },
     "Challenges": {
-        content: ["main-display", "prestige-button", "blank", "challenges"],
-        unlocked() { return hasUpgrade('pp', 15)||hasUpgrade('m', 24); }
+        content: [
+            "main-display",
+            function() { if (!hasUpgrade('m', 21)) return "prestige-button"; },
+            "blank",
+            "challenges"
+        ],
+        unlocked() { return hasUpgrade('pp', 15) || hasUpgrade('m', 24); }
     }
 },
     // ────────── 升级 ──────────
@@ -1712,7 +1789,7 @@ addLayer("pp", {
                 let logLog = logX.add(1).log10();
                 let exponent = new Decimal(1).add(logLog).div(new Decimal(4).times(logX.add(10)));
                 let y = x.add(1).pow(exponent);
-                return Decimal.min(y, 9);
+                return  y;
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id), 4, true) }
         },
@@ -1727,7 +1804,7 @@ addLayer("pp", {
         },
         21: {
             title: "突破！力量初绽",
-            description: "解锁 Points Power效果I,点数获取^(lg(10+Points Power))^0.05(硬上限为^2)",
+            description: "解锁 Points Power效果I,点数获取^(lg(10+Points Power))^0.05",
             cost: new Decimal(1),
             currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp",
             unlocked() { return hasUpgrade('pp', 15) },
@@ -1736,14 +1813,16 @@ addLayer("pp", {
                 let exp = new Decimal(0.05);
                 if (hasUpgrade('pp', 24)) exp = exp.add(0.025);
                 if (hasUpgrade('m', 15)) exp = exp.add(0.025);
-                return Decimal.min(Decimal.pow(Decimal.log10(pp.add(10)), exp), 2);
+                let y=Decimal.pow(Decimal.log10(pp.add(10)), exp);
+                return  y;
             },
             effectDisplay() {
                 let pp = player.pp.pointsPower || new Decimal(0);
                 let exp = new Decimal(0.05);
                 if (hasUpgrade('pp', 24)) exp = exp.add(0.025);
                 if (hasUpgrade('m', 15)) exp = exp.add(0.025);
-                return "^" + format(Decimal.min(Decimal.pow(Decimal.log10(pp.add(10)), exp), 2), 4, true);
+                let y=Decimal.pow(Decimal.log10(pp.add(10)), exp);
+                return "^" + format(y, 4, true);
             }
         },
         22: { title: "力量涌动", description: "Points Power 产量 *4", cost: new Decimal(10), currencyDisplayName: "Points Power", currencyInternalName: "pointsPower", currencyLayer: "pp", unlocked() { return hasUpgrade('pp', 21) } },
@@ -1813,7 +1892,853 @@ addLayer("pp", {
         },
     },
 })
+addLayer("m", {
+    name: "Mass Power",
+    symbol: "M",
+    position: 0,
+    startData() {
+        return {
+            unlocked: false,
+            points: new Decimal(0),
+            mass: new Decimal(0),
+            energy: new Decimal(0),
+            autoTime: new Decimal(0),       // 自动购买累积时间
+        };
+    },
+    color: "#635c5cff",
+    requires: new Decimal(1000000),
+    resource: "Mass Power",
+    baseResource: "PP 点",
+    baseAmount() { return player.pp.points },
+    type: "normal",
+    branches: ['pp'],
+    exponent: function() {
+        return new Decimal(0.5);
+    },
+    gainMult() {
+        let m = new Decimal(1);
+        if (hasUpgrade('m', 23)) m = m.times(upgradeEffect('m', 23));
+        if (hasUpgrade('m', 32)) {
+        let eff = upgradeEffect('m', 32);
+        if (eff.masspower) m = m.times(eff.masspower);
+    }
+        if (hasMilestone('ach', 7)) {
+        let achFactor = tmp.ach.effect
+        m = m.times(achFactor);
+    }
+        return m;
+    },
+    gainExp() { return new Decimal(1) },
+    row: 5,
+    hotkeys: [],
+    tabFormat: {
+        "Upgrades": {
+            content: [
+                "main-display",
+                "prestige-button",
+                "blank",
+                ["display-text", function() {
+                    let amt = player.m.mass || new Decimal(0);
+                    let gain = tmp.m?.massGain || new Decimal(0);
+                    return `你有 <h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(amt)}</h2> Mass (+<h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(gain)}</h2>/s)`;
+                }],
+                "blank",
+                "upgrades"
+            ]
+        },
+        "Milestones": {
+            content: [
+                "main-display",
+                "prestige-button",
+                "blank",
+                ["display-text", function() {
+                    let amt = player.m.mass || new Decimal(0);
+                    let gain = tmp.m?.massGain || new Decimal(0);
+                    return `你有 <h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(amt)}</h2> Mass (+<h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(gain)}</h2>/s)`;
+                }],
+                "blank",
+                "milestones"
+            ]
+        },
+        "Buyables": {
+            content: [
+                "main-display",
+                "prestige-button",
+                "blank",
+                ["display-text", function() {
+                    let amt = player.m.mass || new Decimal(0);
+                    let gain = tmp.m?.massGain || new Decimal(0);
+                    return `你有 <h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(amt)}</h2> Mass (+<h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(gain)}</h2>/s)`;
+                }],
+                "blank",
+                "buyables"
+            ]
+        },
+        "Challenges": {
+            content: [
+                "main-display",
+                "prestige-button",
+                "blank",
+                ["display-text", function() {
+                    let amt = player.m.mass || new Decimal(0);
+                    let gain = tmp.m?.massGain || new Decimal(0);
+                    return `你有 <h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(amt)}</h2> Mass (+<h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(gain)}</h2>/s)`;
+                }],
+                "blank",
+                "challenges"
+            ],
+            unlocked() { return hasUpgrade('m', 25); }
+        },"能量": {
+    content: [
+        "main-display",
+        "prestige-button",
+        "blank",
+        ["display-text", function() {
+    let amt = player.m.energy || new Decimal(0);
+    let gain = tmp.m?.energyGain || new Decimal(0);
+    let factor = tmp.m?.energyFactor || new Decimal(1);
+    return `你有 <h2 style="color: #ffaa00; text-shadow: 0px 0px 10px #ffaa00;">${format(amt)}</h2> 能量 (+<h2 style="color: #ffaa00; text-shadow: 0px 0px 10px #ffaa00;">${format(gain)}</h2>/s)，使一~九重软上限延长 <h2 style="color: #ffaa00; text-shadow: 0px 0px 10px #ffaa00;">^${format(factor, 4, true)}</h2>`;
+}],
+        "blank",
+        ["raw-html", function() {
+            return "能量基于mass每秒产生,<b>1.79e308</b>后开始。";
+        }],
+        "blank",
+        ["upgrades", [6]]   // 能量升级
+    ],
+    unlocked() { return player.m.mass.gte('1.79e308') || player.m.energy.gte(0.00308) || hasMilestone('m', 10); }
+},
+    },
+    layerShown() { return hasChallenge('pp', 15) || player.m.points.gte(1) || player.m.mass.gte(1) || hasUpgrade('m', 11); },
+    autoUpgrade: function() { },
 
+    // 自动生成子资源
+    update(diff) {
+        // 1. 自动生成 mass
+        if (hasMilestone('m', 0)) {
+            let base = Decimal.max(player.m.points, 1);
+            let mult = new Decimal(1);
+            let buy11Eff = tmp.m?.buyables?.[11]?.effect;
+            if (buy11Eff) base = base.add(buy11Eff);
+            let buy12Eff = tmp.m?.buyables?.[12]?.effect;
+            if (buy12Eff) mult = mult.times(buy12Eff);
+            let buy13Eff = tmp.m?.buyables?.[13]?.effect;
+            if (buy13Eff) mult = mult.pow(buy13Eff);
+            let exp = new Decimal(1);
+            let tier = player.m.buyables[21] || new Decimal(0);
+            if (tier.gt(0)) exp = exp.add(tier.div(4));
+            // Points Power 加成（里程碑 6）
+            if (hasMilestone('m', 6)) {
+                let ppBonus = player.pp.pointsPower.add(1).max(1).pow(0.05);
+                mult = mult.times(ppBonus);
+            }
+             if (hasMilestone('m', 8)) {mult=mult.times(125)}
+             if (hasUpgrade('m', 32)) {
+        let eff = upgradeEffect('m', 32);
+        if (eff.mass) mult = mult.times(eff.mass);
+    }
+
+            let gainPerSecond = base.times(mult).pow(exp);
+            let cap1 =new Decimal('1.79e308')
+            if(gainPerSecond.gt(cap1))gainPerSecond=gainPerSecond.div(cap1).pow(0.179).times(cap1)
+            let gain = gainPerSecond.times(diff);
+            player.m.mass = player.m.mass.add(gain);
+            if (!tmp.m) tmp.m = {};
+            tmp.m.massGain = gainPerSecond;
+        }
+// 能量生产 (mass > 1.79e308)
+if (player.m.mass.gte('1.79e308')) {
+    let energyMult = new Decimal(1);
+    let buy31Eff = tmp.m?.buyables?.[31]?.effect || new Decimal(1);
+    energyMult = energyMult.times(buy31Eff);
+    if (hasUpgrade('m', 32)) {
+        let eff = upgradeEffect('m', 32);
+        if (eff.energy) energyMult = energyMult.times(eff.energy);
+    }
+    let energyPerSec = Decimal.log10(player.m.mass.div(1.79e308).add(1)).div(100).times(energyMult);
+    if (hasMilestone('ach', 7)) {
+        let achFactor = tmp.ach.effect
+        energyPerSec = energyPerSec.times(achFactor);
+    }
+    let energyGain = energyPerSec.times(diff);
+    player.m.energy = player.m.energy.add(energyGain);
+    if (!tmp.m) tmp.m = {};
+    tmp.m.energyGain = energyPerSec;
+    tmp.m.energyFactor = getEnergySoftcapFactor();
+} else {
+    if (!tmp.m) tmp.m = {};
+    tmp.m.energyGain = new Decimal(0);
+}
+        // 2. 软上限延迟（里程碑 7）
+        if (hasMilestone('m', 7)) {
+            if (!tmp.m) tmp.m = {};
+            tmp.m.softcapDelay = player.m.mass.add(1).max(1).pow(0.01);
+        }
+
+       // 3.自动购买部分
+if (hasMilestone('m', 4)) {
+    let speed = 1;
+    if (hasMilestone('ach', 3)) speed *= 10;
+    player.m.autoTime = player.m.autoTime.add(diff * speed);
+    if (player.m.autoTime.gte(1)) {
+        let times = Decimal.floor(player.m.autoTime).toNumber();
+        player.m.autoTime = player.m.autoTime.sub(times);
+        for (let i = 0; i < times; i++) {
+            if (player.autoMProd && layers.m.buyables[11].unlocked() && layers.m.buyables[11].canAfford())
+                layers.m.buyables[11].buyMax();
+            if (player.autoMProd && layers.m.buyables[12].unlocked() && layers.m.buyables[12].canAfford())
+                layers.m.buyables[12].buyMax();
+            if (player.autoMProd && layers.m.buyables[13].unlocked() && layers.m.buyables[13].canAfford())
+                layers.m.buyables[13].buyMax();
+            if (hasMilestone('m', 5) && i % 5 === 0 && player.autoMClass) {
+                if (layers.m.buyables[21].unlocked() && layers.m.buyables[21].canAfford())
+                    layers.m.buyables[21].buy();
+            }
+        }
+    }
+}
+
+        // 4. 质量阶级重置后保留（里程碑 8）
+        if (hasMilestone('m', 8) && !tmp.m) {
+            tmp.m = {};
+        }
+    },
+
+    milestones: {
+        0: {
+            requirementDescription: "1 Mass power",
+            effectDescription: "每秒自动生成 mass",
+            done() { return player.m.points.gte(1); },
+        },
+        1: {
+            requirementDescription: "1e2 mass",
+            effectDescription: "解锁质量生产器",
+            done() { return player.m.mass.gte(1e2); },
+        },
+        2: {
+            requirementDescription: "1e4 mass",
+            effectDescription: "解锁质量倍增器",
+            done() { return player.m.mass.gte(1e4); },
+        },
+        3: {
+            requirementDescription: "1e6 mass",
+            effectDescription: "解锁质量强化器",
+            done() { return player.m.mass.gte(1e6); },
+        },
+        4: {
+            requirementDescription: "1e38 mass",
+            effectDescription: "自动购买质量生产器、倍增器、强化器(1/s)",
+            done() { return player.m.mass.gte(1e38); },
+        },
+        5: {
+            requirementDescription: "1e50 mass",
+            effectDescription: "自动购买质量阶级且重置后保留1级生产器(1/5s)",
+            done() { return player.m.mass.gte(1e50); },
+        },
+        6: {
+            requirementDescription: "1e75 mass",
+            effectDescription: "mass产量受Points Power加成",
+            done() { return player.m.mass.gte(1e75); },
+        },
+        7: {
+            requirementDescription: "1e100 mass",
+            effectDescription: "前五重软上限延迟(mass+1)^0.01",
+            done() { return player.m.mass.gte(1e100); },
+        },
+        8: {
+            requirementDescription: "1e120 mass",
+            effectDescription: "质量阶级不再重置,且效果增强50%",
+            done() { return player.m.mass.gte(1e120); },
+        },
+        9: {
+            requirementDescription: "1e280 mass",
+            effectDescription: "mass获取*125",
+            done() { return player.m.mass.gte(1e280); },
+        },
+         10: {
+            requirementDescription: "1.79e308 mass",
+            effectDescription: "解锁能量和能量倍增器",
+            done() { return player.m.mass.gte(1.79e308); },
+        },
+    },
+
+    upgrades: {
+        rows: 5,
+        cols: 5,
+        11: {
+            title: "质量转化",
+            description: "基于Mass大幅提升点数,小幅提升时间之力,微小提升Points Power产量,解锁一个购买项",
+            cost: new Decimal(1),
+            effect() {
+                let mass = player.m.mass || new Decimal(0);
+                return {
+                    points: (function() {
+                        let raw = mass.add(1).pow(5);
+                        if (hasUpgrade('m', 15)) raw = raw.pow(13);
+                        let cap = new Decimal("1e100");
+                        return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
+                    })(),
+                    timePower: (function() {
+                        let raw = mass.add(10).pow(0.5);
+                        if (hasUpgrade('m', 15)) raw = raw.pow(7);
+                        let cap = new Decimal("1e38");
+                        return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.25));
+                    })(),
+                    ppPower: (function() {
+                        if (mass.lte(0)) return new Decimal(1);
+                        let log2e = new Decimal(Math.log2(Math.E));
+                        let raw = mass.add(2).log10().div(log2e).max(1);
+                        if (hasUpgrade('m', 15)) raw = raw.pow(5);
+                        let cap = new Decimal("1e9");
+                        return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
+                    })(),
+                };
+            },
+            effectDisplay() {
+                let eff = upgradeEffect(this.layer, this.id);
+                return `点数*${format(eff.points, 4, true)},时间之力*${format(eff.timePower, 4, true)},Points Power*${format(eff.ppPower, 4, true)}`;
+            },
+        },
+        12: {
+            title: "时间质量",
+            description: "解锁一个TP购买项",
+            cost: new Decimal(2),
+            unlocked() { return hasUpgrade('m', 11); },
+        },
+        13: {
+            title: "回滞之律",
+            description: "基于LW,RE点延长前五重软上限(硬上限^5)",
+            cost: new Decimal(3),
+            unlocked() { return hasUpgrade('m', 12); },
+            effect() {
+                let max = new Decimal(5);
+                let raw1 = player.lw.points.add(1).log10().div(1e4).add(1);
+                let raw2 = player.re.points.add(1).log10().div(1e4).add(1);
+                let raw = raw1.add(raw2).div(2);
+                if (hasUpgrade('m', 15)) max = new Decimal(10);
+                return Decimal.min(raw, max);
+            },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id), 4, true); }
+        },
+        14: {
+            title: "打破六重",
+            description: "六重软上限延迟^10,解锁Points Power效果II,时间碎片价格^{0.5/(lg(10+Points Power)^{0.0521})}(硬上限为^0.05)",
+            cost: new Decimal(4),
+            unlocked() { return hasUpgrade('m', 13); },
+            effect() {
+                let pp = player.pp.pointsPower || new Decimal(0);
+                let exp = new Decimal(0.0521);
+                return Decimal.max(Decimal.pow(Decimal.log10(pp.add(10)), exp).pow(-1).times(0.5), 0.05);
+            },
+            effectDisplay() {
+                let pp = player.pp.pointsPower || new Decimal(0);
+                let exp = new Decimal(0.0521);
+                return "^" + format(Decimal.max(Decimal.pow(Decimal.log10(pp.add(10)), exp).pow(-1).times(0.5), 0.05), 6, true);
+            }
+        },
+        15: {
+            title: "提高效率",
+            description: "MU-1的效果分别^13,^7,^5,MU-2,SAU-19硬上限延迟至10,Points Power效果I的公式指数+0.025,弱化五重软上限1.055,质量阶级对质量倍增器生效,但是效果^0.5",
+            cost: new Decimal(5),
+            unlocked() { return hasUpgrade('m', 14); },
+        },
+        21: {
+            title: "去掉限制I",
+            description: "PP不再受限于最高points,禁用PP重置,每秒自动获取PP(+lg(points+1) / ((lg(PP+1)+1)^{0.5})/s)",
+            cost: new Decimal(10),
+            unlocked() { return hasUpgrade('m', 15); },
+        },
+        22: {
+            title: "去掉限制II",
+            description: "延长前六重软上限^10,并移除一重软上限,但是六~九重软上限惩罚*10,所有弱化一重软上限m改为对点数^m,但是效果^0.5,所有延迟一重软上限n改为对点数*n,延长一重软上限无效",
+            cost: new Decimal(50),
+            unlocked() { return hasUpgrade('m', 21); },
+        },
+        23: {
+            title: "指数之质",
+            description: "基于PP加成Mass Power获取",
+            cost: new Decimal(300),
+            unlocked() { return hasUpgrade('m', 22); },
+            effect() {
+                let pp = player.pp.points || new Decimal(0);
+                let raw = pp.add(1).log10().add(1);
+                if (hasChallenge('m', 11)) raw = raw.pow(2);
+                if (hasChallenge('m', 12)) raw = raw.pow(3);
+                if (hasChallenge('m', 13)) raw = raw.pow(3.5);
+                return raw;
+            },
+            effectDisplay() {
+                let pp = player.pp.points || new Decimal(0);
+                let raw = pp.add(1).log10().add(1);
+                if (hasChallenge('m', 11)) raw = raw.pow(2);
+                if (hasChallenge('m', 12)) raw = raw.pow(3);
+                return "*" + format(raw, 4, true);
+            }
+        },
+        24: {
+            title: "存于质量",
+            description: "M重置保留PP挑战",
+            cost: new Decimal(2100),
+            unlocked() { return hasUpgrade('m', 23); },
+        },
+        25: {
+            title: "于质之中",
+            description: "解锁M挑战",
+            cost: new Decimal(10000),
+            unlocked() { return hasUpgrade('m', 24); },
+        },
+        31: {
+            title: "紧密之时",
+            description: "时间密度效果基础+0.002",
+            cost: new Decimal(1e25),
+            unlocked() { return hasUpgrade('m', 25); },
+        },
+        32: {
+            title: "质能一体",
+            description: "Masspower加成能量获取,能量加成mass获取,mass加成Masspower获取",
+            cost: new Decimal(1e30),
+            unlocked() { return hasUpgrade('m', 25)&& hasUpgrade('m', 65); },
+           effect() {
+                let m = player.m.points || new Decimal(0)
+                let ms = player.m.mass || new Decimal(0);
+                let e = player.m.energy || new Decimal(0)
+                return {
+                    mass: (function() {
+                        let raw = e.add(1).pow(2);
+                        let cap = new Decimal("1e100");
+                        return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
+                    })(),
+                    energy: (function() {
+                        let raw = m.add(10).log10().pow(0.5);
+                        let cap = new Decimal("1e38");
+                        return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.25));
+                    })(),
+                    masspower: (function() {
+                        let raw = ms.add(10).log10().pow(0.2);
+                        let cap = new Decimal("1e38");
+                        return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.1));
+                    })(),
+                };
+            },
+            effectDisplay() {
+                let eff = upgradeEffect(this.layer, this.id);
+                return `能量*${format(eff.energy, 4, true)}, mass*${format(eff.mass, 4, true)}, Masspower*${format(eff.masspower, 4, true)}`;
+            },
+        },
+        33: {
+            title: "能之时",
+            description: "时间密度效果基础基于能量增加",
+            cost: new Decimal(1e32),
+            unlocked() { return hasUpgrade('m', 32); },
+            effect() {
+                let e = player.m.energy || new Decimal(0);
+                let raw = e.add(1).log10().div(520);
+                return raw;
+            },
+            effectDisplay() {
+                let e = player.m.energy || new Decimal(0);
+                let raw = e.add(1).log10().div(520);
+                return "+" + format(raw, 6, true);
+            }
+        },
+        34: {
+            title: "砥砺前行",
+            description: "第六重软上限弱化25",
+            cost: new Decimal(5e32),
+            unlocked() { return hasUpgrade('m', 33); },
+        },
+        35: {
+            title: "效率提升",
+            description: "能量效果基础从2提升至3",
+            cost: new Decimal(1e33),
+            unlocked() { return hasUpgrade('m', 34); },
+        },
+        61: {
+        title: "E1-点数",
+        description: "能量强化点数获取",
+        cost: new Decimal(10),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return player.m.mass.gte('1.79e308')|| player.m.energy.gte(0.00308) || hasMilestone('m', 10); },
+        effect() {
+            let e = player.m.energy || new Decimal(0);
+            let raw=e.add(1).log10().pow(1).div(10).add(2)
+            return raw;
+        },
+        effectDisplay() { return '^'+format(upgradeEffect(this.layer, this.id),4,true) ; }
+    },
+    62: {
+        title: "E2-P",
+        description: "能量强化P点获取",
+        cost: new Decimal(100),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',61); },
+        effect() {
+            let e = player.m.energy || new Decimal(0);
+            let raw=e.add(1).log10().pow(1.2).div(100).add(1.8)
+            return raw;
+        },
+        effectDisplay() { return '^'+format(upgradeEffect(this.layer, this.id),4,true) ; }
+    },
+    63: {
+        title: "E3-SP",
+        description: "能量强化SP点获取",
+        cost: new Decimal(1000),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',62); },
+        effect() {
+            let e = player.m.energy || new Decimal(0);
+            let raw=e.add(1).log10().pow(1.4).div(1000).add(1.6)
+            return raw;
+        },
+        effectDisplay() { return '^'+format(upgradeEffect(this.layer, this.id),4,true) ; }
+    },
+    64: {
+        title: "E4-A",
+        description: "能量强化A获取",
+        cost: new Decimal(10000),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',63); },
+        effect() {
+            let e = player.m.energy || new Decimal(0);
+            let raw=e.add(1).log10().pow(1.6).div(10000).add(1.4)
+            return raw;
+        },
+        effectDisplay() { return '^'+format(upgradeEffect(this.layer, this.id),4,true) ; }
+    },
+    65: {
+        title: "E5-正常PP",
+        description: "PP自动获取不再削减,并且能量强化PP获取,解锁更多质量升级",
+        cost: new Decimal(25000),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',64); },
+    effect() {
+            let e = player.m.energy || new Decimal(0);
+            let raw=e.add(1).log10().add(1).pow(2)
+            return raw;
+        },
+        effectDisplay() { return '*'+format(upgradeEffect(this.layer, this.id),4,true) ; }
+    },
+        },
+
+    buyables: {
+        11: {
+            title: "质量生产器",
+            unlocked() { return hasMilestone('m', 1); },
+            cost(x) {
+                if (x.eq(0)) return new Decimal(1);
+                let base = Decimal.pow(x.add(1).log10().add(1.01), x.times(1.01))
+                    .floor()
+                    .times(Decimal.pow(10, x.div(20).floor().sub(1).max(0)));
+                if (x.gte(100)) base = base.pow(x.div(100));
+                return base.max(1);
+            },
+            freeAmount() { return new Decimal(0); },
+            effect(x) {
+                let total = x.add(this.freeAmount());
+                if (total.eq(0)) return new Decimal(1);
+                let raw = total.times(total.add(1).log10().max(1));
+                if (raw.gt(1e308)) {
+                    return raw.pow(raw.log10().pow(-1).times(154));
+                }
+                return raw;
+            },
+            display() {
+                let bought = getBuyableAmount(this.layer, this.id);
+                let free = this.freeAmount();
+                let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+                let eff11_raw = tmp.m?.buyables?.[11]?.effect || new Decimal(1);
+                let eff12_raw = tmp.m?.buyables?.[12]?.effect || new Decimal(1);
+                let eff13_raw = tmp.m?.buyables?.[13]?.effect || new Decimal(1);
+                let currentMult = eff12_raw.pow(eff13_raw);
+                let realBaseAdd = eff11_raw.times(currentMult);
+                return `花费: ${format(cost)} Mass\n已购买: ${formatWhole(bought)}+${formatWhole(free)}\n` +
+                    `mass获取基数+<b>${format(realBaseAdd, 4, true)}</b>`;
+            },
+            canAfford() {
+                let cost = tmp[this.layer].buyables[this.id]?.cost;
+                return cost !== undefined && player.m.mass.gte(cost);
+            },
+            buy() {
+                let x = getBuyableAmount(this.layer, this.id);
+                let cost = tmp[this.layer].buyables[this.id].cost;
+                player.m.mass = player.m.mass.sub(cost);
+                player[this.layer].buyables[this.id] = x.add(1);
+                updateTemp();
+            },
+            buyMax() {
+                let x = player.m.buyables[11] || new Decimal(0);
+                let mass = player.m.mass;
+                let count = 0;
+                let totalCost = new Decimal(0);
+                while (count < 50) {
+                    let nextCost = this.cost(x.add(count));
+                    let newTotal = totalCost.add(nextCost);
+                    if (mass.gte(newTotal)) {
+                        totalCost = newTotal;
+                        count++;
+                    } else break;
+                }
+                if (count > 0) {
+                    player.m.mass = mass.sub(totalCost);
+                    player.m.buyables[11] = x.add(count);
+                    updateTemp();
+                }
+            },
+        },
+        12: {
+            title: "质量倍增器",
+            unlocked() { return hasMilestone('m', 2); },
+            cost(x) {
+                if (x.eq(0)) return new Decimal(10);
+                let base = Decimal.pow(x.add(1).log10().add(2.2), x.times(1.2))
+                    .times(10).floor()
+                    .times(Decimal.pow(100, x.div(10).floor().sub(1).max(0)));
+                if (x.gte(50)) base = base.pow(x.div(50));
+                return base.max(10);
+            },
+            freeAmount() { return new Decimal(0); },
+            effect(x) {
+                let total = x.add(this.freeAmount());
+                if (total.eq(0)) return new Decimal(1);
+                let exp = new Decimal(2);
+                let raw = total.add(1).pow(exp);
+                let tier = player.m.buyables[21] || new Decimal(0);
+                let exptier = tier.div(4).add(1).pow(0.5);
+                if (hasUpgrade('m', 15)) raw = raw.pow(exptier);
+                if (raw.gt(1e38)) {
+                    return raw.sqrt();
+                }
+                return raw;
+            },
+            display() {
+                let bought = getBuyableAmount(this.layer, this.id);
+                let free = this.freeAmount();
+                let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+                let eff12_real = tmp.m?.buyables?.[12]?.effect || new Decimal(1);
+                let eff13_raw = tmp.m?.buyables?.[13]?.effect || new Decimal(1);
+                let currentMult = eff12_real.pow(eff13_raw);
+                return `花费: ${format(cost)} Mass\n已购买: ${formatWhole(bought)}+${formatWhole(free)}\n` +
+                    `质量生产器效果*<b>${format(currentMult, 4, true)}</b>`;
+            },
+            canAfford() {
+                let cost = tmp[this.layer].buyables[this.id]?.cost;
+                return cost !== undefined && player.m.mass.gte(cost);
+            },
+            buy() {
+                let x = getBuyableAmount(this.layer, this.id);
+                let cost = tmp[this.layer].buyables[this.id].cost;
+                player.m.mass = player.m.mass.sub(cost);
+                player[this.layer].buyables[this.id] = x.add(1);
+                updateTemp();
+            },
+            buyMax() {
+                let x = player.m.buyables[12] || new Decimal(0);
+                let mass = player.m.mass;
+                let count = 0;
+                let totalCost = new Decimal(0);
+                while (count < 50) {
+                    let nextCost = this.cost(x.add(count));
+                    let newTotal = totalCost.add(nextCost);
+                    if (mass.gte(newTotal)) {
+                        totalCost = newTotal;
+                        count++;
+                    } else break;
+                }
+                if (count > 0) {
+                    player.m.mass = mass.sub(totalCost);
+                    player.m.buyables[12] = x.add(count);
+                    updateTemp();
+                }
+            },
+        },
+        13: {
+            title: "质量强化器",
+            unlocked() { return hasMilestone('m', 3); },
+            cost(x) {
+                if (x.eq(0)) return new Decimal(100);
+                let base = Decimal.pow(x.times(0.05).add(4.4), x.times(1.3))
+                    .times(100).floor()
+                    .times(Decimal.pow(1000, x.div(5).floor().sub(1).max(0)));
+                if (x.gte(25)) base = base.pow(x.div(25));
+                return base.max(100);
+            },
+            freeAmount() { return new Decimal(0); },
+            effect(x) {
+                let total = x.add(this.freeAmount());
+                if (total.eq(0)) return new Decimal(1);
+                let raw = total.div(13).add(1).pow(0.78);
+                if (raw.gt(5)) {
+                    raw = raw.div(5).add(10).log10().sqrt().times(5);
+                }
+                // 挑战 12 限制：效果开方
+                if (player.m.activeChallenge == 12) raw = raw.sqrt();
+                return raw;
+            },
+            display() {
+                let bought = getBuyableAmount(this.layer, this.id);
+                let free = this.freeAmount();
+                let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+                let eff13_raw = tmp.m?.buyables?.[13]?.effect || new Decimal(1);
+                return `花费: ${format(cost)} Mass\n已购买: ${formatWhole(bought)}+${formatWhole(free)}\n` +
+                    `质量倍增器效果^<b>${format(eff13_raw, 4, true)}</b>`;
+            },
+            canAfford() {
+                let cost = tmp[this.layer].buyables[this.id]?.cost;
+                return cost !== undefined && player.m.mass.gte(cost);
+            },
+            buy() {
+                let x = getBuyableAmount(this.layer, this.id);
+                let cost = tmp[this.layer].buyables[this.id].cost;
+                player.m.mass = player.m.mass.sub(cost);
+                player[this.layer].buyables[this.id] = x.add(1);
+                updateTemp();
+            },
+            buyMax() {
+                let x = player.m.buyables[13] || new Decimal(0);
+                let mass = player.m.mass;
+                let count = 0;
+                let totalCost = new Decimal(0);
+                while (count < 50) {
+                    let nextCost = this.cost(x.add(count));
+                    let newTotal = totalCost.add(nextCost);
+                    if (mass.gte(newTotal)) {
+                        totalCost = newTotal;
+                        count++;
+                    } else break;
+                }
+                if (count > 0) {
+                    player.m.mass = mass.sub(totalCost);
+                    player.m.buyables[13] = x.add(count);
+                    updateTemp();
+                }
+            },
+        },
+        21: {
+            title: "质量阶级",
+            unlocked() { return hasUpgrade('m', 11); },
+            cost(x) {
+                if (x.eq(0)) return new Decimal(100);
+                let base = Decimal.pow(x.div(10).add(10), x.pow(2).add(2)).floor();
+                if (x.gte(10)) base = base.pow(x.div(10));
+                return base;
+            },
+            effect(x) { return new Decimal(1); },
+            display() {
+                let x = player[this.layer].buyables[this.id] || new Decimal(0);
+                let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+                let tier = player.m.buyables[21] || new Decimal(0);
+                let classExp = Decimal.add(1, tier.div(4));
+                if (hasMilestone('m', 8)) classExp = classExp.times(1.5);  // 效果增强 50%
+                if (classExp.gt(5)) classExp = classExp.div(5).log10().add(1).times(5);
+                return `花费: ${format(cost)} Mass\n当前阶级: ${formatWhole(x)}\n` +
+                    `购买后重置第一行购买项和Mass\n` +
+                    `mass获取^<b>${format(classExp, 4, true)}</b>`;
+            },
+            canAfford() {
+                let cost = tmp[this.layer].buyables[this.id]?.cost;
+                return cost !== undefined && player.m.mass.gte(cost);
+            },
+            buy() {
+                let x = player[this.layer].buyables[this.id] || new Decimal(0);
+                let cost = tmp[this.layer].buyables[this.id].cost;
+                player.m.mass = player.m.mass.sub(cost);
+                if (!hasMilestone('m', 8)) {
+    player.m.mass = new Decimal(0);
+                    player[this.layer].buyables[11] = new Decimal(0);
+                    player[this.layer].buyables[12] = new Decimal(0);
+                    player[this.layer].buyables[13] = new Decimal(0);
+                } 
+                player[this.layer].buyables[this.id] = x.add(1);
+                updateTemp();
+            },
+        },
+        31: {
+    title: "能量倍增器",
+    unlocked() { return player.m.mass.gte('1.79e308') || player.m.energy.gte(0.00308) || hasMilestone('m', 10); },
+    cost(x) { return Decimal.pow(10, x).floor(); },
+    currencyDisplayName: "能量",
+    currencyInternalName: "energy",
+    currencyLayer: "m",
+    effect(x) { let base =new Decimal(5);
+        let raw=base.pow(x)
+        return raw;
+    },
+    display() {
+        let bought = getBuyableAmount(this.layer, this.id);
+        let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
+        let eff = tmp[this.layer].buyables[this.id]?.effect || new Decimal(1);
+        return `花费: ${format(cost)} 能量\n已购买: ${formatWhole(bought)}\n效果: 能量获取*${format(eff)}`;
+    },
+    canAfford() {
+        let cost = tmp[this.layer].buyables[this.id]?.cost;
+        return cost !== undefined && player.m.energy.gte(cost);
+    },
+    buy() {
+        let x = getBuyableAmount(this.layer, this.id);
+        let cost = tmp[this.layer].buyables[this.id].cost;
+        player.m.energy = player.m.energy.sub(cost);
+        player[this.layer].buyables[this.id] = x.add(1);
+        updateTemp();
+    },
+    buyMax() {
+        let x = player.m.buyables[31] || new Decimal(0);
+        let energy = player.m.energy;
+        let count = 0;
+        let totalCost = new Decimal(0);
+        while (count < 50) {
+            let nextCost = this.cost(x.add(count));
+            let newTotal = totalCost.add(nextCost);
+            if (energy.gte(newTotal)) {
+                totalCost = newTotal;
+                count++;
+            } else break;
+        }
+        if (count > 0) {
+            player.m.energy = energy.sub(totalCost);
+            player.m.buyables[31] = x.add(count);
+            updateTemp();
+        }
+    },
+},
+    },
+
+    challenges: {
+        11: {
+            name: "往日不再", challengeDescription: "你的点数获取速度被压缩为^0.01,AU-1效果强制为1", goal: new Decimal("1e75"),
+            rewardDescription: function() {
+                return "时间碎片价格^0.5,AU-1效果^1.001,MU-8效果^2,且根据点数延长前五重软上限,当前:^" + format(player.points.add(10).log10().pow(0.025),4,true);
+            },
+            onComplete() {},
+            unlocked() { return hasUpgrade('m', 25)|| player.m.activeChallenge == 11 || hasChallenge('m', 11) }
+        },
+        12: {
+            name: "美好回忆", challengeDescription: "你的点数获取速度被压缩为^0.005,AU-1,SPU-1效果强制为1", goal: new Decimal("1e50"),
+            rewardDescription: function() {
+                return "时间碎片价格^0.25,SPU-1效果^1.002,MU-8效果^3,且根据点数延长第六重软上限,当前:^" + format(player.points.add(10).log10().pow(0.0125),4,true);
+            },
+            onComplete() {},
+            unlocked() { return hasChallenge('m',11)|| player.m.activeChallenge == 11 || hasChallenge('m', 11) }
+        },
+         13: {
+            name: "只余幻影", challengeDescription: "你的点数获取速度被压缩为^0.0025,AU-1,SPU-1,UP-2效果强制为1", goal: new Decimal("1e25"),
+            rewardDescription: function() {
+                return "时间碎片价格^0.125,PU-1效果^1.004,MU-8效果^3.5,且根据PP延长前六重软上限,当前:^" + format(player.pp.points.add(10).log10().pow(0.05),4,true);
+            },
+            onComplete() {},
+            unlocked() { return hasChallenge('m',12)|| player.m.activeChallenge == 12 || hasChallenge('m', 12) }
+        },
+    },
+});
 addLayer("ach", {
     name: "Achievements",
     symbol: "A",
@@ -1830,12 +2755,18 @@ addLayer("ach", {
         "里程碑": { content: ["main-display", "blank", "milestones"] }
     },
     milestones: {
-        0: { requirementDescription: "解放双手I (18成就点)", effectDescription: "永久自动购买P,SP,A层升级", done() { return player.ach.points.gte(18) } },
+        0: { requirementDescription: "解放双手I (18成就点)", effectDescription: "自动购买P,SP,A层升级", done() { return player.ach.points.gte(18) } },
         1: { requirementDescription: "成就优化I (36成就点)", effectDescription: "优化成就点效果公式", done() { return player.ach.points.gte(36) } },
         2: { requirementDescription: "成就优化II (60成就点)", effectDescription: "优化成就点效果公式", done() { return player.ach.points.gte(60) } },
-        3: { requirementDescription: "解放双手II (90成就点)", effectDescription: "永久自动购买P,SP层购买项(100/100ms)", done() { return player.ach.points.gte(90) } },
+        3: { requirementDescription: "解放双手II (90成就点)", effectDescription: "自动购买P,SP层购买项(100/100ms)", done() { return player.ach.points.gte(90) } },
         4: { requirementDescription: "自动获取I (168成就点)", effectDescription: "每秒获取重置时TP的4%,重置时SA,LW,RE的5%,重置时A,SP,P的9000%", done() { return player.ach.points.gte(168) } },
-    },
+     5: { requirementDescription: "解放双手III (200成就点)", effectDescription: "自动购买SA,LW,RE层升级", done() { return player.ach.points.gte(200) } },
+6: { requirementDescription: "解放双手IV (216成就点)", effectDescription: "自动购买TPA-2,3购买项(100/100ms)", done() { return player.ach.points.gte(216) } },
+7: {
+    requirementDescription: "不限于此 (270成就点)",
+    effectDescription: "成就优化I,II效果无效,但成就点效果对Masspower与能量获取生效",
+    done() { return player.ach.points.gte(270) }
+}},
     achievements: {
         rows: 10, cols: 6,
         11: { name: "起点", tooltip: "获得10点数 奖励:1成就点。", done() { return player.points.gte(10) }, onComplete() { addPoints("ach", 1) } },
@@ -1886,507 +2817,143 @@ addLayer("ach", {
     84: { name: "!?强化器?!", tooltip: "购买5个质量强化器 奖励:8成就点。", done() { return player.m.buyables[13].gte(5) }, onComplete() { addPoints("ach", 8) } },
     85: { name:  "<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>时间</b><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>密度</b>", tooltip: "购买1个 <b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>时间</b><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>密度</b>, 奖励:8成就点。", done() { return player.tp.buyables[21].gte(1) }, onComplete() { addPoints("ach", 8) } },
     86: { name: "打破六重", tooltip: "购买升级「打破六重」 奖励:8成就点。", done() { return hasUpgrade('m',14) }, onComplete() { addPoints("ach", 8) } },
+    91: { name: "能量初现", tooltip: "拥有10点能量 奖励:9成就点。", done() { return player.m.energy.gte(10) }, onComplete() { addPoints("ach", 9) } },
+92: { name: "能量倍增", tooltip: "购买5个能量倍增器 奖励:9成就点。", done() { return (player.m.buyables[31] || new Decimal(0)).gte(5) }, onComplete() { addPoints("ach", 9) } },
+93: { name: "能量强化", tooltip: "购买升级「E5-正常PP」 奖励:9成就点。", done() { return hasUpgrade('m', 65) }, onComplete() { addPoints("ach", 9) } },
+94: { name: "质能转换", tooltip: "购买升级「质能一体」 奖励:9成就点。", done() { return hasUpgrade('m', 32) }, onComplete() { addPoints("ach", 9) } },
+95: { name: "砥砺前行", tooltip: "购买升级「砥砺前行」 奖励:9成就点。", done() { return hasUpgrade('m', 34) } , onComplete() { addPoints("ach", 9) } },
+96: { name: "超越极限", tooltip: "点数达到 1e1e14 奖励:9成就点。", done() { return player.points.gte('1e1e14') }, onComplete() { addPoints("ach", 9) } },
 },
     effect() {
-        let base = new Decimal(1.01);
+    let base = new Decimal(1.01);
+    // 如果里程碑7未达成，则应用优化I和II
+    if (!hasMilestone('ach', 7)) {
         if (hasMilestone('ach', 1)) base = base.add(player.ach.points);
         if (hasMilestone('ach', 2)) base = base.pow(player.ach.points.div(37.5).add(1));
-        let raw=base.pow(player.ach.points.add(1));
-        let cap = new Decimal('1e2000');
-        let raw1=raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
-        return raw1;
-    },
-    effectDescription() {
+    }
+    let raw = base.pow(player.ach.points.add(1));
+    let cap = new Decimal('1e2000');
+    return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
+},
+effectDescription() {
         return "成就点数使点数获取*" + format(tmp.ach.effect,4,true);
     }
 })
-// 软上限显示侧层
-const fmt = (v) => {
-    let val = typeof v === "function" ? v() : v;
-    return val instanceof Decimal ? format(val) : val;
-};
-
-const softcapList = [
-    { name: "P-12", cap: "1e38" }, { name: "P-13", cap: "1e38" }, { name: "P-14", cap: "1e38" }, { name: "P-15", cap: "1e38" },
-    { name: "P-21", cap: "1e38" }, { name: "P-23", cap: "1e38" }, { name: "P-24", cap: "1e38" }, { name: "P-25", cap: "1e38" },
-    { name: "P-31", cap: "1e38" }, { name: "P-32", cap: "1e38" }, { name: "P-33", cap: "1e38" }, { name: "P-41", cap: "1e38" },
-    { name: "SP-11", cap: "1e38" }, { name: "SP-12", cap: "1e38" }, { name: "SP-13", cap: "1e38" }, { name: "SP-14", cap: "1e38" },
-    { name: "SP-15", cap: "1e38" }, { name: "SP-21", cap: "0.50" }, { name: "SP-22", cap: "1e38" }, { name: "SP-23", cap: "1e38" },
-    { name: "SP-32", cap: "0.15" }, { name: "SP-33", cap: "0.66" }, { name: "SP-34", cap: "0.17" }, { name: "SP-35", cap: "1e9" },
-    { name: "SP-42", cap: "1e38" }, { name: "SP-43", cap: "1e38" }, { name: "SP-44", cap: "1e38" }, { name: "SP-45", cap: "1e38" },
-    { name: "A-11", cap: "1e38, 1e50000" }, { name: "A-13", cap: "1e38" }, { name: "A-34", cap: "1e38" },
-    { name: "A-42", cap: "1e38" },{ name: "A-43", cap: "1e38" },{ name: "A-44", cap: "1e38" },{ name: "A-45", cap: "1e38" },
-    { name: "SA-21", cap: "0.50" },{ name: "SA-22", cap: "1e38" },{ name: "SA-24", cap: "1e38" },
-    { name: "SA-31", cap: "1e38" },{ name: "SA-33", cap: "1e38" },{ name: "SA-34", cap: "1e38" },{ name: "SA-35", cap: "1e38" },{ name: "SA-41", cap: "1e38" },{ name: "SA-42", cap: "1e1000" },
-    { name: "LW-21", cap: "1e38" },{ name: "LW-22", cap: "1e38" },{ name: "LW-24", cap: "1e38" },
-    { name: "RE-21", cap: "1e38" },{ name: "RE-22", cap: "1e38" },{ name: "RE-24", cap: "1e38" },
-    { name: "TP-11", cap: "1e38" }, { name: "TP-13", cap: "1e38" }, { name: "TP-24", cap: "1e38" },
-    { name: "PP-11", cap: "9" }, { name: "时间碎片", cap: "2" }
-];
-
-addLayer("s", {
-    name: "Softcap", symbol: "S", position: 1, row: "side", color: "#cccccc",
-    resource: "Softcap", type: "none",
+addLayer("ab", {
+    name: "AutoBuy",
+    symbol: "AB",
+    position: 2,
+    row: "side",
+    color: "#ae00ffff",
+    resource: "",
+    type: "none",
     startData() { return { unlocked: true } },
-    layerShown() { return true },
-    tabFormat: {
-        "软上限统计": {
-            content: [
-                ["blank"],
-                ...softcapList.map(({ name, cap }) => ["display-text", () => `${name} : 软上限开始于 ${fmt(cap)}效果`])
-            ]
-        }
-    }
-});
-addLayer("m", {
-    name: "Mass Power",
-    symbol: "M",
-    position: 0,
-    startData() {
-        return {
-            unlocked: false,
-            points: new Decimal(0),
-            mass: new Decimal(0), // 子资源
-        };
-    },
-    color: "#635c5cff",
-    requires: new Decimal(1000000),
-    resource: "Mass Power",
-    baseResource: "PP 点",
-    baseAmount() { return player.pp.points },
-    type: "normal",
-    branches: ['pp'],
-    exponent: function() {
-        return new Decimal(0.5);
-    },
-    gainMult() {
-        let m = new Decimal(1);
-        if(hasUpgrade('m',23))m=m.times(upgradeEffect('m',23))
-        return m;
-    },
-    gainExp() { return new Decimal(1) },
-    row: 5,
-    hotkeys: [],
-    tabFormat: {
-    "Upgrades": {
-        content: [
-            "main-display",
-            "prestige-button",
-            "blank",
-            ["display-text", function() {
-                if (!hasMilestone('m', 0)) return "获得 1 Mass power 解锁自动生成 mass";
-                let amt = player.m.mass || new Decimal(0);
-                let gain = tmp.m?.massGain || new Decimal(0);
-                return `你有 <h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(amt)}</h2> Mass (+<h2 style="color: #635c5cff; text-shadow: 0px 0px 10px #635c5cff;">${format(gain)}</h2>/s)`;
-            }],
-            "blank",
-            "upgrades"
-        ]
-    },
-    "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] },
-    "Buyables": { content: ["main-display", "prestige-button", "blank", "buyables"] },
-    "Challenges": {
-        content: ["main-display", "prestige-button", "blank", "challenges"],
-        unlocked() { return hasUpgrade('m', 25); }
-    }
-},
-    layerShown() { return hasChallenge('pp', 15) || player.m.points.gte(1)|| player.m.mass.gte(1)||hasUpgrade('m',11); },
-    autoUpgrade: function() { },
-
-    // 自动生成 mass 子资源
-  update(diff) {
-    if (hasMilestone('m', 0)) {
-        let base = Decimal.max(player.m.points, 1);
-        let mult = new Decimal(1);
-        let buy11Eff = tmp.m?.buyables?.[11]?.effect;
-        if (buy11Eff) base = base.add(buy11Eff);
-        let buy12Eff = tmp.m?.buyables?.[12]?.effect;
-        if (buy12Eff) mult = mult.times(buy12Eff);
-        let buy13Eff = tmp.m?.buyables?.[13]?.effect;
-        if (buy13Eff) mult = mult.pow(buy13Eff);
-        let exp = new Decimal(1);
-        let tier = player.m.buyables[21] || new Decimal(0);
-        if (tier.gt(0)) exp = exp.add(tier.div(4));
-        
-        let gainPerSecond = base.times(mult).pow(exp);
-        let gain = gainPerSecond.times(diff);
-        player.m.mass = player.m.mass.add(gain);
-        if (!tmp.m) tmp.m = {};
-        tmp.m.massGain = gainPerSecond;
-    }
-},
-    milestones: {
-    0: {
-        requirementDescription: "1 Mass power",
-        effectDescription: "每秒自动生成 mass",
-        done() { return player.m.points.gte(1); },
-    },
-    1: {
-        requirementDescription: "1e2 mass",
-        effectDescription: "解锁质量生产器",
-        done() { return player.m.mass.gte(1e2); },
-    },
-    2: {
-        requirementDescription: "1e4 mass",
-        effectDescription: "解锁质量倍增器",
-        done() { return player.m.mass.gte(1e4); },
-    },
-    3: {
-        requirementDescription: "1e6 mass",
-        effectDescription: "解锁质量强化器",
-        done() { return player.m.mass.gte(1e6); },
-    },
-},
-
-    upgrades: {
-        rows: 5,
+    layerShown() { return player.p.unlocked || player.pp.unlocked || player.m.unlocked },
+    tooltip: "自动购买开关",
+    clickables: {
+        rows: 6,
         cols: 5,
+        // ── P 层 ──
         11: {
-    title: "质量转化",
-    description: "基于Mass大幅提升点数,小幅提升时间之力,微小提升Points Power产量,解锁一个购买项",
-    cost: new Decimal(1),
-    effect() {
-        let mass = player.m.mass || new Decimal(0);
-        return {
-            // 大幅提升点数获取
-            points: (function() {
-                let raw = mass.add(1).pow(5);
-                if(hasUpgrade('m',15))raw=raw.pow(13)
-                let cap = new Decimal("1e100");
-                return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
-            })(),
-            // 小幅提升时间之力产量
-            timePower: (function() {
-                let raw = mass.add(10).pow(0.5);
-                if(hasUpgrade('m',15))raw=raw.pow(7)
-                let cap = new Decimal("1e38");
-                return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.25));
-            })(),
-            // 微小提升 Points Power 产量
-            ppPower: (function() {
-                if (mass.lte(0)) return new Decimal(1);
-                let log2e = new Decimal(Math.log2(Math.E));
-                let raw = mass.add(2).log10().div(log2e).max(1);
-                if(hasUpgrade('m',15))raw=raw.pow(5)
-                let cap = new Decimal("1e9");
-                return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
-            })(),
-        };
-    },
-    effectDisplay() {
-        let eff = upgradeEffect(this.layer, this.id);
-        return `点数*${format(eff.points, 4, true)},时间之力*${format(eff.timePower, 4, true)},Points Power*${format(eff.ppPower, 4, true)}`;
-    },
-}, 12: {
-    title: "时间质量",
-    description: "解锁一个TP购买项",
-    cost: new Decimal(2),
-    unlocked() { return hasUpgrade('m', 11); },
-}, 13: {
-    title: "回滞之律",
-    description: "基于LW,RE点延长前五重软上限(硬上限^5)",
-    cost: new Decimal(3),
-    unlocked() { return hasUpgrade('m', 12); },
-    effect() {
-        let max=new Decimal(5)
-        let raw1 = player.lw.points.add(1).log10().div(1e4).add(1);
-        let raw2 = player.re.points.add(1).log10().div(1e4).add(1);
-        let raw = raw1.add(raw2).div(2);
-        if(hasUpgrade('m',15))max=new Decimal(10)
-        return Decimal.min(raw, max);
-    },
-            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true) }
+            title: "UP",
+            display() { return hasMilestone('ach', 0) ? (player.autoPUpgrade ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 0) },
+            onClick() { player.autoPUpgrade = !player.autoPUpgrade },
+            style: { "background-color"() { return player.autoPUpgrade ? "#4BDC13" : "#666666" } },
         },
-14: {
-    title: "打破六重",
-    description: "六重软上限延迟^10,解锁Points Power效果II,时间碎片价格^{0.5/(lg(10+Points Power)^{0.0521})}(硬上限为^0.05)",
-    cost: new Decimal(4),
-    unlocked() { return hasUpgrade('m', 13); },
-    effect() {
-                let pp = player.pp.pointsPower || new Decimal(0);
-                let exp = new Decimal(0.0521);
-                return Decimal.max(Decimal.pow(Decimal.log10(pp.add(10)), exp).pow(-1).times(0.5),0.05);
-            },
-            effectDisplay() {
-                let pp = player.pp.pointsPower || new Decimal(0);
-                let exp = new Decimal(0.0521);
-                return "^" + format(Decimal.max(Decimal.pow(Decimal.log10(pp.add(10)), exp).pow(-1).times(0.5), 0.05), 6, true);
-            }
-},15: {
-    title: "提高效率",
-    description: "MU-1的效果分别^13,^7,^5,MU-2,SAU-19硬上限延迟至10,Points Power效果I的公式指数+0.025,弱化五重软上限1.055,质量阶级对质量倍增器生效,但是效果^0.5",
-    cost: new Decimal(5),
-    unlocked() { return hasUpgrade('m', 14); },
-}, 
-21: {
-    title: "去掉限制I",
-    description: "PP不再受限于最高points,禁用PP重置,每秒自动获取PP",
-    cost: new Decimal(10),
-    unlocked() { return hasUpgrade('m', 15); },
-},
-22: {
-    title: "去掉限制II",
-    description: "延长前六重软上限^10,并移除一重软上限,但是六~九重软上限惩罚*10,所有弱化一重软上限m改为对点数^m,但是效果^0.5,所有延迟一重软上限n改为对点数*n,延长一重软上限无效",
-    cost: new Decimal(50),
-    unlocked() { return hasUpgrade('m', 21); },
-},23: {
-    title: "指数之质",
-    description: "基于PP加成Mass Power获取",
-    cost: new Decimal(300),
-    unlocked() { return hasUpgrade('m', 22); },
-     effect() {
-                let pp = player.pp.points || new Decimal(0);
-                let raw=pp.add(1).log10().add(1)
-                 if (hasChallenge('m', 11))raw=raw.pow(2)
-                return raw;
-            },
-            effectDisplay() {
-                let pp = player.pp.points || new Decimal(0);
-                let raw=pp.add(1).log10().add(1)
-                 if (hasChallenge('m', 11))raw=raw.pow(2)
-                return "*" + format(raw, 6, true);
-            }
-},
-24: {
-    title: "存于质量",
-    description: "M重置保留PP挑战",
-    cost: new Decimal(2100),
-    unlocked() { return hasUpgrade('m', 23); },
-},
-25: {
-    title: "于质之中",
-    description: "解锁M挑战",
-    cost: new Decimal(10000),
-    unlocked() { return hasUpgrade('m', 24); },
-},
-    },
-
-   buyables: {
-    11: {
-        title: "质量生产器",
-       unlocked() { return hasMilestone('m', 1); },
-        cost(x) { if (x.eq(0)) return new Decimal(1);
-            let base = Decimal.pow(x.add(1).log10().add(1.01), x.times(1.01))
-                .floor()
-                .times(Decimal.pow(10, x.div(20).floor().sub(1).max(0)));
-                if(x.gte(100))base=base.pow(x.div(100))
-            return base.max(1);
+        12: {
+            title: "BP1",
+            display() { return hasMilestone('ach', 2) ? (player.autoPBuyable ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 2) },
+            onClick() { player.autoPBuyable = !player.autoPBuyable },
+            style: { "background-color"() { return player.autoPBuyable ? "#4BDC13" : "#666666" } },
         },
-        freeAmount() { return new Decimal(0); },
-        effect(x) {  let total = x.add(this.freeAmount());
-            if (total.eq(0)) return new Decimal(1);
-            let raw = total.times(total.add(1).log10().max(1));
-            if (raw.gt(1e308)) {
-                return raw.pow(raw.log10().pow(-1).times(154));
-            }
-            return raw; },
-       display() {
-    let bought = getBuyableAmount(this.layer, this.id);
-    let free = this.freeAmount();
-    let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
-    let eff11_raw = tmp.m?.buyables?.[11]?.effect || new Decimal(1);
-    let eff12_raw = tmp.m?.buyables?.[12]?.effect || new Decimal(1);
-    let eff13_raw = tmp.m?.buyables?.[13]?.effect || new Decimal(1);
-    let currentMult = eff12_raw.pow(eff13_raw);
-    let realBaseAdd = eff11_raw.times(currentMult);
-    return `花费: ${format(cost)} Mass\n已购买: ${formatWhole(bought)}+${formatWhole(free)}\n` +
-           `mass获取基数+<b>${format(realBaseAdd, 4, true)}</b>`;
-},
-        canAfford() {
-            let cost = tmp[this.layer].buyables[this.id]?.cost;
-            return cost !== undefined && player.m.mass.gte(cost);   
+        // ── SP 层 ──
+        13: {
+            title: "USP",
+            display() { return hasMilestone('ach', 0) ? (player.autoSPUpgrade ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 0) },
+            onClick() { player.autoSPUpgrade = !player.autoSPUpgrade },
+            style: { "background-color"() { return player.autoSPUpgrade ? "#ffc400" : "#666666" } },
         },
-        buy() {
-            let x = getBuyableAmount(this.layer, this.id);
-            let cost = tmp[this.layer].buyables[this.id].cost;
-            player.m.mass = player.m.mass.sub(cost);                
-            player[this.layer].buyables[this.id] = x.add(1);
-            updateTemp();
+        14: {
+            title: "BSP1",
+            display() { return hasMilestone('ach', 2) ? (player.autoSPBuyable ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 2) },
+            onClick() { player.autoSPBuyable = !player.autoSPBuyable },
+            style: { "background-color"() { return player.autoSPBuyable ? "#ffc400" : "#666666" } },
         },
-        buyMax() {
-            let x = player.m.buyables[11] || new Decimal(0);
-            let mass = player.m.mass;                                
-            let count = 0;
-            let totalCost = new Decimal(0);
-            while (count < 50) {
-                let nextCost = this.cost(x.add(count));
-                let newTotal = totalCost.add(nextCost);
-                if (mass.gte(newTotal)) {                            
-                    totalCost = newTotal;
-                    count++;
-                } else break;
-            }
-            if (count > 0) {
-                player.m.mass = mass.sub(totalCost);
-                player.m.buyables[11] = x.add(count);
-                updateTemp();
-            }
+        // ── A 层 ──
+        15: {
+            title: "UA",
+            display() { return hasMilestone('ach', 0) ? (player.autoAUpgrade ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 0) },
+            onClick() { player.autoAUpgrade = !player.autoAUpgrade },
+            style: { "background-color"() { return player.autoAUpgrade ? "#1900ffff" : "#666666" } },
+        },
+        // ── SA / LW / RE ──
+        21: {
+            title: "USA",
+            display() { return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) ? (player.autoSAUpgrade ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 5) || hasUpgrade('pp', 13) },
+            onClick() { player.autoSAUpgrade = !player.autoSAUpgrade },
+            style: { "background-color"() { return player.autoSAUpgrade ? "#00ffbfff" : "#666666" } },
+        },
+        22: {
+            title: "ULW",
+            display() { return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) ? (player.autoLWUpgrade ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 5) || hasUpgrade('pp', 13) },
+            onClick() { player.autoLWUpgrade = !player.autoLWUpgrade },
+            style: { "background-color"() { return player.autoLWUpgrade ? "#c2f310ff" : "#666666" } },
+        },
+        23: {
+            title: "URE",
+            display() { return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) ? (player.autoREUpgrade ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('ach', 5) || hasUpgrade('pp', 13) },
+            onClick() { player.autoREUpgrade = !player.autoREUpgrade },
+            style: { "background-color"() { return player.autoREUpgrade ? "rgba(0,89,255,1)" : "#666666" } },
+        },
+        // ── TP 层 ──
+        24: {
+            title: "UTP&BTP1",
+            display() { return hasChallenge('pp', 14) ? (player.autoTPFragment ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasChallenge('pp', 14) },
+            onClick() { player.autoTPFragment = !player.autoTPFragment },
+            style: { "background-color"() { return player.autoTPFragment ? "rgba(255,0,221,1)" : "#666666" } },
+        },
+        25: {
+            title: "BTP2&BTP3",
+            display() { return hasMilestone('ach', 6) ? (player.autoTPCrystalEclipse ? "开" : "关") : "禁用" },
+            unlocked() { return player.tp.unlocked && hasUpgrade('tp', 14) },
+            canClick() { return hasMilestone('ach', 6) },
+            onClick() { player.autoTPCrystalEclipse = !player.autoTPCrystalEclipse },
+            style: { "background-color"() { return player.autoTPCrystalEclipse ? "rgba(255,0,221,1)" : "#666666" } },
+        },
+        // ── M 层 ──
+        31: {
+            title: "BM1&BM2&BM3",
+            display() { return hasMilestone('m', 4) ? (player.autoMProd ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('m', 4) },
+            onClick() { player.autoMProd = !player.autoMProd },
+            style: { "background-color"() { return player.autoMProd ? "#635c5cff" : "#666666" } },
+        },
+        32: {
+            title: "BM4",
+            display() { return hasMilestone('m', 5) ? (player.autoMClass ? "开" : "关") : "禁用" },
+            unlocked() { return true },
+            canClick() { return hasMilestone('m', 5) },
+            onClick() { player.autoMClass = !player.autoMClass },
+            style: { "background-color"() { return player.autoMClass ? "#635c5cff" : "#666666" } },
         },
     },
-    12: {
-        title: "质量倍增器",
-       unlocked() { return hasMilestone('m', 2); },
-        cost(x) { if (x.eq(0)) return new Decimal(10);
-            let base = Decimal.pow(x.add(1).log10().add(2.2), x.times(1.2))
-                .times(10).floor()
-                .times(Decimal.pow(100, x.div(10).floor().sub(1).max(0)));
-                if(x.gte(50))base=base.pow(x.div(50))
-            return base.max(10); },
-        freeAmount() { return new Decimal(0); },
-        effect(x) { let total = x.add(this.freeAmount());
-            if (total.eq(0)) return new Decimal(1);
-            let exp = new Decimal(2);
-            let raw = total.add(1).pow(exp);
-            let tier = player.m.buyables[21] || new Decimal(0);
-            let exptier = tier.div(4).add(1).pow(0.5);
-            if(hasUpgrade('m',15))raw=raw.pow(exptier)
-            if (raw.gt(1e38)) {
-                return raw.sqrt();
-            }
-            return raw; },
-       display() {
-    let bought = getBuyableAmount(this.layer, this.id);
-    let free = this.freeAmount();
-    let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
-    let eff12_real = tmp.m?.buyables?.[12]?.effect || new Decimal(1);   // 实际生效值（已含阶级加成）
-    let eff13_raw = tmp.m?.buyables?.[13]?.effect || new Decimal(1);
-    let currentMult = eff12_real.pow(eff13_raw);                       // 真实的乘数
-    return `花费: ${format(cost)} Mass\n已购买: ${formatWhole(bought)}+${formatWhole(free)}\n` +
-           `质量生产器效果*<b>${format(currentMult, 4, true)}</b>`;
-},
-        canAfford() {
-            let cost = tmp[this.layer].buyables[this.id]?.cost;
-            return cost !== undefined && player.m.mass.gte(cost);
-        },
-        buy() {
-            let x = getBuyableAmount(this.layer, this.id);
-            let cost = tmp[this.layer].buyables[this.id].cost;
-            player.m.mass = player.m.mass.sub(cost);
-            player[this.layer].buyables[this.id] = x.add(1);
-            updateTemp();
-        },
-        buyMax() {
-            let x = player.m.buyables[12] || new Decimal(0);
-            let mass = player.m.mass;
-            let count = 0;
-            let totalCost = new Decimal(0);
-            while (count < 50) {
-                let nextCost = this.cost(x.add(count));
-                let newTotal = totalCost.add(nextCost);
-                if (mass.gte(newTotal)) {
-                    totalCost = newTotal;
-                    count++;
-                } else break;
-            }
-            if (count > 0) {
-                player.m.mass = mass.sub(totalCost);
-                player.m.buyables[12] = x.add(count);
-                updateTemp();
-            }
-        },
-    },
-    13: {
-        title: "质量强化器",
-        unlocked() { return hasMilestone('m', 3); },
-        cost(x) {  if (x.eq(0)) return new Decimal(100);
-            let base = Decimal.pow(x.times(0.05).add(4.4), x.times(1.3))
-                .times(100).floor()
-                .times(Decimal.pow(1000, x.div(5).floor().sub(1).max(0)));
-                if(x.gte(25))base=base.pow(x.div(25))
-            return base.max(100); },
-        freeAmount() { return new Decimal(0); },
-        effect(x) { let total = x.add(this.freeAmount());
-            if (total.eq(0)) return new Decimal(1);
-            let raw = total.div(13).add(1).pow(0.78);
-            if (raw.gt(5)) {
-                return raw.div(5).add(10).log10().sqrt().times(5);
-            }
-            return raw; },
-       display() {
-    let bought = getBuyableAmount(this.layer, this.id);
-    let free = this.freeAmount();
-    let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
-    let eff13_raw = tmp.m?.buyables?.[13]?.effect || new Decimal(1);
-    return `花费: ${format(cost)} Mass\n已购买: ${formatWhole(bought)}+${formatWhole(free)}\n` +
-           `质量倍增器效果^<b>${format(eff13_raw, 4, true)}</b>`;
-},
-        canAfford() {
-            let cost = tmp[this.layer].buyables[this.id]?.cost;
-            return cost !== undefined && player.m.mass.gte(cost);
-        },
-        buy() {
-            let x = getBuyableAmount(this.layer, this.id);
-            let cost = tmp[this.layer].buyables[this.id].cost;
-            player.m.mass = player.m.mass.sub(cost);
-            player[this.layer].buyables[this.id] = x.add(1);
-            updateTemp();
-        },
-        buyMax() {
-            let x = player.m.buyables[13] || new Decimal(0);
-            let mass = player.m.mass;
-            let count = 0;
-            let totalCost = new Decimal(0);
-            while (count < 50) {
-                let nextCost = this.cost(x.add(count));
-                let newTotal = totalCost.add(nextCost);
-                if (mass.gte(newTotal)) {
-                    totalCost = newTotal;
-                    count++;
-                } else break;
-            }
-            if (count > 0) {
-                player.m.mass = mass.sub(totalCost);
-                player.m.buyables[13] = x.add(count);
-                updateTemp();
-            }
-        },
-    },
-    21: {
-        title: "质量阶级",
-        unlocked() { return hasUpgrade('m', 11); },
-        cost(x) {
-            if (x.eq(0)) return new Decimal(100);
-           let base=Decimal.pow(x.div(10).add(10), x.pow(2).add(2)).floor();
-           if(x.gte(10))base=base.pow(x.div(10))
-            return base
-        },
-        effect(x) {
-            return new Decimal(1);
-        },
-       display() {
-    let x = player[this.layer].buyables[this.id] || new Decimal(0);
-    let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
-    let tier = player.m.buyables[21] || new Decimal(0);
-    let classExp = Decimal.add(1, tier.div(4));
-    if (classExp.gt(5)) classExp = classExp.div(5).log10().add(1).times(5);
-    return `花费: ${format(cost)} Mass\n当前阶级: ${formatWhole(x)}\n` +
-           `购买后重置第一行购买项和Mass\n` +
-           `mass获取^<b>${format(classExp, 4, true)}</b>`;
-},        canAfford() {
-            let cost = tmp[this.layer].buyables[this.id]?.cost;
-            return cost !== undefined && player.m.mass.gte(cost);   // mass
-        },
-        buy() {
-            let x = player[this.layer].buyables[this.id] || new Decimal(0);
-            let cost = tmp[this.layer].buyables[this.id].cost;
-            player.m.mass = player.m.mass.sub(cost);                // mass
-            // 重置
-            player.m.mass =new Decimal(0);
-            player[this.layer].buyables[11] = new Decimal(0);
-            player[this.layer].buyables[12] = new Decimal(0);
-            player[this.layer].buyables[13] = new Decimal(0);
-            player[this.layer].buyables[this.id] = x.add(1);
-            updateTemp();
-        },
-    },
-}, challenges: {
-        11: {
-            name: "往日不再", challengeDescription: "你的点数获取速度被压缩为^0.01,AU-1效果强制为1(tips:去休息一会吧)", goal: new Decimal("1e75"),
-            rewardDescription: function() {
-                return "时间碎片价格^0.5,AU-1效果^1.001,MU-8效果^2,且根据点数延长前五重软上限,当前:^" + format(player.points.add(10).log10().pow(0.025),4,true);
-            },
-            onComplete() {},
-            unlocked() { return hasUpgrade('m', 25)|| player.m.activeChallenge == 11 || hasChallenge('m', 11) }
-        },
-    },
-}); 
+});
