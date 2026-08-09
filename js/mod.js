@@ -11,7 +11,7 @@ let modInfo = {
 
 let VERSION = {
     num: "0.0",
-    name: "nothing",
+    name: "更新至320成就点(95个成就)",
 }
 
 let changelog = `<h1>Changelog:</h1><br>
@@ -134,8 +134,9 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
     if (hasUpgrade('pp', 21)) gain = gain.pow(upgradeEffect('pp', 21));
     if (hasUpgrade('p', 45)) gain = gain.pow(upgradeEffect('p', 45));
     if (hasUpgrade('m', 61)) gain = gain.pow(upgradeEffect('m', 61));
-  let tpDensityEff = tmp.tp?.buyables?.[21]?.effect;
-if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
+    if (player.pr.points.gt(1)) gain = gain.pow(player.pr.points.add(1).pow(2));
+    let tpDensityEff = tmp.tp?.buyables?.[21]?.effect;
+    if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
 
     // ---- 挑战压缩 ----
     if (player.pp.activeChallenge == 11) gain = gain.pow(0.6);
@@ -143,10 +144,18 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
     if (player.pp.activeChallenge == 13) gain = gain.pow(0.4);
     if (player.pp.activeChallenge == 14) gain = gain.pow(0.3);
     if (player.pp.activeChallenge == 15) gain = gain.pow(0.25);
+    if (player.pp.activeChallenge == 16) gain = gain.pow(0.009);
     if (player.m.activeChallenge == 11) gain = gain.pow(0.01);
     if (player.m.activeChallenge == 12) gain = gain.pow(0.005);
     if (player.m.activeChallenge == 13) gain = gain.pow(0.0025);
-
+    if (player.m.activeChallenge == 14) gain = gain.add(1).log10();
+    if (player.m.activeChallenge == 15) gain = gain.add(1).log10().pow(5);
+    if (player.m.activeChallenge == 16) gain = gain.pow(1.25e-7).add(10).log10();
+    if (player.m.activeChallenge == 16){
+        if (hasUpgrade('PI', 11)) gain = gain.times(2);
+    if (hasUpgrade('PI', 12)) gain = gain.times(upgradeEffect('PI', 12));
+    if (hasUpgrade('PI', 15)) gain = gain.times(upgradeEffect('PI', 15));
+    }
     // ---- 软上限处理 ----
 
     // 如果 M-22 已购买，跳过一重软上限
@@ -163,6 +172,7 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
         if (hasChallenge('m', 11))p1=p1.pow(player.points.add(10).log10().pow(0.025));
     if (hasChallenge('m', 13))p1=p1.pow(player.pp.points.add(10).log10().pow(0.05));
         p1 = p1.pow(energyFactor);
+        if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p1 = p1.log10();
         gain = applySoftcap(gain, p1, 8.2, [
             { cond: () => hasUpgrade('a', 21), mult: 1.05 },
             { cond: () => hasUpgrade('sp', 24), mult: 1.05 },
@@ -197,6 +207,7 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
     if (hasChallenge('m', 11))p2=p2.pow(player.points.add(10).log10().pow(0.025));
     if (hasChallenge('m', 13))p2=p2.pow(player.pp.points.add(10).log10().pow(0.05));
    p2 = p2.pow(energyFactor);
+   if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p2 = p2.log10();
     gain = applySoftcap(gain, p2, 8, [
         { cond: () => hasUpgrade('sa', 12), mult: 1.05 },
         { cond: () => hasUpgrade('lw', 12), mult: 1.05 },
@@ -224,6 +235,7 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
     if (hasChallenge('m', 13))p3=p3.pow(player.pp.points.add(10).log10().pow(0.05));
     if (hasChallenge('m', 11))p3=p3.pow(player.points.add(10).log10().pow(0.025));
     p3 = p3.pow(energyFactor);
+    if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p3 = p3.log10();
     gain = applySoftcap(gain, p3, 6.9, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.04 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.3 },
@@ -245,6 +257,7 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
     if (hasChallenge('m', 13))p4=p4.pow(player.pp.points.add(10).log10().pow(0.05));
     if (hasChallenge('m', 11))p4=p4.pow(player.points.add(10).log10().pow(0.025));
    p4 = p4.pow(energyFactor);
+   if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p4 = p4.log10();
     gain = applySoftcap(gain, p4, 7.8, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.05 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.4 },
@@ -265,6 +278,7 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
     if (hasChallenge('m', 13))p5=p5.pow(player.pp.points.add(10).log10().pow(0.05));
     if (hasChallenge('m', 11))p5=p5.pow(player.points.add(10).log10().pow(0.025));
     p5 = p5.pow(energyFactor);
+    if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p5 = p5.log10();
     gain = applySoftcap(gain, p5, 6.5, [
         { cond: () => hasUpgrade('p', 43), mult: 1.5 },
         { cond: () => hasUpgrade('p', 44), mult: 1.04 },
@@ -286,20 +300,24 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
     if (hasChallenge('m', 12)) p6 = p6.pow(player.points.add(10).log10().pow(0.0125));
     if (hasChallenge('m', 13))p6=p6.pow(player.pp.points.add(10).log10().pow(0.05));
     p6 = p6.pow(energyFactor);
+    if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p6 = p6.log10();
     gain = applySoftcap(gain, p6, 5.5, [
          { cond: () => hasUpgrade('m', 34), mult: 25 },
     ], 'sextupleSoftcapHint', pen6);
 
     let p7 = new Decimal("1e1e9");
    p7 = p7.pow(energyFactor);
+   if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p7 = p7.log10();
     gain = applySoftcap(gain, p7, 4.5, [], 'septupleSoftcapHint', pen7);
 
     let p8 = new Decimal("1e1e13");
    p8 = p8.pow(energyFactor);
+   if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p8 = p8.log10();
     gain = applySoftcap(gain, p8, 3.5, [], 'octupleSoftcapHint', pen8);
 
     let p9 = new Decimal("1e1e25");
    p9 = p9.pow(energyFactor);
+    if (player.m.activeChallenge == 15||player.m.activeChallenge == 16) p9 = p9.log10();
     gain = applySoftcap(gain, p9, 2.5, [], 'nonupleSoftcapHint', pen9);
 
     return gain;
@@ -308,7 +326,7 @@ if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
 // ==================== 杂项 ====================
 var displayThings = [
     function() {
-        return '当前残局:达到270成就点';
+        return '当前残局:达到320成就点';
     }
 ];
 

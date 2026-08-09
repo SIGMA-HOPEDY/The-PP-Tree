@@ -58,7 +58,7 @@ addLayer("p", {
     gainExp() { return new Decimal(1) },
     row: 0,
     hotkeys: [
-        { key: "p", description: "P: Reset for prestige points", onPress() { if (canReset(this.layer)) doReset(this.layer) } }
+        { key: "", description: "", onPress() { if (canReset(this.layer)) doReset(this.layer) } }
     ],
    tabFormat: {
     "Upgrades": {
@@ -367,7 +367,7 @@ addLayer("sp", {
         return p;
     },
     row: 1,
-    hotkeys: [{ key: "s", description: "S: Reset for second prestige points", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
+    hotkeys: [{ key: "", description: "", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
     layerShown() { return player.p.points.gte(100) || player.sp.points.gte(1) || hasUpgrade('sp', 11) },
    autoUpgrade: function() { return hasMilestone('ach', 0) && player.autoSPUpgrade; },
     tabFormat: {
@@ -677,7 +677,7 @@ addLayer("a", {
     },
     gainExp() { return new Decimal(1) },
     row: 1,
-    hotkeys: [{ key: "a", description: "A: Reset for amplifier", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
+    hotkeys: [{ key: "", description: "", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
     layerShown() { return player.p.points.gte(1e6) || player.a.points.gte(1) || hasUpgrade('a', 11) },
     passiveGeneration: function() {
         let p = 0;
@@ -1249,7 +1249,7 @@ addLayer("tp", {
     },
     gainExp() { return new Decimal(1) },
     row: 3,
-    hotkeys: [{ key: "T", description: "T: Reset for Time Points", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
+    hotkeys: [{ key: "", description: "", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
     layerShown() { return hasUpgrade('a', 35) || player.tp.points.gte(1) || hasUpgrade('tp', 11) },
     update(diff) {
         if (!(player.timesPower instanceof Decimal)) player.timesPower = new Decimal(player.timesPower || 0);
@@ -1359,10 +1359,18 @@ addLayer("tp", {
     buyables: {
     11: {
         title: "时间碎片",
-        unlocked() { return hasUpgrade('tp', 13) && player.pp.activeChallenge != 15 },
+        unlocked() { return hasUpgrade('tp', 13) && player.pp.activeChallenge != 15 && player.pp.activeChallenge != 16 && player.m.activeChallenge != 16 },
         cost(x) {
             if (x.eq(0)) return new Decimal(1);
-            let cost=Decimal.pow(x.pow(Decimal.min(x.pow(-1).times(1024), 2)), x.pow(Decimal.max(x.div(512), 1).pow(2)))
+            let costbase=x.pow(Decimal.min(x.pow(-1).times(1024), 2))
+            if (hasChallenge('m', 15)){
+    costbase = costbase.pow(0.2).max(1);
+ }
+            let costexp=x.pow(Decimal.max(x.div(512), 1).pow(2))
+            if (hasChallenge('pp', 16)){
+    costexp = costexp.pow(0.5).max(1);
+ }
+            let cost=Decimal.pow(costbase, costexp)
                 .times(getTimeCrystalDiscount()).max(1);
                 if (hasUpgrade('m', 14)) {
     cost = cost.pow(upgradeEffect('m', 14)).max(1);
@@ -1375,6 +1383,9 @@ addLayer("tp", {
  }
  if (hasChallenge('m', 13)){
     cost = cost.pow(0.125).max(1);
+ }
+ if (hasChallenge('m', 14)){
+    cost = cost.pow(0.20200311).max(1);
  }
                     return cost
 
@@ -1390,7 +1401,14 @@ addLayer("tp", {
             let raw = total.pow(exp).div(10).add(1);
             let baseEff = raw.gt(1) ? raw.sqrt() : raw;
             if (total.gt(512)) {
-                let extra = Decimal.pow(1.0001, total.div(512));
+                let extrabase = new Decimal(1.0001);
+                if (hasChallenge('m', 15)){
+    extrabase = extrabase.add(0.0004)
+ }
+ if (hasChallenge('pp', 16)){
+    extrabase = extrabase.add(0.0005)
+ }
+                let extra = Decimal.pow(extrabase, total.div(512));
                 return baseEff.times(extra);
             }
             return baseEff;
@@ -1438,7 +1456,7 @@ addLayer("tp", {
     },
     12: {
     title: "时间之晶",
-    unlocked() { return hasUpgrade('tp', 14) && player.pp.activeChallenge != 15 },
+    unlocked() { return hasUpgrade('tp', 14) && player.pp.activeChallenge != 15 && player.pp.activeChallenge != 16 && player.m.activeChallenge != 16 },
     cost(x) { if (x.eq(0)) return new Decimal(4); return Decimal.pow(5, x).floor() },
      freeCrystals() {
             let f = new Decimal(0);
@@ -1503,10 +1521,12 @@ display() {
 },
     13: {
         title: "时蚀之刻",
-        unlocked() { return hasUpgrade('tp', 15) && player.pp.activeChallenge != 15 },
+        unlocked() { return hasUpgrade('tp', 15) && player.pp.activeChallenge != 15 && player.pp.activeChallenge != 16 && player.m.activeChallenge != 16 },
         cost(x) { if (x.eq(0)) return new Decimal(1); return Decimal.pow(2, x).floor() },
         freeCrystals() {
-            return new Decimal(0);   // 时蚀之刻暂时没有免费来源
+            let free=new Decimal(0);
+if (hasChallenge('pp', 16)) free = free.add(1);  // 挑战16奖励：1个免费
+            return free;   
         },
         effect(x) {
             let total = x.add(this.freeCrystals());
@@ -1550,11 +1570,11 @@ display() {
                 updateTemp();
             }
         },
-        purchaseLimit: 10
+        purchaseLimit: 10,
     },
        21: {
     title: "<b style='color:rgba(255, 0, 221, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>时间</b><b style='color:rgba(47, 0, 255, 1); text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;'>密度</b>",
-    unlocked() { return hasUpgrade('m', 12); },
+    unlocked() { return hasUpgrade('m', 12) && player.pp.activeChallenge != 15 && player.pp.activeChallenge != 16 && player.m.activeChallenge != 16 ; },
 
     cost(x) {
         if (x.eq(0)) return new Decimal(550);
@@ -1668,7 +1688,7 @@ addLayer("pp", {
     gainExp() { return new Decimal(1) },
     row: 4,
     branches: ["tp"],
-    hotkeys: [{ key: "P", description: "P: Reset for PP points", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
+    hotkeys: [{ key: '', description: "", onPress() { if (canReset(this.layer)) doReset(this.layer) } }],
     layerShown() { return player.points.gte("1e7000") || player.pp?.points?.gte(1) || hasUpgrade('pp', 11) },
 
     // ────────── 每帧更新 ──────────
@@ -1890,6 +1910,20 @@ tabFormat: {
                     || hasChallenge('pp', 15);
             }
         },
+        16: {
+            name: "坍缩禁锢",
+            challengeDescription: "你的点数获取速度被压缩为^0.009,且所有TP购买项被禁用。",
+            goal: new Decimal("1e7300"),
+            rewardDescription: function() {
+                return "额外获得1个免费时蚀之刻,时间碎片效果额外乘数因子基础+0.0005,时间碎片价格指数^0.5,解锁一个M挑战";
+            },
+            onComplete() {},
+            unlocked() {
+                return hasChallenge('m',15)
+                    || player.pp.activeChallenge == 16
+                    || hasChallenge('pp', 16);
+            }
+        },
     },
 })
 addLayer("m", {
@@ -1904,6 +1938,11 @@ addLayer("m", {
             energy: new Decimal(0),
             autoTime: new Decimal(0),       // 自动购买累积时间
         };
+    },
+    passiveGeneration: function() {
+        let p = 0;
+        if (hasMilestone('ach', 8)) p += 0.01;
+        return p;
     },
     color: "#635c5cff",
     requires: new Decimal(1000000),
@@ -2349,7 +2388,7 @@ if (hasMilestone('m', 4)) {
         },
         35: {
             title: "效率提升",
-            description: "能量效果基础从2提升至3",
+            description: "能量效果基础从2提升至3,解锁一个M挑战",
             cost: new Decimal(1e33),
             unlocked() { return hasUpgrade('m', 34); },
         },
@@ -2727,7 +2766,7 @@ if (hasMilestone('m', 4)) {
                 return "时间碎片价格^0.25,SPU-1效果^1.002,MU-8效果^3,且根据点数延长第六重软上限,当前:^" + format(player.points.add(10).log10().pow(0.0125),4,true);
             },
             onComplete() {},
-            unlocked() { return hasChallenge('m',11)|| player.m.activeChallenge == 11 || hasChallenge('m', 11) }
+            unlocked() { return hasChallenge('m',11)|| player.m.activeChallenge == 12 || hasChallenge('m', 12) }
         },
          13: {
             name: "只余幻影", challengeDescription: "你的点数获取速度被压缩为^0.0025,AU-1,SPU-1,UP-2效果强制为1", goal: new Decimal("1e25"),
@@ -2735,8 +2774,183 @@ if (hasMilestone('m', 4)) {
                 return "时间碎片价格^0.125,PU-1效果^1.004,MU-8效果^3.5,且根据PP延长前六重软上限,当前:^" + format(player.pp.points.add(10).log10().pow(0.05),4,true);
             },
             onComplete() {},
-            unlocked() { return hasChallenge('m',12)|| player.m.activeChallenge == 12 || hasChallenge('m', 12) }
+            unlocked() { return hasChallenge('m',12)|| player.m.activeChallenge == 13 || hasChallenge('m', 13) }
         },
+        14: {
+            name: "痛苦回想", challengeDescription: "你的点数获取速度被压缩为lg(点数获取+1)", goal: new Decimal("20200311"),
+            rewardDescription: function() {
+                return "时间碎片价格^0.20200311,且根据点数增加成就效果基础,当前:+" + format(player.points.add(10).log10().log10().pow(0.22).div(100),6,true);
+            },
+            onComplete() {},
+            unlocked() { return hasUpgrade('m',35)|| player.m.activeChallenge == 14 || hasChallenge('m', 14) }
+        },
+        15: {
+            name: "辗转反侧", challengeDescription: "你的点数获取速度被压缩为lg(点数获取+1)^5,软上限阀值提前至lg(软上限阀值)", goal: new Decimal("1e17"),
+            rewardDescription: function() {
+                return "时间碎片价格基础^0.2,时间碎片效果额外乘数因子基础+0.0004,解锁一个PP挑战,且根据点数增加能量效果基础,当前:+" + format(player.points.add(10).log10().log10().pow(0.2).div(10),6,true);
+            },
+            onComplete() {},
+            unlocked() { return hasChallenge('m',14)|| player.m.activeChallenge == 15 || hasChallenge('m', 15) }
+        },
+        16: {
+            name: "不复当年", challengeDescription: "你的点数获取速度被压缩为lg(点数获取^{1.25e-7}+10),软上限阀值提前至lg(软上限阀值),且所有TP购买项被禁用", goal: new Decimal("1e1.79e308"),
+            rewardDescription: function() {
+                return " ? ? ? "
+            },
+            onComplete() {},
+            unlocked() { return hasChallenge('pp',15)|| player.m.activeChallenge == 16 || hasChallenge('m', 16) }
+        },
+    },
+});
+addLayer("PI", {
+    name: "往昔幻象",
+    symbol: "PI",
+    position: 0,
+    startData() {
+        return {
+            unlocked: false,
+            points: new Decimal(0),
+            autoTime: new Decimal(0),       // 自动购买累积时间
+        };
+    },
+    color: "#ffffffff",
+    requires: new Decimal(100),
+    resource: "往昔幻象",
+    baseResource: "points",
+    baseAmount() { return player.points },
+    type: "normal",
+    branches: ['p','a','sp'],
+    exponent: function() {
+        return new Decimal(0.5);
+    },
+    gainMult() {
+        let m = new Decimal(1);
+         if (hasUpgrade('PI', 13)) m = m.times(upgradeEffect('PI', 13));
+          if (hasUpgrade('PI', 14)) m = m.times(upgradeEffect('PI', 14));
+        return m;
+    },
+    gainExp() { return new Decimal(1) },
+    row: 0,
+    hotkeys: [],
+    tabFormat: {
+    "往日的回忆": {
+        content: [
+             ["display-text", function() {
+                let eff = player.PI.points.add(1);
+                let pi = player.PI.points;
+    return `你有 <h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${formatWhole(pi)}</h2> 往昔幻象`;
+            }], "blank",
+            "prestige-button",
+            "blank",
+            ["display-text", function() {
+                return `<h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">往昔幻象,不复当年</h2>`;
+            }],
+            "blank",
+            "upgrades"
+        ]
+    },
+},
+    layerShown() { return player.m.activeChallenge == 16 },
+    autoUpgrade: function() { },
+    // 自动生成子资源
+    update(diff) {
+    },
+
+    milestones: {
+    },
+
+    upgrades: {
+        rows: 5,
+        cols: 5,
+        11: {
+        title: "微弱记忆",
+        description: "最终点数获取*2  微弱的记忆,让你回想起往昔的初始",
+        cost: new Decimal(1),
+        effect() { return new Decimal(2); },
+        effectDisplay() { return "*2"; }
+    },
+    12: {
+        title: "往昔余温",
+        description: "基于往昔幻象提升最终点数获取",
+        cost: new Decimal(3),
+        unlocked() { return hasUpgrade('PI', 11); },
+        effect() {
+            let pi = player.PI.points.add(1);
+            return pi.pow(0.5);
+        },
+        effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id)); },
+    },
+    13: {
+        title: "仍存于心",
+        description: "基于点数提升往昔幻象获取",
+        cost: new Decimal(10),
+        unlocked() { return hasUpgrade('PI', 12); },
+        effect() {
+            return player.points.add(1).log10().add(1).pow(0.5);
+        },
+        effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id)); },
+    },
+    14: {
+        title: "虽逝不忘",
+        description: "基于往昔幻象提升往昔幻象获取",
+        cost: new Decimal(50),
+        unlocked() { return hasUpgrade('PI', 13); },
+        effect() {
+            return player.PI.points.add(1).pow(0.25);
+        },
+        effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id)); },
+    },
+    15: {
+        title: "永记于心",
+        description: "基于点数提升最终点数获取",
+        cost: new Decimal(100),
+        unlocked() { return hasUpgrade('PI', 14); },
+        effect() {
+            return player.points.add(1).pow(0.25);
+        },
+        effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id)); },
+    },
+        },
+
+    buyables: {
+    },
+});
+addLayer("pr", {
+    name: "Past Reminiscence",
+    symbol: "PR",        
+    startData() { return { unlocked: true, points: new Decimal(0) } },
+    color: "#8f8f8fff",
+    resource: "昔日追忆",
+    baseResource: "points",
+    baseAmount() { return player.points },
+    type: "normal",                // 无重置按钮，仅通过里程碑获取
+    row: 5,   
+    branches: ['pp','m'],                 
+    layerShown() { return player.m.activeChallenge == 16 || player.pr.points.gt(0); },
+    milestones: {
+        0: {
+            requirementDescription: "在CM16中达到1e4点数",
+            effectDescription: "昔日追忆增加成就基础",
+            done() { return player.points.gte(1e4) && player.m.activeChallenge == 16; },
+            onComplete() {
+                player.pr.points = player.pr.points.add(1);
+                updateTemp();
+            }
+        },
+        
+        // 可继续按需添加
+    },
+    tabFormat: {
+        "昔日追忆": {
+            content: [
+                ["display-text", function() {
+                    let pts = player.pr.points;
+                    return `你拥有 <h2 style="color: #8f8f8fff; text-shadow: 0px 0px 10px #8f8f8fff;">${formatWhole(pts)}</h2> 昔日追忆,使点数获取 <h2 style="color: #8f8f8fff; text-shadow: 0px 0px 10px #8f8f8fff;">^${format(player.pr.points.add(1).pow(2), 4, true)}</h2> `;
+                }],
+                "blank",
+                "milestones"
+            ]
+        }
     },
 });
 addLayer("ach", {
@@ -2766,9 +2980,10 @@ addLayer("ach", {
     requirementDescription: "不限于此 (270成就点)",
     effectDescription: "成就优化I,II效果无效,但成就点效果对Masspower与能量获取生效",
     done() { return player.ach.points.gte(270) }
-}},
+},
+8: { requirementDescription: "自动获取II (320成就点)", effectDescription: "每秒获取重置时Mass Power的1%", done() { return player.ach.points.gte(320) } },},
     achievements: {
-        rows: 10, cols: 6,
+        rows: 100, cols: 6,
         11: { name: "起点", tooltip: "获得10点数 奖励:1成就点。", done() { return player.points.gte(10) }, onComplete() { addPoints("ach", 1) } },
         12: { name: "P?", tooltip: "获得1P点 奖励:1成就点。", done() { return player.p.points.gte(1) }, onComplete() { addPoints("ach", 1) } },
         13: { name: "一群P", tooltip: "获得100P点 奖励:1成就点。", done() { return player.p.points.gte(100) }, onComplete() { addPoints("ach", 1) } },
@@ -2823,9 +3038,16 @@ addLayer("ach", {
 94: { name: "质能转换", tooltip: "购买升级「质能一体」 奖励:9成就点。", done() { return hasUpgrade('m', 32) }, onComplete() { addPoints("ach", 9) } },
 95: { name: "砥砺前行", tooltip: "购买升级「砥砺前行」 奖励:9成就点。", done() { return hasUpgrade('m', 34) } , onComplete() { addPoints("ach", 9) } },
 96: { name: "超越极限", tooltip: "点数达到 1e1e14 奖励:9成就点。", done() { return player.points.gte('1e1e14') }, onComplete() { addPoints("ach", 9) } },
+101: { name: "黑暗岁月", tooltip: "完成挑战「痛苦回想」 奖励:10成就点。", done() { return hasChallenge('m', 14) }, onComplete() { addPoints("ach", 10) } },
+102: { name: "难以入睡", tooltip: "完成挑战「辗转反侧」 奖励:10成就点。", done() { return hasChallenge('m', 15) }, onComplete() { addPoints("ach", 10) } },
+103: { name: "指数已尽", tooltip: "完成挑战「坍缩禁锢」 奖励:10成就点。", done() { return hasChallenge('pp', 16) }, onComplete() { addPoints("ach", 10) } },
+104: { name: "往日种种", tooltip: "达到1往昔幻象 奖励:10成就点。", done() { return player.PI.points.gte(1) }, onComplete() { addPoints("ach", 10) } },
+105: { name: "往日...", tooltip: "达到1昔日追忆 奖励:10成就点。", done() { return player.pr.points.gte(1) }, onComplete() { addPoints("ach", 10) } },
 },
     effect() {
     let base = new Decimal(1.01);
+    if(hasChallenge('m',14)) base = base.add(player.points.add(10).log10().log10().pow(0.22).div(100));
+    base=base.add(Decimal.pow(player.pr.points,2).div(100));
     // 如果里程碑7未达成，则应用优化I和II
     if (!hasMilestone('ach', 7)) {
         if (hasMilestone('ach', 1)) base = base.add(player.ach.points);
