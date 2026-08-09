@@ -103,7 +103,7 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
         if (hasUpgrade('lw', 13)) delay(1e9);
         if (hasUpgrade('re', 13)) delay(1e9);
         if (hasUpgrade('p', 35)) delay(1e14);
-        if (hasMilestone('m', 7)) delay(player.m.mass.add().pow(0.01));
+        if (hasMilestone('m', 7)) delay(player.m.mass.add(1).pow(0.01));
         // 弱化类（原 multiply exponent）：改为 gain^effect（但效果^0.5）
         function weaken(eff) {
             let x = Decimal.pow(eff, 0.5); // 效果^0.5
@@ -166,7 +166,7 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
         if (hasUpgrade('lw', 13)) p1 = p1.times(1e9);
         if (hasUpgrade('re', 13)) p1 = p1.times(1e9);
         if (hasUpgrade('p', 35)) p1 = p1.times(1e14);
-        if (hasMilestone('m', 7))p1=p1.times(player.m.mass.add().pow(0.01));
+        if (hasMilestone('m', 7))p1=p1.times(player.m.mass.add(1).pow(0.01));
         if (hasUpgrade('sa', 44)) p1 = p1.pow(upgradeEffect('sa', 44));
         if (hasUpgrade('m', 13)) p1 = p1.pow(upgradeEffect('m', 13));
         if (hasChallenge('m', 11))p1=p1.pow(player.points.add(10).log10().pow(0.025));
@@ -331,7 +331,7 @@ var displayThings = [
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e1e14"))
+    return player.points.gte(new Decimal("1e1e20"))
 }
 
 var backgroundStyle = {};
