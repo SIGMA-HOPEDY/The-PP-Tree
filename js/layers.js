@@ -12,10 +12,11 @@ addLayer("p", {
     
     exponent: function() {
         let exp = new Decimal(0.52);
-        if (hasUpgrade('a', 12)) exp = exp.times(1.01);
         if (hasUpgrade('sp', 33)) exp = exp.add(upgradeEffect('sp', 33));
         if (hasUpgrade('sa', 21)) exp = exp.add(upgradeEffect('sa', 21));
         if (hasUpgrade('m', 62)) exp = exp.times(upgradeEffect('m', 62));
+        if (hasUpgrade('a', 12)) exp = exp.times(1.01);
+        if (hasUpgrade('pp', 13)) exp = exp.times(1.01);
         return exp;
     },
     passiveGeneration: function() {
@@ -733,7 +734,7 @@ addLayer("a", {
                 return `基础效果^${format(eff,4,true)} (当前: 点数获取*${format(upgradeEffect(this.layer, this.id),4,true)} P点获取*${format(upgradeEffect(this.layer, this.id).pow(0.66),4,true)} SP点获取*${format(upgradeEffect(this.layer, this.id).pow(0.33),4,true)})`;
             }
         },
-        12: { title: "22", description: "P点获取公式指数x1.01", cost: new Decimal(5), unlocked() { return hasUpgrade('a', 11) } },
+        12: { title: "22", description: "P点获取^1.01", cost: new Decimal(5), unlocked() { return hasUpgrade('a', 11) } },
         13: {
             title: "23", description: "基于你的amplifier提升sp点获取(加成不低于10)", cost: new Decimal(10000000), unlocked() { return hasUpgrade('a', 12) },
             effect() {
@@ -825,7 +826,7 @@ addLayer("lw", {
     branches: ["sp", "a"],
    
     exponent: function() { return new Decimal(0.01) },
-    autoUpgrade: function() { return (hasMilestone('ach', 5) ||hasUpgrade('pp', 13) )&& player.autoLWUpgrade},
+    autoUpgrade: function() { return (hasMilestone('ach', 5) )&& player.autoLWUpgrade},
     milestonePopups: false,
     passiveGeneration: function() {
         let p = 0;
@@ -927,7 +928,7 @@ addLayer("sa", {
     baseAmount() { return player.points },
     type: "normal",
     exponent: function() { return new Decimal(0.01) },
-    autoUpgrade: function() { return (hasMilestone('ach', 5) ||hasUpgrade('pp', 13)) && player.autoSAUpgrade},
+    autoUpgrade: function() { return (hasMilestone('ach', 5)) && player.autoSAUpgrade},
     milestonePopups: false,
     passiveGeneration: function() {
         let p = 0;
@@ -1111,7 +1112,7 @@ addLayer("re", {
     exponent: function() { return new Decimal(0.01) },
     milestonePopups: false,
     autoUpgrade: function() { 
-    return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) && player.autoREUpgrade;
+    return (hasMilestone('ach', 5)) && player.autoREUpgrade;
 },
     milestones: {
         0: { requirementDescription: "1 Recursive Echo", effectDescription: "点数获取速度*100", done() { return player.re.points.gte(1) } },
@@ -1815,7 +1816,7 @@ tabFormat: {
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id), 4, true) }
         },
         12: { title: "指数软化", description: "软上限(三重、四重)指数再分别乘以1.3,1.4", cost: new Decimal(7000), unlocked() { return hasUpgrade('pp', 11) } },
-        13: { title: "指数自动", description: "自动购买sa,lw,re层升级", cost: new Decimal(7000), unlocked() { return hasUpgrade('pp', 12) } },
+        13: { title: "指数基础", description: "P点获取^1.003", cost: new Decimal(7000), unlocked() { return hasUpgrade('pp', 12) } },
         14: { title: "指数突破", description: "四重软上限延迟至 1e10000", cost: new Decimal(7000), unlocked() { return hasUpgrade('pp', 13) } },
         15: {
             title: "次级之力",
@@ -3092,102 +3093,138 @@ addLayer("ab", {
         // ── P 层 ──
         11: {
             title: "UP",
-            display() { return hasMilestone('ach', 0) ? (player.autoPUpgrade ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 0)) player.permUP = true; // 解锁后永久
+                return player.permUP ? (player.autoPUpgrade ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 0) },
+            canClick() { return player.permUP },
             onClick() { player.autoPUpgrade = !player.autoPUpgrade },
             style: { "background-color"() { return player.autoPUpgrade ? "#4BDC13" : "#666666" } },
         },
         12: {
             title: "BP1",
-            display() { return hasMilestone('ach', 2) ? (player.autoPBuyable ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 2)) player.permBP1 = true;
+                return player.permBP1 ? (player.autoPBuyable ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 2) },
+            canClick() { return player.permBP1 },
             onClick() { player.autoPBuyable = !player.autoPBuyable },
             style: { "background-color"() { return player.autoPBuyable ? "#4BDC13" : "#666666" } },
         },
         // ── SP 层 ──
         13: {
             title: "USP",
-            display() { return hasMilestone('ach', 0) ? (player.autoSPUpgrade ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 0)) player.permUSP = true;
+                return player.permUSP ? (player.autoSPUpgrade ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 0) },
+            canClick() { return player.permUSP },
             onClick() { player.autoSPUpgrade = !player.autoSPUpgrade },
             style: { "background-color"() { return player.autoSPUpgrade ? "#ffc400" : "#666666" } },
         },
         14: {
             title: "BSP1",
-            display() { return hasMilestone('ach', 2) ? (player.autoSPBuyable ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 2)) player.permBSP1 = true;
+                return player.permBSP1 ? (player.autoSPBuyable ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 2) },
+            canClick() { return player.permBSP1 },
             onClick() { player.autoSPBuyable = !player.autoSPBuyable },
             style: { "background-color"() { return player.autoSPBuyable ? "#ffc400" : "#666666" } },
         },
         // ── A 层 ──
         15: {
             title: "UA",
-            display() { return hasMilestone('ach', 0) ? (player.autoAUpgrade ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 0)) player.permUA = true;
+                return player.permUA ? (player.autoAUpgrade ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 0) },
+            canClick() { return player.permUA },
             onClick() { player.autoAUpgrade = !player.autoAUpgrade },
             style: { "background-color"() { return player.autoAUpgrade ? "#1900ffff" : "#666666" } },
         },
         // ── SA / LW / RE ──
         21: {
             title: "USA",
-            display() { return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) ? (player.autoSAUpgrade ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 5) ) player.permUSA = true;
+                return player.permUSA ? (player.autoSAUpgrade ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 5) || hasUpgrade('pp', 13) },
+            canClick() { return player.permUSA },
             onClick() { player.autoSAUpgrade = !player.autoSAUpgrade },
             style: { "background-color"() { return player.autoSAUpgrade ? "#00ffbfff" : "#666666" } },
         },
         22: {
             title: "ULW",
-            display() { return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) ? (player.autoLWUpgrade ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 5)) player.permULW = true;
+                return player.permULW ? (player.autoLWUpgrade ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 5) || hasUpgrade('pp', 13) },
+            canClick() { return player.permULW },
             onClick() { player.autoLWUpgrade = !player.autoLWUpgrade },
             style: { "background-color"() { return player.autoLWUpgrade ? "#c2f310ff" : "#666666" } },
         },
         23: {
             title: "URE",
-            display() { return (hasMilestone('ach', 5) || hasUpgrade('pp', 13)) ? (player.autoREUpgrade ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('ach', 5)) player.permURE = true;
+                return player.permURE ? (player.autoREUpgrade ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('ach', 5) || hasUpgrade('pp', 13) },
+            canClick() { return player.permURE },
             onClick() { player.autoREUpgrade = !player.autoREUpgrade },
             style: { "background-color"() { return player.autoREUpgrade ? "rgba(0,89,255,1)" : "#666666" } },
         },
         // ── TP 层 ──
         24: {
             title: "UTP&BTP1",
-            display() { return hasChallenge('pp', 14) ? (player.autoTPFragment ? "开" : "关") : "禁用" },
+            display() {
+                if (hasChallenge('pp', 14)) player.permUTP = true;
+                return player.permUTP ? (player.autoTPFragment ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasChallenge('pp', 14) },
+            canClick() { return player.permUTP },
             onClick() { player.autoTPFragment = !player.autoTPFragment },
             style: { "background-color"() { return player.autoTPFragment ? "rgba(255,0,221,1)" : "#666666" } },
         },
         25: {
             title: "BTP2&BTP3",
-            display() { return hasMilestone('ach', 6) ? (player.autoTPCrystalEclipse ? "开" : "关") : "禁用" },
-            unlocked() { return player.tp.unlocked && hasUpgrade('tp', 14) },
-            canClick() { return hasMilestone('ach', 6) },
+            display() {
+                if (hasMilestone('ach', 6)) player.permBTP23 = true;
+                return player.permBTP23 ? (player.autoTPCrystalEclipse ? "开" : "关") : "禁用";
+            },
+            unlocked() { return true },
+            canClick() { return player.permBTP23 },
             onClick() { player.autoTPCrystalEclipse = !player.autoTPCrystalEclipse },
             style: { "background-color"() { return player.autoTPCrystalEclipse ? "rgba(255,0,221,1)" : "#666666" } },
         },
         // ── M 层 ──
         31: {
             title: "BM1&BM2&BM3",
-            display() { return hasMilestone('m', 4) ? (player.autoMProd ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('m', 4)) player.permBM = true;
+                return player.permBM ? (player.autoMProd ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('m', 4) },
+            canClick() { return player.permBM },
             onClick() { player.autoMProd = !player.autoMProd },
             style: { "background-color"() { return player.autoMProd ? "#635c5cff" : "#666666" } },
         },
         32: {
             title: "BM4",
-            display() { return hasMilestone('m', 5) ? (player.autoMClass ? "开" : "关") : "禁用" },
+            display() {
+                if (hasMilestone('m', 5)) player.permBM4 = true;
+                return player.permBM4 ? (player.autoMClass ? "开" : "关") : "禁用";
+            },
             unlocked() { return true },
-            canClick() { return hasMilestone('m', 5) },
+            canClick() { return player.permBM4 },
             onClick() { player.autoMClass = !player.autoMClass },
             style: { "background-color"() { return player.autoMClass ? "#635c5cff" : "#666666" } },
         },

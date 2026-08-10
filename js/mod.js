@@ -50,7 +50,21 @@ function addedPlayerData() {
         autoMClass: false,
         // ── CM16 记录 ──
         cm16BestPoints: new Decimal(0),
-        cm16BestPointsPerSec: new Decimal(0)
+        cm16BestPointsPerSec: new Decimal(0),
+
+        // 永久解锁标记（对应原来 canClick 中的条件）
+        permUP: false,       // 对应 hasMilestone('ach',0)
+        permBP1: false,      // 对应 hasMilestone('ach',2)
+        permUSP: false,      // 对应 hasMilestone('ach',0)
+        permBSP1: false,     // 对应 hasMilestone('ach',2)
+        permUA: false,       // 对应 hasMilestone('ach',0)
+        permUSA: false,      // 对应 hasMilestone('ach',5) || hasUpgrade('pp',13)
+        permULW: false,      // 同上
+        permURE: false,      // 同上
+        permUTP: false,      // 对应 hasChallenge('pp',14)
+        permBTP23: false,    // 对应 hasMilestone('ach',6)
+        permBM: false,       // 对应 hasMilestone('m',4)
+        permBM4: false       // 对应 hasMilestone('m',5)
     };
 }
 
