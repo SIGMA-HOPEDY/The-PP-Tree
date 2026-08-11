@@ -2961,7 +2961,7 @@ addLayer("PI", {
         unlocked() { return hasUpgrade('PI', 11); },
         effect() {
             let pi = player.PI.points.add(1);
-            return pi.pow(0.25);
+            return pi.pow(0.28);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
@@ -2971,7 +2971,7 @@ addLayer("PI", {
         cost: new Decimal(10),
         unlocked() { return hasUpgrade('PI', 12); },
         effect() {
-            return player.points.add(1).log10().add(1).pow(0.25);
+            return player.points.add(1).log10().add(1).pow(0.28);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
@@ -2981,7 +2981,7 @@ addLayer("PI", {
         cost: new Decimal(50),
         unlocked() { return hasUpgrade('PI', 13); },
         effect() {
-            return player.PI.points.add(1).pow(0.125);
+            return player.PI.points.add(1).pow(0.144);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
@@ -2991,7 +2991,7 @@ addLayer("PI", {
         cost: new Decimal(100),
         unlocked() { return hasUpgrade('PI', 14); },
         effect() {
-            return player.points.add(1).pow(0.125);
+            return player.points.add(1).pow(0.128);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
@@ -3002,7 +3002,7 @@ addLayer("PI", {
     unlocked() { return hasMilestone('pr', 0)&&hasUpgrade('PI', 15); },
     effect() {
         let pi = player.PI.points.add(1);
-        return pi.add(1).log10().add(1).pow(0.0625);
+        return pi.add(1).log10().add(1).pow(0.0666);
     },
     effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
 },
@@ -3012,17 +3012,17 @@ addLayer("PI", {
     cost: new Decimal(1000),
     unlocked() { return hasUpgrade('PI', 21); },
     effect() {
-        return player.points.add(1).log10().add(1).pow(0.0375);
+        return player.points.add(1).log10().add(1).pow(0.0444);
     },
     effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
 },
 23: {
     title: "残存之影",
-    description: "往昔幻象获取*(往昔幻象+1)^0.1",
+    description: "往昔幻象获取*(往昔幻象+1)^0.13",
     cost: new Decimal(2500),
     unlocked() { return hasUpgrade('PI', 22); },
     effect() {
-        return player.PI.points.add(1).pow(0.1);
+        return player.PI.points.add(1).pow(0.13);
     },
     effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); }
 },
@@ -3033,7 +3033,8 @@ addLayer("PI", {
     unlocked() { return hasUpgrade('PI', 23); },
     effect() {
         let best = player.cm16BestPoints.add(1).log10().add(1);
-        return best.pow(0.3);
+        let bests = player.cm16BestPointsPerSec.add(1).log10().add(1).pow(1.1);
+        return best.times(bests);
     },
     effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); }
 },
