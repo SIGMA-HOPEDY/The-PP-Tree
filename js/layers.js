@@ -67,7 +67,7 @@ addLayer("p", {
     },
     "Buyables": {
         content: ["main-display", "prestige-button", "blank", "buyables"],
-        unlocked() { return hasUpgrade('pp', 31); }
+        unlocked() { return hasUpgrade('pp', 31) && player.m.activeChallenge != 16; }
     }
 },
     layerShown() { return true },
@@ -130,7 +130,7 @@ buyables: {
                     updateTemp();
                 }
             },
-            unlocked() { return hasUpgrade('pp', 31) }
+            unlocked() { return hasUpgrade('pp', 31) && player.m.activeChallenge != 16 }
         }
     },
 
@@ -141,7 +141,7 @@ buyables: {
             title: "02", description: "基于你的p点提升点数获取", cost: new Decimal(5),
             unlocked() { return hasUpgrade('p', 11) },
             effect() {
-                if (inChallenge('m', 13)) {
+                if (inChallenge('m', 13)||inChallenge('m', 16)) {
         return new Decimal(1);
     }
                 let raw = player.p.points.add(1).pow(0.5);
@@ -306,7 +306,7 @@ buyables: {
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id), 4, true) }
         }
     }
-})
+});
 addLayer("sp", {
     name: "second prestige",
     symbol: "SP",
@@ -376,7 +376,7 @@ addLayer("sp", {
     "Milestones": { content: ["main-display", "prestige-button", "blank", "milestones"] },
     "Buyables": {
         content: ["main-display", "prestige-button", "blank", "buyables"],
-        unlocked() { return hasUpgrade('sp', 41) || player.pp.activeChallenge == 14 || hasChallenge('pp', 14); }
+        unlocked() { return hasUpgrade('sp', 41) || player.pp.activeChallenge == 14 || hasChallenge('pp', 14) && player.m.activeChallenge != 16; }
     }
 },
     buyables: {
@@ -437,14 +437,14 @@ addLayer("sp", {
             updateTemp();
         }
     },
-    unlocked() { return hasUpgrade('sp', 41) || player.pp.activeChallenge == 14 || hasChallenge('pp', 14) }
+    unlocked() { return hasUpgrade('sp', 41) || player.pp.activeChallenge == 14 || hasChallenge('pp', 14)  && player.m.activeChallenge != 16}
 }},
     upgrades: {
         rows: 5, cols: 5,
         11: {
             title: "11", description: "双倍p点获取,基于你的sp点小幅度提升点数获取", cost: new Decimal(1),
             effect() {
-                 if (inChallenge('m', 12)||inChallenge('m', 13)) {
+                 if (inChallenge('m', 12)||inChallenge('m', 13)||inChallenge('m', 16)) {
         return new Decimal(1);
     }
                 let raw = player.sp.points.add(1).pow(0.1);
@@ -634,7 +634,7 @@ addLayer("sp", {
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         }
     }
-})
+});
 addLayer("a", {
     name: "amplifier",
     symbol: "A",
@@ -698,7 +698,7 @@ addLayer("a", {
             title: "21", description: "基于你的amplifier提升点数,P点,sp点获取(加成不低于10)", cost: new Decimal(1),
             effect() {
     // 如果挑战正在活跃中，禁用效果
-    if (inChallenge('m', 11)||inChallenge('m', 12)||inChallenge('m', 13)) {
+    if (inChallenge('m', 11)||inChallenge('m', 12)||inChallenge('m', 13)||inChallenge('m', 16)) {
         return new Decimal(1);
     }
 
@@ -811,7 +811,7 @@ addLayer("a", {
             effectDisplay() { return format(upgradeEffect(this.layer, this.id)) + "x" }
         }
     }
-})
+});
 addLayer("lw", {
     name: "Law Weaving",
     symbol: "LW",
@@ -915,7 +915,7 @@ addLayer("lw", {
             title: "解锁·回声", description: "解锁新的RE升级", cost: new Decimal("1e6446"), unlocked() { return hasUpgrade('lw', 24) }
         }
     }
-})
+});
 addLayer("sa", {
     name: "Source Amplification",
     symbol: "SA",
@@ -1097,7 +1097,7 @@ addLayer("sa", {
             title: "终极源质", description: "解锁一个新的PP挑战", cost: new Decimal("1e20500"), unlocked() { return hasUpgrade('sa', 44) }
         }
     }
-})
+});
 addLayer("re", {
     name: "Recursive Echo",
     symbol: "RE",
@@ -1201,7 +1201,7 @@ addLayer("re", {
             title: "解锁·源质", description: "解锁新的SA升级", cost: new Decimal("1e7474"), unlocked() { return hasUpgrade('re', 24) }
         }
     }
-})
+});
 addLayer("tp", {
     name: "Time Points",
     symbol: "TP",
@@ -1646,7 +1646,7 @@ if (hasChallenge('pp', 16)) free = free.add(1);  // 挑战16奖励：1个免费
     },
 },
 }
-})
+});
 addLayer("pp", {
     name: "Points Power",
     symbol: "PP",
@@ -1927,7 +1927,56 @@ tabFormat: {
             }
         },
     },
-})
+});
+addLayer("pr", {
+    name: "Past Reminiscence",
+    symbol: "PR",        
+    startData() { return { unlocked: true, points: new Decimal(0) } },
+    color: "#8f8f8fff",
+    resource: "昔日追忆",
+    baseResource: "points",
+    baseAmount() { return player.points },
+    type: "normal",                // 无重置按钮，仅通过里程碑获取
+    row: 5,   
+    branches: ['pp','m'],                 
+    layerShown() { return player.m.activeChallenge == 16 || player.pr.points.gt(0); },
+    milestones: {
+        0: {
+            requirementDescription: "在CM16中达到1e4点数",
+            effectDescription: "昔日追忆增加成就基础",
+            done() { return player.points.gte(1e4) && player.m.activeChallenge == 16; },
+            onComplete() {
+                player.pr.points = player.pr.points.add(1);
+                updateTemp();
+            }
+        },
+        
+        // 可继续按需添加
+    },
+    tabFormat: {
+        "昔日追忆": {
+            content: [
+                ["display-text", function() {
+                    let pts = player.pr.points;
+                    return `你拥有 <h2 style="color: #8f8f8fff; text-shadow: 0px 0px 10px #8f8f8fff;">${formatWhole(pts)}</h2> 昔日追忆,使点数获取 <h2 style="color: #8f8f8fff; text-shadow: 0px 0px 10px #8f8f8fff;">^${format(player.pr.points.add(1).pow(2), 4, true)}</h2> `;
+                }],
+                "blank",
+                ["display-text", function() {              
+                        let bestPts = player.cm16BestPoints || new Decimal(0);
+                        let Ptseff = bestPts.add(1).log10().add(1) || new Decimal(1);
+                        return `<h2 style="color: #ffffffff; text-shadow: 0px 0px 5px #ffffffff;">CM16中最高点数为${format(bestPts, 4, true)},使点数获取^${format(Ptseff, 4, true)}`;                  
+                }],
+                ["display-text", function() {              
+                        let bestPps = player.cm16BestPointsPerSec || new Decimal(0);
+                        let Ppseff = bestPps.add(1).log10().add(1).pow(2) || new Decimal(1);
+                        return `</h2><br><h2 style="color: #ffffffff; text-shadow: 0px 0px 5px #ffffffff;">CM16中最高点数获取为${format(bestPps, 4, true)}/s,使点数获取^${format(Ppseff, 4, true)}</h2>`;                  
+                }],
+                "blank",
+                "milestones"
+            ]
+        }
+    },
+});
 addLayer("m", {
     name: "Mass Power",
     symbol: "M",
@@ -2319,7 +2368,7 @@ if (hasMilestone('m', 4)) {
         },
         24: {
             title: "存于质量",
-            description: "M重置保留PP挑战",
+            description: "第6行重置保留PP挑战",
             cost: new Decimal(2100),
             unlocked() { return hasUpgrade('m', 23); },
         },
@@ -2795,14 +2844,21 @@ if (hasMilestone('m', 4)) {
             onComplete() {},
             unlocked() { return hasChallenge('m',14)|| player.m.activeChallenge == 15 || hasChallenge('m', 15) }
         },
-        16: {
-            name: "不复当年", challengeDescription: "你的点数获取速度被压缩为lg(点数获取^{1.25e-7}+10),软上限阀值提前至lg(软上限阀值)^0.2,软上限惩罚加强,且所有TP购买项被禁用", goal: new Decimal("1e1.79e308"),
-            rewardDescription: function() {
-                return " ? ? ? "
-            },
-            onComplete() {},
-            unlocked() { return hasChallenge('pp',16)|| player.m.activeChallenge == 16 || hasChallenge('m', 16) }
-        },
+       16: {
+    name: "不复当年",
+    challengeDescription: "点数获取速度被极端压缩,P~TP层资源获取极度压缩,软上限阀值提前,软上限惩罚加强,AU-1,SPU-1,UP-2效果强制为1,且除M及之后层外所有购买项被禁用",
+    goal: new Decimal("1e1.79e308"),
+    rewardDescription: function() {
+        return "解锁一个新层级"
+    },
+    onComplete() {},
+    unlocked() { return hasChallenge('pp',16)|| player.m.activeChallenge == 16 || hasChallenge('m', 16) },
+    style: { 
+        "color": "#ff0000", 
+        "font-weight": "bold",
+        "text-shadow": "0 0 4px #000, 0 0 4px #000, 0 0 4px #000"
+    }
+},
     },
 });
 addLayer("PI", {
@@ -2822,7 +2878,7 @@ addLayer("PI", {
     baseResource: "points",
     baseAmount() { return player.points },
     type: "normal",
-    branches: ['p','a','sp'],
+    branches: ['m','pp','tp'],
     exponent: function() {
         return new Decimal(0.5);
     },
@@ -2833,7 +2889,7 @@ addLayer("PI", {
         return m;
     },
     gainExp() { return new Decimal(1) },
-    row: 0,
+    row: 4,
     hotkeys: [],
     tabFormat: {
     "往日的回忆": {
@@ -2916,55 +2972,6 @@ addLayer("PI", {
         },
 
     buyables: {
-    },
-});
-addLayer("pr", {
-    name: "Past Reminiscence",
-    symbol: "PR",        
-    startData() { return { unlocked: true, points: new Decimal(0) } },
-    color: "#8f8f8fff",
-    resource: "昔日追忆",
-    baseResource: "points",
-    baseAmount() { return player.points },
-    type: "normal",                // 无重置按钮，仅通过里程碑获取
-    row: 5,   
-    branches: ['pp','m'],                 
-    layerShown() { return player.m.activeChallenge == 16 || player.pr.points.gt(0); },
-    milestones: {
-        0: {
-            requirementDescription: "在CM16中达到1e4点数",
-            effectDescription: "昔日追忆增加成就基础",
-            done() { return player.points.gte(1e4) && player.m.activeChallenge == 16; },
-            onComplete() {
-                player.pr.points = player.pr.points.add(1);
-                updateTemp();
-            }
-        },
-        
-        // 可继续按需添加
-    },
-    tabFormat: {
-        "昔日追忆": {
-            content: [
-                ["display-text", function() {
-                    let pts = player.pr.points;
-                    return `你拥有 <h2 style="color: #8f8f8fff; text-shadow: 0px 0px 10px #8f8f8fff;">${formatWhole(pts)}</h2> 昔日追忆,使点数获取 <h2 style="color: #8f8f8fff; text-shadow: 0px 0px 10px #8f8f8fff;">^${format(player.pr.points.add(1).pow(2), 4, true)}</h2> `;
-                }],
-                "blank",
-                ["display-text", function() {              
-                        let bestPts = player.cm16BestPoints || new Decimal(0);
-                        let Ptseff = bestPts.add(1).log10().add(1) || new Decimal(1);
-                        return `<h2 style="color: #ffffffff; text-shadow: 0px 0px 5px #ffffffff;">CM16中最高点数为${format(bestPts, 4, true)},使点数获取^${format(Ptseff, 4, true)}`;                  
-                }],
-                ["display-text", function() {              
-                        let bestPps = player.cm16BestPointsPerSec || new Decimal(0);
-                        let Ppseff = bestPps.add(1).log10().add(1).pow(2) || new Decimal(1);
-                        return `</h2><br><h2 style="color: #ffffffff; text-shadow: 0px 0px 5px #ffffffff;">CM16中最高点数获取为${format(bestPps, 4, true)}/s,使点数获取^${format(Ppseff, 4, true)}</h2>`;                  
-                }],
-                "blank",
-                "milestones"
-            ]
-        }
     },
 });
 addLayer("ach", {

@@ -8,31 +8,39 @@ const TMT_VERSION = {
 }
 
 function getResetGain(layer, useType = null) {
-	let type = useType
-	if (!useType){ 
-		type = tmp[layer].type
-		if (layers[layer].getResetGain !== undefined)
-			return layers[layer].getResetGain()
-	} 
-	if(tmp[layer].type == "none")
-		return new Decimal (0)
-	if (tmp[layer].gainExp.eq(0)) return decimalZero
-	if (type=="static") {
-		if ((!tmp[layer].canBuyMax) || tmp[layer].baseAmount.lt(tmp[layer].requires)) return decimalOne
-		let gain = tmp[layer].baseAmount.div(tmp[layer].requires).div(tmp[layer].gainMult).max(1).log(tmp[layer].base).times(tmp[layer].gainExp).pow(Decimal.pow(tmp[layer].exponent, -1))
-		gain = gain.times(tmp[layer].directMult)
-		return gain.floor().sub(player[layer].points).add(1).max(1);
-	} else if (type=="normal"){
-		if (tmp[layer].baseAmount.lt(tmp[layer].requires)) return decimalZero
-		let gain = tmp[layer].baseAmount.div(tmp[layer].requires).pow(tmp[layer].exponent).times(tmp[layer].gainMult).pow(tmp[layer].gainExp)
-		if (gain.gte(tmp[layer].softcap)) gain = gain.pow(tmp[layer].softcapPower).times(tmp[layer].softcap.pow(decimalOne.sub(tmp[layer].softcapPower)))
-		gain = gain.times(tmp[layer].directMult)
-		return gain.floor().max(0);
-	} else if (type=="custom"){
-		return layers[layer].getResetGain()
-	} else {
-		return decimalZero
-	}
+    let type = useType
+    if (!useType){ 
+        type = tmp[layer].type
+        if (layers[layer].getResetGain !== undefined)
+            return layers[layer].getResetGain()
+    } 
+    if(tmp[layer].type == "none")
+        return new Decimal (0)
+    if (tmp[layer].gainExp.eq(0)) return decimalZero
+    let gain;
+    if (type=="static") {
+        if ((!tmp[layer].canBuyMax) || tmp[layer].baseAmount.lt(tmp[layer].requires)) return decimalOne
+        gain = tmp[layer].baseAmount.div(tmp[layer].requires).div(tmp[layer].gainMult).max(1).log(tmp[layer].base).times(tmp[layer].gainExp).pow(Decimal.pow(tmp[layer].exponent, -1))
+        gain = gain.times(tmp[layer].directMult)
+        gain = gain.floor().sub(player[layer].points).add(1).max(1);
+    } else if (type=="normal"){
+        if (tmp[layer].baseAmount.lt(tmp[layer].requires)) return decimalZero
+        gain = tmp[layer].baseAmount.div(tmp[layer].requires).pow(tmp[layer].exponent).times(tmp[layer].gainMult).pow(tmp[layer].gainExp)
+        if (gain.gte(tmp[layer].softcap)) gain = gain.pow(tmp[layer].softcapPower).times(tmp[layer].softcap.pow(decimalOne.sub(tmp[layer].softcapPower)))
+        gain = gain.times(tmp[layer].directMult)
+        gain = gain.floor().max(0);
+    } else if (type=="custom"){
+        return layers[layer].getResetGain()
+    } else {
+        return decimalZero
+    }
+
+    // ── CM16 全局压缩：P~PP 层资源获取再取对数 ──
+    const cm16Layers = ["p", "sp", "a", "lw", "sa", "re", "tp"];
+    if (player.m.activeChallenge == 16 && cm16Layers.includes(layer)) {
+        gain = gain.add(1).log10().add(1);
+    }
+    return gain;
 }
 
 function getNextAt(layer, canMax=false, useType = null) {
@@ -144,7 +152,9 @@ function rowReset(row, layer) {
 
     // 新增：定义保留挑战的规则
     const keepChallengesRules = {
-        "m_pp": () => hasUpgrade('m', 24),   // M 重置时保留 PP 挑战
+        "m_pp": () => hasUpgrade('m', 24),
+		"PI_pp": () => hasUpgrade('m', 24),
+		"pr_pp": () => hasUpgrade('m', 24), 
         // 可以继续添加其他规则，例如：
         // "anotherLayer_targetLayer": () => someCondition(),
     };
