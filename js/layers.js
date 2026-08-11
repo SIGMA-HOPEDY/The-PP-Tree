@@ -1943,13 +1943,22 @@ addLayer("pr", {
     milestones: {
         0: {
             requirementDescription: "在CM16中达到1e4点数",
-            effectDescription: "昔日追忆增加成就基础",
+            effectDescription: "昔日追忆增加成就基础,解锁UPI-6",
             done() { return player.points.gte(1e4) && player.m.activeChallenge == 16; },
             onComplete() {
                 player.pr.points = player.pr.points.add(1);
                 updateTemp();
             }
         },
+        1: {
+    requirementDescription: "在CM16中达到100000往昔幻象",
+    effectDescription: "昔日追忆增加能量效果基础,解锁BPI-1(未更)",
+    done() { return player.PI.points.gte(1e6) && player.m.activeChallenge == 16; },
+    onComplete() {
+        player.pr.points = player.pr.points.add(1);
+        updateTemp();
+    }
+},
         
         // 可继续按需添加
     },
@@ -1970,6 +1979,16 @@ addLayer("pr", {
                         let bestPps = player.cm16BestPointsPerSec || new Decimal(0);
                         let Ppseff = bestPps.add(1).log10().add(1).pow(2) || new Decimal(1);
                         return `</h2><br><h2 style="color: #ffffffff; text-shadow: 0px 0px 5px #ffffffff;">CM16中最高点数获取为${format(bestPps, 4, true)}/s,使点数获取^${format(Ppseff, 4, true)}</h2>`;                  
+                }],
+                 ["display-text", function() {              
+                        let nbestPts = player.BestPoints || new Decimal(0);
+                        let nPtseff = nbestPts.add(1).log10().add(1).log10().add(1).pow(0.08) || new Decimal(1);
+                        return `</h2><br><h2 style="color: #ffffffff; text-shadow: 0px 0px 5px #ffffffff;">CM16外最高点数为${format(nbestPts, 4, true)},使CM16内点数获取*${format(nPtseff, 4, true)}</h2>`;                  
+                }],
+                 ["display-text", function() {              
+                        let nbestPps = player.BestPointsPerSec || new Decimal(0);
+                        let nPpseff = nbestPps.add(1).log10().add(1).log10().add(1).pow(0.16);
+                        return `</h2><br><h2 style="color: #ffffffff; text-shadow: 0px 0px 5px #ffffffff;">CM16外最高点数获取为${format(nbestPps, 4, true)}/s,使CM16内点数获取*${format(nPpseff, 4, true)}</h2>`;                  
                 }],
                 "blank",
                 "milestones"
@@ -2880,12 +2899,15 @@ addLayer("PI", {
     type: "normal",
     branches: ['m','pp','tp'],
     exponent: function() {
-        return new Decimal(0.5);
+        let exp=new Decimal(0.5)
+        if (hasUpgrade('PI', 22)) exp = exp.times(upgradeEffect('PI', 22));
+        return exp;
     },
     gainMult() {
         let m = new Decimal(1);
          if (hasUpgrade('PI', 13)) m = m.times(upgradeEffect('PI', 13));
           if (hasUpgrade('PI', 14)) m = m.times(upgradeEffect('PI', 14));
+          if (hasUpgrade('PI', 23)) m = m.times(upgradeEffect('PI', 23));
         return m;
     },
     gainExp() { return new Decimal(1) },
@@ -2935,7 +2957,7 @@ addLayer("PI", {
         unlocked() { return hasUpgrade('PI', 11); },
         effect() {
             let pi = player.PI.points.add(1);
-            return pi.pow(0.5);
+            return pi.pow(0.25);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
@@ -2945,7 +2967,7 @@ addLayer("PI", {
         cost: new Decimal(10),
         unlocked() { return hasUpgrade('PI', 12); },
         effect() {
-            return player.points.add(1).log10().add(1).pow(0.5);
+            return player.points.add(1).log10().add(1).pow(0.25);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
@@ -2955,7 +2977,7 @@ addLayer("PI", {
         cost: new Decimal(50),
         unlocked() { return hasUpgrade('PI', 13); },
         effect() {
-            return player.PI.points.add(1).pow(0.25);
+            return player.PI.points.add(1).pow(0.125);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
@@ -2965,10 +2987,63 @@ addLayer("PI", {
         cost: new Decimal(100),
         unlocked() { return hasUpgrade('PI', 14); },
         effect() {
-            return player.points.add(1).pow(0.25);
+            return player.points.add(1).pow(0.125);
         },
         effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
     },
+    21: {
+    title: "回忆强化",
+    description: "基于往昔幻象提升最终点数获取",
+    cost: new Decimal(500),
+    unlocked() { return hasMilestone('pr', 0); },
+    effect() {
+        let pi = player.PI.points.add(1);
+        return pi.add(1).log10().add(1).pow(0.0625);
+    },
+    effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+},
+22: {
+    title: "昔日共鸣",
+    description: "基于点数提升往昔幻象获取",
+    cost: new Decimal(2000),
+    unlocked() { return hasUpgrade('PI', 21); },
+    effect() {
+        return player.points.add(1).log10().add(1).pow(0.0375);
+    },
+    effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+},
+23: {
+    title: "残存之影",
+    description: "往昔幻象获取*(往昔幻象+1)^0.1",
+    cost: new Decimal(10000),
+    unlocked() { return hasUpgrade('PI', 22); },
+    effect() {
+        return player.PI.points.add(1).pow(0.1);
+    },
+    effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); }
+},
+24: {
+    title: "时光回溯",
+    description: "基于CM16最高记录提升最终点数获取",
+    cost: new Decimal(50000),
+    unlocked() { return hasUpgrade('PI', 23); },
+    effect() {
+        let best = player.cm16BestPoints.add(1).log10().add(1);
+        return best.pow(0.3);
+    },
+    effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); }
+},
+25: {
+    title: "永恒烙印",
+    description: "最终点数获取^(√(1+昔日追忆))",
+    cost: new Decimal(1e5),
+    unlocked() { return hasUpgrade('PI', 24) && player.pr.points.gte(1); },
+    effect() {
+        let pr = player.pr.points || new Decimal(0);
+        return pr.add(1).pow(0.5);
+    },
+    effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+}
         },
 
     buyables: {
@@ -3069,7 +3144,7 @@ addLayer("ach", {
     effect() {
     let base = new Decimal(1.01);
     if(hasChallenge('m',14)) base = base.add(player.points.add(10).log10().log10().pow(0.22).div(100));
-    base=base.add(Decimal.pow(player.pr.points,2).div(100));
+    if(hasMilestone('pr', 0)){base=base.add(Decimal.pow(player.pr.points,2).div(100));}
     // 如果里程碑7未达成，则应用优化I和II
     if (!hasMilestone('ach', 7)) {
         if (hasMilestone('ach', 1)) base = base.add(player.ach.points);

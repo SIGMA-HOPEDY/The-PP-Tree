@@ -14,7 +14,7 @@ function dynamicSoftcap(raw, cap, resourceLayer, basePower, divisorFn) {
     return cap.times(ratio.pow(dynamicPow));
 }
 function applySoftcap(gain, threshold, baseExponent, upgrades, hintKey, penalty = 1) {
-    let exponentBase = new Decimal(baseExponent); 
+    let exponentBase = new Decimal(baseExponent);
     if (gain.lte(threshold)) {
         if (tmp && tmp.other && hintKey) tmp.other[hintKey] = "";
         return gain;
@@ -30,14 +30,26 @@ function applySoftcap(gain, threshold, baseExponent, upgrades, hintKey, penalty 
             if (upg.cond()) exponent = exponent.times(upg.mult);
         }
     }
-    if (penalty !== 1) {
-        exponent = exponent.times(penalty);
-    }
+    if (penalty !== 1) exponent = exponent.times(penalty);
     if (!exponent.isFinite() || exponent.isNan() || exponent.lte(0)) exponent = new Decimal(0.9);
     let cappedExcess = excess.pow(exponent);
     let result = threshold.plus(cappedExcess);
+
+    // 设置提示文本（新格式）
     if (tmp && tmp.other && hintKey) {
-        tmp.other[hintKey] = `点数获取大于 ${format(threshold, 3, true)} 后，受到软上限！(^${format(exponent, 9, true)})`;
+        const names = {
+            'softcapHint': '一重软上限',
+            'doubleSoftcapHint': '二重软上限',
+            'tripleSoftcapHint': '三重软上限',
+            'quadrupleSoftcapHint': '四重软上限',
+            'quintupleSoftcapHint': '五重软上限',
+            'sextupleSoftcapHint': '六重软上限',
+            'septupleSoftcapHint': '七重软上限',
+            'octupleSoftcapHint': '八重软上限',
+            'nonupleSoftcapHint': '九重软上限'
+        };
+        let name = names[hintKey] || hintKey;
+        tmp.other[hintKey] = `${name}:点数获取>${format(threshold, 3, true)}后^${format(exponent, 9, true)}`;
         if (hintKey === 'softcapHint') tmp.other.softcappedPointGen = result;
     }
     return result;
@@ -98,6 +110,7 @@ function getEnergySoftcapFactor() {
     let base = new Decimal(2);
     if (hasUpgrade('m', 35)) base = base.add(1);
     if (hasChallenge('m', 15)) base = base.add(player.points.add(10).log10().log10().pow(0.2).div(10));
+    if(hasMilestone('pr', 1)){base=base.add(Decimal.pow(player.pr.points,1.5).div(50));}
     let raw = Decimal.pow(base, Decimal.log10(e.add(1)));
     let cap = new Decimal("1e9");
     let cap2 = new Decimal("1e38");

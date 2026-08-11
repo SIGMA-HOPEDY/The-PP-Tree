@@ -51,7 +51,9 @@ function addedPlayerData() {
         // ── CM16 记录 ──
         cm16BestPoints: new Decimal(0),
         cm16BestPointsPerSec: new Decimal(0),
-
+// ── normal 记录 ──
+        BestPoints: new Decimal(0),
+        BestPointsPerSec: new Decimal(0),
         // 永久解锁标记（对应原来 canClick 中的条件）
         permUP: false,       // 对应 hasMilestone('ach',0)
         permBP1: false,      // 对应 hasMilestone('ach',2)
@@ -176,9 +178,19 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
     if (player.m.activeChallenge == 15) gain = gain.add(1).log10().pow(5);
     if (player.m.activeChallenge == 16) gain = gain.pow(1.25e-7).add(10).log10();
     if (player.m.activeChallenge == 16){
-        if (hasUpgrade('PI', 11)) gain = gain.times(2);
+        let nbestPts = player.BestPoints || new Decimal(0);
+        let nPtseff = nbestPts.add(1).log10().add(1).log10().add(1).pow(0.08) || new Decimal(1);
+        let nbestPps = player.BestPointsPerSec || new Decimal(0);
+        let nPpseff = nbestPps.add(1).log10().add(1).log10().add(1).pow(0.16);
+        if (nbestPts.gt(1)) gain = gain.times(nPtseff);
+        if (nbestPps.gt(1)) gain = gain.times(nPpseff);
+    if (hasUpgrade('PI', 11)) gain = gain.times(2);
     if (hasUpgrade('PI', 12)) gain = gain.times(upgradeEffect('PI', 12));
     if (hasUpgrade('PI', 15)) gain = gain.times(upgradeEffect('PI', 15));
+    if (hasUpgrade('PI', 24)) gain = gain.times(upgradeEffect('PI', 24));
+    if (hasUpgrade('PI', 21)) gain = gain.pow(upgradeEffect('PI', 21));
+    if (hasUpgrade('PI', 25)) gain = gain.pow(upgradeEffect('PI', 25));
+
     }
     // ---- 软上限处理 ----
 
@@ -364,19 +376,27 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
         if (player.points.gt(player.cm16BestPoints)) player.cm16BestPoints = new Decimal(player.points);
         if (gain.gt(player.cm16BestPointsPerSec)) player.cm16BestPointsPerSec = new Decimal(gain);
     }
-
+// 更新普通模式最高纪录（非 CM16 挑战时）
+if (player.m.activeChallenge != 16) {
+    if (player.points.gt(player.BestPoints)) {
+        player.BestPoints = new Decimal(player.points);
+    }
+    if (gain.gt(player.BestPointsPerSec)) {
+        player.BestPointsPerSec = new Decimal(gain);
+    }
+}
     return gain;
 }
 
 // ==================== 杂项 ====================
 var displayThings = [
     function() {
-        return '当前残局:达到1e1e20点数';
+        return '当前残局:获得MPR2';
     }
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e1e20"))
+    return player.points.gte(new Decimal("1e1e24"))
 }
 
 var backgroundStyle = {};
