@@ -2998,8 +2998,8 @@ addLayer("PI", {
     21: {
     title: "回忆强化",
     description: "基于往昔幻象提升最终点数获取",
-    cost: new Decimal(500),
-    unlocked() { return hasMilestone('pr', 0); },
+    cost: new Decimal(250),
+    unlocked() { return hasMilestone('pr', 0)&&hasUpgrade('PI', 15); },
     effect() {
         let pi = player.PI.points.add(1);
         return pi.add(1).log10().add(1).pow(0.0625);
@@ -3009,7 +3009,7 @@ addLayer("PI", {
 22: {
     title: "昔日共鸣",
     description: "基于点数提升往昔幻象获取",
-    cost: new Decimal(2000),
+    cost: new Decimal(1000),
     unlocked() { return hasUpgrade('PI', 21); },
     effect() {
         return player.points.add(1).log10().add(1).pow(0.0375);
@@ -3019,7 +3019,7 @@ addLayer("PI", {
 23: {
     title: "残存之影",
     description: "往昔幻象获取*(往昔幻象+1)^0.1",
-    cost: new Decimal(10000),
+    cost: new Decimal(5000),
     unlocked() { return hasUpgrade('PI', 22); },
     effect() {
         return player.PI.points.add(1).pow(0.1);
@@ -3029,7 +3029,7 @@ addLayer("PI", {
 24: {
     title: "时光回溯",
     description: "基于CM16最高记录提升最终点数获取",
-    cost: new Decimal(50000),
+    cost: new Decimal(10000),
     unlocked() { return hasUpgrade('PI', 23); },
     effect() {
         let best = player.cm16BestPoints.add(1).log10().add(1);
