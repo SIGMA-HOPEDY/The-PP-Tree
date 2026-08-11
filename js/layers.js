@@ -1946,7 +1946,7 @@ addLayer("pr", {
     layerShown() { return player.m.activeChallenge == 16 || player.pr.points.gt(0); },
     milestones: {
         0: {
-            requirementDescription: "在CM16中达到1e4点数",
+            requirementDescription: "在CM16中达到10000点数",
             effectDescription: "昔日追忆增加成就基础,解锁UPI-6",
             done() { return player.points.gte(1e4) && player.m.activeChallenge == 16; },
             onComplete() {
@@ -1955,9 +1955,9 @@ addLayer("pr", {
             }
         },
         1: {
-    requirementDescription: "在CM16中达到100000往昔幻象",
+    requirementDescription: "在CM16中达到10000往昔幻象",
     effectDescription: "昔日追忆增加能量效果基础,解锁BPI-1(未更)",
-    done() { return player.PI.points.gte(1e6) && player.m.activeChallenge == 16; },
+    done() { return player.PI.points.gte(1e4) && player.m.activeChallenge == 16; },
     onComplete() {
         player.pr.points = player.pr.points.add(1);
         updateTemp();
@@ -3019,7 +3019,7 @@ addLayer("PI", {
 23: {
     title: "残存之影",
     description: "往昔幻象获取*(往昔幻象+1)^0.1",
-    cost: new Decimal(5000),
+    cost: new Decimal(2500),
     unlocked() { return hasUpgrade('PI', 22); },
     effect() {
         return player.PI.points.add(1).pow(0.1);
@@ -3029,7 +3029,7 @@ addLayer("PI", {
 24: {
     title: "时光回溯",
     description: "基于CM16最高记录提升最终点数获取",
-    cost: new Decimal(10000),
+    cost: new Decimal(5000),
     unlocked() { return hasUpgrade('PI', 23); },
     effect() {
         let best = player.cm16BestPoints.add(1).log10().add(1);
@@ -3040,7 +3040,7 @@ addLayer("PI", {
 25: {
     title: "永恒烙印",
     description: "最终点数获取^(√(1+昔日追忆))",
-    cost: new Decimal(1e5),
+    cost: new Decimal(1e4),
     unlocked() { return hasUpgrade('PI', 24) && player.pr.points.gte(1); },
     effect() {
         let pr = player.pr.points || new Decimal(0);
