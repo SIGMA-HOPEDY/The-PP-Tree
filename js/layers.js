@@ -78,6 +78,8 @@ buyables: {
                 if (x.eq(0)) return new Decimal(1);
                 let base = x.add(3).times(10);
                 let exp = x.times(x.add(1)).pow(x.add(10).log10().div(3).add(1));
+                let cap = new Decimal("5000");
+        if(x.gte(cap))exp=exp.pow(x.div(cap))
                 return Decimal.pow(base, exp).floor();
             },
            // 免费数量（预留扩展）
@@ -91,6 +93,8 @@ buyables: {
         if (hasUpgrade('sp', 43)) base = base.times(upgradeEffect('sp', 43));
         if (hasUpgrade('sp', 44)) base = base.times(upgradeEffect('sp', 44));
         let exp = total.pow(total.add(10).log10().div(2).add(1.01));
+        let cap = new Decimal("5000");
+        if(x.gte(cap))exp=exp.pow(x.div(cap).pow(0.5))
         return Decimal.pow(base, exp);
     },
     display() {
@@ -1243,7 +1247,7 @@ addLayer("tp", {
         if (hasChallenge('pp', 14)) m = m.times(1e9);
         if (hasUpgrade('sa', 33)) m = m.times(upgradeEffect('sa', 33));
         if (hasChallenge('pp', 15)) m = m.times('1.79e308');
-        if (player.pp.activeChallenge == 14) m = m.times(4.44e44);
+        if (player.pp.activeChallenge == 14) m = m.times(4.44e144);
         if (player.timesPower && player.timesPower instanceof Decimal) {
             m = m.times(player.timesPower.add(1).pow(1.3));
         }
@@ -1890,7 +1894,7 @@ tabFormat: {
             unlocked() { return hasUpgrade('sp', 45) || player.pp.activeChallenge == 13 || hasChallenge('pp', 13) }
         },
         14: {
-            name: "指数坍缩IV", challengeDescription: "你的点数获取速度被压缩为^0.3,但提前解锁凝聚器,TP获取*4.44e44,TPU-11^2.026", goal: new Decimal("1e9000"),
+            name: "指数坍缩IV", challengeDescription: "你的点数获取速度被压缩为^0.3,但提前解锁凝聚器,TP获取*4.44e144,TPU-11^2.026", goal: new Decimal("1e9000"),
             rewardDescription: function() {
                 let mult = player.a.points.add(10).log10().pow(0.14).times(4);
                 return "解锁SA层新内容,自动购买TP层升级和时间碎片,TPU-11^1.279,A点获取*1e100,SA,LW,RE点获取*1e38,TP点获取*1e9,提前解锁凝聚器,根据A点增幅Points Power获取(不小于4),当前: *" + format(mult);
