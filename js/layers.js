@@ -1978,7 +1978,9 @@ addLayer("pr", {
             unlocked() {return hasMilestone('pr', 2)},
     requirementDescription: "在CM16中达到190基础点数/s",
     effectDescription: "昔日追忆增加质量强化器效果基础",
-    done() { return tmp.CM16pointsbasesec.gte(190) && player.m.activeChallenge == 16; },
+   done() {
+    return player.m.activeChallenge == 16 && (tmp.CM16pointsbasesec || new Decimal(0)).gte(190);
+},
     onComplete() {
         player.pr.points = player.pr.points.add(1);
         updateTemp();
