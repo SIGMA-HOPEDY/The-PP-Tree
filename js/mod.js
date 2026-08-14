@@ -11,7 +11,7 @@ let modInfo = {
 
 let VERSION = {
     num: "0.0",
-    name: "更新至330成就点(96个成就)",
+    name: "更新至350成就点(98个成就)",
 }
 
 let changelog = `<h1>Changelog:</h1><br>
@@ -69,8 +69,6 @@ function addedPlayerData() {
         permBM4: false       // 对应 hasMilestone('m',5)
     };
 }
-
-// ==================== 点数生成 ====================
 function getPointGen() {
     if (!canGenPoints()) return new Decimal(0);
 
@@ -78,7 +76,16 @@ function getPointGen() {
         cleanUpgrades();
         player.cleanedUpgrades = true;
     }
-let energyFactor = tmp.m?.energyFactor || new Decimal(1);
+
+    // 辅助函数：计算 M 层挑战 11/12/13 的软上限延迟奖励指数（带软上限）
+    function getMSoftcapBonus(resource, exponent) {
+        let raw = resource.add(10).log10().pow(exponent);
+        let cap = new Decimal(10);
+        if (raw.gte(cap)) raw = raw.div(cap).pow(0.5).times(cap);
+        return raw;
+    }
+
+    let energyFactor = tmp.m?.energyFactor || new Decimal(1);
     let gain = new Decimal(1);
 
     // ---- 基础加成 ----
@@ -113,20 +120,17 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
 
     // ---- M-22: 将原本弱化/延迟一重软上限的效果转换为直接对 gain 的加成 ----
     if (hasUpgrade('m', 22)) {
-         if (hasUpgrade('p', 32)) gain = gain.times(upgradeEffect('p', 32))
-         // 延迟类（原 multiply threshold）：改为 gain*effect
-        function delay(eff) {
+         if (hasUpgrade('p', 32)) gain = gain.times(upgradeEffect('p', 32));
+         function delay(eff) {
             gain = gain.times(eff);
         }
-        // 原本延长一重软上限的升级，现在改为直接乘法
         if (hasUpgrade('sa', 13)) delay(1e9);
         if (hasUpgrade('lw', 13)) delay(1e9);
         if (hasUpgrade('re', 13)) delay(1e9);
         if (hasUpgrade('p', 35)) delay(1e14);
         if (hasMilestone('m', 7)) delay(player.m.mass.add(1).pow(0.01));
-        // 弱化类（原 multiply exponent）：改为 gain^effect（但效果^0.5）
         function weaken(eff) {
-            let x = Decimal.pow(eff, 0.5); // 效果^0.5
+            let x = Decimal.pow(eff, 0.5);
             gain = gain.pow(x);
         }
         if (hasUpgrade('a', 21)) weaken(1.05);
@@ -177,36 +181,42 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
     if (player.m.activeChallenge == 14) gain = gain.add(1).log10();
     if (player.m.activeChallenge == 15) gain = gain.add(1).log10().pow(5);
     if (player.m.activeChallenge == 16) gain = gain.pow(1.25e-7).add(10).log10();
-    if (player.m.activeChallenge == 16){
+
+    if (player.m.activeChallenge == 16) {
+               // 保存基础压缩后点数获取（应用 PI 层加成前）
+tmp.CM16pointsbasesec = new Decimal(gain);
         let nbestPts = player.BestPoints || new Decimal(0);
         let nPtseff = nbestPts.add(1).log10().add(1).log10().add(1).pow(0.08) || new Decimal(1);
         let nbestPps = player.BestPointsPerSec || new Decimal(0);
         let nPpseff = nbestPps.add(1).log10().add(1).log10().add(1).pow(0.16);
         if (nbestPts.gt(1)) gain = gain.times(nPtseff);
         if (nbestPps.gt(1)) gain = gain.times(nPpseff);
-    if (hasUpgrade('PI', 11)) gain = gain.times(2);
-    if (hasUpgrade('PI', 12)) gain = gain.times(upgradeEffect('PI', 12));
-    if (hasUpgrade('PI', 15)) gain = gain.times(upgradeEffect('PI', 15));
-    if (hasUpgrade('PI', 24)) gain = gain.times(upgradeEffect('PI', 24));
-    if (hasUpgrade('PI', 21)) gain = gain.pow(upgradeEffect('PI', 21));
-    if (hasUpgrade('PI', 25)) gain = gain.pow(upgradeEffect('PI', 25));
-
+        if (hasUpgrade('PI', 11)) gain = gain.times(2);
+        if (hasUpgrade('PI', 12)) gain = gain.times(upgradeEffect('PI', 12));
+        if (hasUpgrade('PI', 15)) gain = gain.times(upgradeEffect('PI', 15));
+        if (hasUpgrade('PI', 24)) gain = gain.times(upgradeEffect('PI', 24));
+        let b22 = tmp.PI?.buyables?.[22]?.effect;
+        if (b22) gain = gain.times(b22);
+        let b23 = tmp.PI?.buyables?.[23]?.effect;
+        if (b23 && b23.points) gain = gain.times(b23.points);
+        if (hasUpgrade('PI', 21)) gain = gain.pow(upgradeEffect('PI', 21));
+        if (hasUpgrade('PI', 25)) gain = gain.pow(upgradeEffect('PI', 25));
+        if (hasUpgrade('PI', 31)) gain = gain.pow(upgradeEffect('PI', 31).add(1));
     }
-    // ---- 软上限处理 ----
 
-    // 如果 M-22 已购买，跳过一重软上限
+    // ---- 软上限处理 ----
+    // 一重（若无 M-22）
     if (!hasUpgrade('m', 22)) {
-        // 一重
         let p1 = new Decimal(1e9);
         if (hasUpgrade('sa', 13)) p1 = p1.times(1e9);
         if (hasUpgrade('lw', 13)) p1 = p1.times(1e9);
         if (hasUpgrade('re', 13)) p1 = p1.times(1e9);
         if (hasUpgrade('p', 35)) p1 = p1.times(1e14);
-        if (hasMilestone('m', 7))p1=p1.times(player.m.mass.add(1).pow(0.01));
+        if (hasMilestone('m', 7)) p1 = p1.times(player.m.mass.add(1).pow(0.01));
         if (hasUpgrade('sa', 44)) p1 = p1.pow(upgradeEffect('sa', 44));
         if (hasUpgrade('m', 13)) p1 = p1.pow(upgradeEffect('m', 13));
-        if (hasChallenge('m', 11))p1=p1.pow(player.points.add(10).log10().pow(0.025));
-    if (hasChallenge('m', 13))p1=p1.pow(player.pp.points.add(10).log10().pow(0.05));
+        if (hasChallenge('m', 11)) p1 = p1.pow(getMSoftcapBonus(player.points, 0.025));
+        if (hasChallenge('m', 13)) p1 = p1.pow(getMSoftcapBonus(player.pp.points, 0.05));
         p1 = p1.pow(energyFactor);
         if (player.m.activeChallenge == 15) p1 = p1.log10();
         if (player.m.activeChallenge == 16) p1 = p1.log10().pow(0.2);
@@ -238,15 +248,15 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
     let p2 = new Decimal("1e308");
     if (hasUpgrade('re', 14)) p2 = p2.times(10);
     if (hasUpgrade('sp', 35)) p2 = p2.times(upgradeEffect('sp', 35));
-    if (hasMilestone('m', 7))p2=p2.times(player.m.mass.add(1).pow(0.01));
+    if (hasMilestone('m', 7)) p2 = p2.times(player.m.mass.add(1).pow(0.01));
     if (hasUpgrade('sa', 44)) p2 = p2.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p2 = p2.pow(upgradeEffect('m', 13));
     if (hasUpgrade('m', 22)) p2 = p2.pow(10);
-    if (hasChallenge('m', 11))p2=p2.pow(player.points.add(10).log10().pow(0.025));
-    if (hasChallenge('m', 13))p2=p2.pow(player.pp.points.add(10).log10().pow(0.05));
-   p2 = p2.pow(energyFactor);
-   if (player.m.activeChallenge == 15) p2 = p2.log10();
-   if (player.m.activeChallenge == 16) p2 = p2.log10().pow(0.2);
+    if (hasChallenge('m', 11)) p2 = p2.pow(getMSoftcapBonus(player.points, 0.025));
+    if (hasChallenge('m', 13)) p2 = p2.pow(getMSoftcapBonus(player.pp.points, 0.05));
+    p2 = p2.pow(energyFactor);
+    if (player.m.activeChallenge == 15) p2 = p2.log10();
+    if (player.m.activeChallenge == 16) p2 = p2.log10().pow(0.2);
     gain = applySoftcap(gain, p2, 8, [
         { cond: () => hasUpgrade('sa', 12), mult: 1.05 },
         { cond: () => hasUpgrade('lw', 12), mult: 1.05 },
@@ -268,12 +278,12 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
     // 三重
     let p3 = new Decimal("1e1000");
     if (hasUpgrade('tp', 12)) p3 = p3.times('1e314');
-    if (hasMilestone('m', 7))p3=p3.times(player.m.mass.add(1).pow(0.01));
+    if (hasMilestone('m', 7)) p3 = p3.times(player.m.mass.add(1).pow(0.01));
     if (hasUpgrade('sa', 44)) p3 = p3.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p3 = p3.pow(upgradeEffect('m', 13));
     if (hasUpgrade('m', 22)) p3 = p3.pow(10);
-    if (hasChallenge('m', 13))p3=p3.pow(player.pp.points.add(10).log10().pow(0.05));
-    if (hasChallenge('m', 11))p3=p3.pow(player.points.add(10).log10().pow(0.025));
+    if (hasChallenge('m', 13)) p3 = p3.pow(getMSoftcapBonus(player.pp.points, 0.05));
+    if (hasChallenge('m', 11)) p3 = p3.pow(getMSoftcapBonus(player.points, 0.025));
     p3 = p3.pow(energyFactor);
     if (player.m.activeChallenge == 15) p3 = p3.log10();
     if (player.m.activeChallenge == 16) p3 = p3.log10().pow(0.2);
@@ -292,15 +302,15 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
     // 四重
     let p4 = new Decimal("1e7000");
     if (hasUpgrade('pp', 14)) p4 = p4.times('1e3000');
-    if (hasMilestone('m', 7))p4=p4.times(player.m.mass.add(1).pow(0.01));
+    if (hasMilestone('m', 7)) p4 = p4.times(player.m.mass.add(1).pow(0.01));
     if (hasUpgrade('sa', 44)) p4 = p4.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p4 = p4.pow(upgradeEffect('m', 13));
     if (hasUpgrade('m', 22)) p4 = p4.pow(10);
-    if (hasChallenge('m', 13))p4=p4.pow(player.pp.points.add(10).log10().pow(0.05));
-    if (hasChallenge('m', 11))p4=p4.pow(player.points.add(10).log10().pow(0.025));
-   p4 = p4.pow(energyFactor);
-   if (player.m.activeChallenge == 15) p4 = p4.log10();
-   if (player.m.activeChallenge == 16) p4 = p4.log10().pow(0.2);
+    if (hasChallenge('m', 13)) p4 = p4.pow(getMSoftcapBonus(player.pp.points, 0.05));
+    if (hasChallenge('m', 11)) p4 = p4.pow(getMSoftcapBonus(player.points, 0.025));
+    p4 = p4.pow(energyFactor);
+    if (player.m.activeChallenge == 15) p4 = p4.log10();
+    if (player.m.activeChallenge == 16) p4 = p4.log10().pow(0.2);
     gain = applySoftcap(gain, p4, 7.8, [
         { cond: () => hasUpgrade('tp', 25), mult: 1.05 },
         { cond: () => hasUpgrade('pp', 12), mult: 1.4 },
@@ -315,12 +325,12 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
 
     // 五重
     let p5 = new Decimal("1e50000");
-    if (hasMilestone('m', 7))p5=p5.times(player.m.mass.add(1).pow(0.01));
+    if (hasMilestone('m', 7)) p5 = p5.times(player.m.mass.add(1).pow(0.01));
     if (hasUpgrade('sa', 44)) p5 = p5.pow(upgradeEffect('sa', 44));
     if (hasUpgrade('m', 13)) p5 = p5.pow(upgradeEffect('m', 13));
     if (hasUpgrade('m', 22)) p5 = p5.pow(10);
-    if (hasChallenge('m', 13))p5=p5.pow(player.pp.points.add(10).log10().pow(0.05));
-    if (hasChallenge('m', 11))p5=p5.pow(player.points.add(10).log10().pow(0.025));
+    if (hasChallenge('m', 13)) p5 = p5.pow(getMSoftcapBonus(player.pp.points, 0.05));
+    if (hasChallenge('m', 11)) p5 = p5.pow(getMSoftcapBonus(player.points, 0.025));
     p5 = p5.pow(energyFactor);
     if (player.m.activeChallenge == 15) p5 = p5.log10();
     if (player.m.activeChallenge == 16) p5 = p5.log10().pow(0.2);
@@ -335,36 +345,41 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
         { cond: () => player.m.activeChallenge == 16, mult: 0.5 },
         { cond: () => hasUpgrade('sa', 43), mult: 1.05 },
     ], 'quintupleSoftcapHint', 0.4);
-    let pen6 = hasUpgrade('m', 22) ? 0.02 : 0.2; 
+
+    let pen6 = hasUpgrade('m', 22) ? 0.02 : 0.2;
     let pen7 = hasUpgrade('m', 22) ? 0.01 : 0.1;
     let pen8 = hasUpgrade('m', 22) ? 0.005 : 0.05;
     let pen9 = hasUpgrade('m', 22) ? 0.0025 : 0.025;
 
+    // 六重
     let p6 = new Decimal("1e1e6");
     if (hasUpgrade('m', 14)) p6 = p6.pow(10);
     if (hasUpgrade('m', 22)) p6 = p6.pow(10);
-    if (hasChallenge('m', 12)) p6 = p6.pow(player.points.add(10).log10().pow(0.0125));
-    if (hasChallenge('m', 13))p6=p6.pow(player.pp.points.add(10).log10().pow(0.05));
+    if (hasChallenge('m', 12)) p6 = p6.pow(getMSoftcapBonus(player.points, 0.0125));
+    if (hasChallenge('m', 13)) p6 = p6.pow(getMSoftcapBonus(player.pp.points, 0.05));
     p6 = p6.pow(energyFactor);
     if (player.m.activeChallenge == 15) p6 = p6.log10();
     if (player.m.activeChallenge == 16) p6 = p6.log10().pow(0.2);
     gain = applySoftcap(gain, p6, 5.5, [
-         { cond: () => hasUpgrade('m', 34), mult: 25 },
-         { cond: () => player.m.activeChallenge == 16, mult: 0.5 },
+        { cond: () => hasUpgrade('m', 34), mult: 25 },
+        { cond: () => player.m.activeChallenge == 16, mult: 0.5 },
     ], 'sextupleSoftcapHint', pen6);
 
+    // 七重
     let p7 = new Decimal("1e1e9");
-   p7 = p7.pow(energyFactor);
-   if (player.m.activeChallenge == 15) p7 = p7.log10();
-   if (player.m.activeChallenge == 16) p7 = p7.log10().pow(0.2);
+    p7 = p7.pow(energyFactor);
+    if (player.m.activeChallenge == 15) p7 = p7.log10();
+    if (player.m.activeChallenge == 16) p7 = p7.log10().pow(0.2);
     gain = applySoftcap(gain, p7, 4.5, [{ cond: () => player.m.activeChallenge == 16, mult: 0.5 },], 'septupleSoftcapHint', pen7);
 
+    // 八重
     let p8 = new Decimal("1e1e13");
-   p8 = p8.pow(energyFactor);
-   if (player.m.activeChallenge == 15) p8 = p8.log10();
-   if (player.m.activeChallenge == 16) p8 = p8.log10().pow(0.2);
+    p8 = p8.pow(energyFactor);
+    if (player.m.activeChallenge == 15) p8 = p8.log10();
+    if (player.m.activeChallenge == 16) p8 = p8.log10().pow(0.2);
     gain = applySoftcap(gain, p8, 3.5, [{ cond: () => player.m.activeChallenge == 16, mult: 0.5 },], 'octupleSoftcapHint', pen8);
 
+    // 九重
     let p9 = new Decimal("1e1e25");
     p9 = p9.pow(energyFactor);
     if (player.m.activeChallenge == 15) p9 = p9.log10();
@@ -376,27 +391,23 @@ let energyFactor = tmp.m?.energyFactor || new Decimal(1);
         if (player.points.gt(player.cm16BestPoints)) player.cm16BestPoints = new Decimal(player.points);
         if (gain.gt(player.cm16BestPointsPerSec)) player.cm16BestPointsPerSec = new Decimal(gain);
     }
-// 更新普通模式最高纪录（非 CM16 挑战时）
-if (player.m.activeChallenge != 16) {
-    if (player.points.gt(player.BestPoints)) {
-        player.BestPoints = new Decimal(player.points);
+    // 普通模式纪录
+    if (player.m.activeChallenge != 16) {
+        if (player.points.gt(player.BestPoints)) player.BestPoints = new Decimal(player.points);
+        if (gain.gt(player.BestPointsPerSec)) player.BestPointsPerSec = new Decimal(gain);
     }
-    if (gain.gt(player.BestPointsPerSec)) {
-        player.BestPointsPerSec = new Decimal(gain);
-    }
-}
     return gain;
 }
 
 // ==================== 杂项 ====================
 var displayThings = [
     function() {
-        return '当前残局:获得MPR2';
+        return '当前残局:获得MPR4且达e1e30点数';
     }
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e1e24"))
+    return player.points.gte(new Decimal("1e1e30"))
 }
 
 var backgroundStyle = {};

@@ -109,7 +109,10 @@ function getEnergySoftcapFactor() {
     let e = player.m.energy || new Decimal(0);
     let base = new Decimal(2);
     if (hasUpgrade('m', 35)) base = base.add(1);
-    if (hasChallenge('m', 15)) base = base.add(player.points.add(10).log10().log10().pow(0.2).div(10));
+    if (hasChallenge('m', 15)){ let eff=player.points.add(10).log10().log10().pow(0.2).div(10)
+                let cape=new Decimal(1)
+                if(eff.gte(cape))eff=eff.sub(cape).pow(0.5).add(cape)
+                    base = base.add(eff)};
     if(hasMilestone('pr', 1)){base=base.add(Decimal.pow(player.pr.points,1.5).div(50));}
     let raw = Decimal.pow(base, Decimal.log10(e.add(1)));
     let cap = new Decimal("1e9");
