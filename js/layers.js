@@ -1977,9 +1977,21 @@ addLayer("pr", {
 3: {
             unlocked() {return hasMilestone('pr', 2)},
     requirementDescription: "在CM16中达到190基础点数/s",
-    effectDescription: "昔日追忆增加质量强化器效果基础",
+    effectDescription: "昔日追忆增加质量强化器效果基础,解锁新的能量升级",
    done() {
     return player.m.activeChallenge == 16 && (tmp.CM16pointsbasesec || new Decimal(0)).gte(190);
+},
+    onComplete() {
+        player.pr.points = player.pr.points.add(1);
+        updateTemp();
+    }
+},
+4: {
+            unlocked() {return hasMilestone('pr', 3)},
+    requirementDescription: "真是一对苦命鸳鸯",
+    effectDescription: "昔日追忆增加能量倍增器基础",
+   done() {
+    return player.m.activeChallenge == 16 && hasUpgrade('PI',45);
 },
     onComplete() {
         player.pr.points = player.pr.points.add(1);
@@ -2140,7 +2152,7 @@ addLayer("m", {
             return "能量基于mass每秒产生,<b>1.79e308</b>后开始。";
         }],
         "blank",
-        ["upgrades", [6]]   // 能量升级
+      ["upgrades", [6, 7, 8, 9, 10]]   // 能量升级
     ],
     unlocked() { return player.m.mass.gte('1.79e308') || player.m.energy.gte(0.00308) || hasMilestone('m', 10); }
 },
@@ -2189,6 +2201,10 @@ if (player.m.mass.gte('1.79e308')) {
     energyMult = energyMult.times(buy31Eff);
     if (hasUpgrade('m', 32)) {
         let eff = upgradeEffect('m', 32);
+        if (eff.energy) energyMult = energyMult.times(eff.energy);
+    }
+    if (hasUpgrade('m', 72)) {
+        let eff = upgradeEffect('m', 72);
         if (eff.energy) energyMult = energyMult.times(eff.energy);
     }
     let energyPerSec = Decimal.log10(player.m.mass.div(1.79e308).add(1)).div(100).times(energyMult);
@@ -2565,6 +2581,82 @@ if (hasMilestone('m', 4)) {
         },
         effectDisplay() { return '*'+format(upgradeEffect(this.layer, this.id),4,true) ; }
     },
+    71: {
+        title: "上限重回",
+        description: "去掉限制II效果改为延长前六重软上限^10",
+        cost: new Decimal(1e75),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',65)&&hasMilestone('pr',3); },
+   
+    },
+    72: {
+        title: "能量强化I",
+        description: "解锁Points Power效果III,Points Power强化能量获取",
+        cost: new Decimal(1e76),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',71); },
+   effect() {
+    let p = player.pp.pointsPower || new Decimal(0);
+    let raw = p.add(1).log10().add(1).pow(3.33);
+    return { energy: raw };
+},
+        effectDisplay() {
+        let eff = upgradeEffect(this.layer, this.id);
+        return `能量获取 *${format(eff.energy, 4, true)}`;
+    }
+    },
+     73: {
+        title: "能量强化II",
+        description: "能量强化能量效果基础",
+        cost: new Decimal(2.5e83),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',72); },
+   effect() {
+    let e = player.m.energy || new Decimal(0);
+    let raw = e.add(1).log10().add(1).log10().add(1).div(10);
+    return raw },
+        effectDisplay() {
+        return `+${format(upgradeEffect(this.layer, this.id), 6, true)}`;
+    }
+    },
+    74: {
+        title: "能量强化III",
+        description: "能量强化成就基础",
+        cost: new Decimal(1e84),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',73); },
+   effect() {
+    let e = player.m.energy || new Decimal(0);
+    let raw = e.add(1).log10().add(1).log10().add(1).pow(0.5).div(100);
+    return raw },
+        effectDisplay() {
+        return `+${format(upgradeEffect(this.layer, this.id), 6, true)}`;
+    }
+    },
+    75: {
+        title: "能量强化IV",
+        description: "能量强化能量倍增器基础,解锁UPI-16",
+        cost: new Decimal(1e86),
+        currencyDisplayName: "能量",
+        currencyInternalName: "energy",
+        currencyLayer: "m",
+        unlocked() { return hasUpgrade('m',74); },
+   effect() {
+    let e = player.m.energy || new Decimal(0);
+    let raw = e.add(1).log10().add(1).log10().add(1).pow(1.75).div(10);
+    return raw },
+        effectDisplay() {
+        return `+${format(upgradeEffect(this.layer, this.id), 6, true)}`;
+    }
+    },
         },
 
     buyables: {
@@ -2813,6 +2905,8 @@ if (x.gte(cap)) costbase = costbase.add(x.div(cap));
     currencyInternalName: "energy",
     currencyLayer: "m",
     effect(x) { let base =new Decimal(5);
+        if (hasUpgrade('m', 75)) base =base.add(upgradeEffect('m', 75));
+        if(hasMilestone('pr', 0)){base=base.add(Decimal.pow(player.pr.points,2).div(100));}
         let raw=base.pow(x)
         let capexp=new Decimal(60)
         let cap=base.pow(capexp)
@@ -2823,7 +2917,7 @@ if (x.gte(cap)) costbase = costbase.add(x.div(cap));
         let bought = getBuyableAmount(this.layer, this.id);
         let cost = tmp[this.layer].buyables[this.id]?.cost || new Decimal(0);
         let eff = tmp[this.layer].buyables[this.id]?.effect || new Decimal(1);
-        return `花费: ${format(cost)} 能量\n已购买: ${formatWhole(bought)}\n效果: 能量获取*${format(eff)}`;
+        return `花费: ${format(cost)} 能量\n已购买: ${formatWhole(bought)}\n效果: 能量获取*${format(eff,4,true)}`;
     },
     canAfford() {
         let cost = tmp[this.layer].buyables[this.id]?.cost;
@@ -2985,19 +3079,28 @@ addLayer("PI", {
     player.PI.best = player.PI.best.max(player.PI.points);
     player.PI.brokenMemoryMax = player.PI.brokenMemoryMax.max(player.PI.brokenMemory);
 
+    // 计算指定 bmMax 对应的需求阈值指数（已含额外幂次）
+    function getThresholdExponent(bmMax) {
+        let exponent = bmMax.add(1).log10().div(100).add(2);
+        if (bmMax.gt(100)) exponent = exponent.pow(bmMax.div(100));
+        if (bmMax.gt(200)) exponent = exponent.pow(bmMax.div(200));
+        if (bmMax.gt(300)) exponent = exponent.pow(bmMax.div(300));
+        return exponent;
+    }
+
+    // 获取需求阈值：底数 ^ 指数
+    function getThreshold(bmMax) {
+        let exponent = getThresholdExponent(bmMax);
+        return Decimal.pow(bmMax.div(10).add(2), exponent);
+    }
+
     let logBest = Decimal.log10(player.PI.best.add(1));
-    let thresholdExp = Decimal.pow(
-        player.PI.brokenMemoryMax.div(10).add(2),
-        player.PI.brokenMemoryMax.add(1).log10().div(100).add(2)
-    );
+    let thresholdExp = getThreshold(player.PI.brokenMemoryMax);
 
     while (logBest.gte(thresholdExp) && player.PI.brokenMemoryMax.lt(1e9)) {
         player.PI.brokenMemory = player.PI.brokenMemory.add(1);
         player.PI.brokenMemoryMax = player.PI.brokenMemoryMax.add(1);
-        thresholdExp = Decimal.pow(
-            player.PI.brokenMemoryMax.div(10).add(2),
-            player.PI.brokenMemoryMax.add(1).log10().div(100).add(2)
-        );
+        thresholdExp = getThreshold(player.PI.brokenMemoryMax);
     }
 },
     milestones: {},
@@ -3008,7 +3111,10 @@ addLayer("PI", {
                     let pi = player.PI.points;
                     return `你有 <h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${formatWhole(pi)}</h2> 往昔幻象`;
                 }],
-                "blank",
+                ["display-text", function() {
+                    let ps = tmp.pointsbasesec || new Decimal(0);
+                    return `原点数获取(CM16压缩,软上限应用前):<h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${format(ps,4,true)}/s</h2> `;
+                }],
                 ["display-text", function() {
                     let pbs = tmp.CM16pointsbasesec || new Decimal(0);
                     return `CM16压缩后点数获取基础:<h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${format(pbs,4,true)}/s</h2> `;
@@ -3028,11 +3134,20 @@ addLayer("PI", {
                 ["display-text", function() {
     let pi = player.PI.points;
     let bmMax = player.PI.brokenMemoryMax;
-    let nextNeed = Decimal.pow(10, Decimal.pow(bmMax.div(10).add(2), bmMax.add(1).log10().div(100).add(2)));
+   function getBrokenMemoryThreshold(bm) {
+        let exponent = bm.add(1).log10().div(100).add(2);
+        if (bm.gt(100)) exponent = exponent.pow(bm.div(100));
+        if (bm.gt(200)) exponent = exponent.pow(bm.div(200));
+        if (bm.gt(300)) exponent = exponent.pow(bm.div(300));
+        return Decimal.pow(bm.div(10).add(2), exponent);
+    }
+    let nextNeed = Decimal.pow(10, getBrokenMemoryThreshold(bmMax));
     let pbs = tmp.CM16pointsbasesec || new Decimal(0);
+    let ps = tmp.pointsbasesec || new Decimal(0);
     return `你有 <h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${formatWhole(pi)}</h2> 往昔幻象<br>` +
+    `原点数获取(CM16压缩,软上限应用前):<h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${format(ps,4,true)}/s</h2><br> `+
     `CM16压缩后点数获取基础:<h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${format(pbs,4,true)}/s</h2><br> `+
-           `破碎之忆: <h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${formatWhole(player.PI.brokenMemory)}</h2> (最高: <h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${formatWhole(bmMax)}</h2>)<br>` +
+           `破碎之忆: <h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${formatWhole(player.PI.brokenMemory)}/${formatWhole(bmMax)}</h2><br>` +
            `下一个破碎之忆需达 <h2 style="color: #ffffffff; text-shadow: 0px 0px 10px #ffffffff;">${format(nextNeed, 4, true)}</h2> 往昔幻象`;
 }],
                 "blank",
@@ -3074,7 +3189,9 @@ addLayer("PI", {
             cost: new Decimal(10),
             unlocked() { return hasUpgrade('PI', 12); },
             effect() {
-                return player.points.add(1).log10().add(1).pow(0.28);
+                let raw=player.points.add(1).log10().add(1).pow(0.28)
+                if(hasUpgrade('PI',41))raw=raw.pow(upgradeEffect('PI', 41))
+                return raw;
             },
             effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
         },
@@ -3094,7 +3211,10 @@ addLayer("PI", {
             cost: new Decimal(100),
             unlocked() { return hasUpgrade('PI', 14); },
             effect() {
-                return player.points.add(1).pow(0.128);
+                let raw=player.points.add(1).pow(0.128)
+                if(hasUpgrade('PI',42))raw=raw.pow(upgradeEffect('PI', 42))
+                return raw;
+               
             },
             effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); },
         },
@@ -3125,7 +3245,9 @@ addLayer("PI", {
             cost: new Decimal(2500),
             unlocked() { return hasUpgrade('PI', 22); },
             effect() {
-                return player.PI.points.add(1).pow(0.13);
+                let raw=player.PI.points.add(1).pow(0.13)
+                if(hasUpgrade('PI',43))raw=raw.pow(upgradeEffect('PI', 43))
+                return raw;
             },
             effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
@@ -3137,7 +3259,9 @@ addLayer("PI", {
             effect() {
                 let best = player.cm16BestPoints.add(1).log10().add(1);
                 let bests = player.cm16BestPointsPerSec.add(1).log10().add(1).pow(1.1);
-                return best.times(bests);
+                let raw=best.times(bests)
+                if(hasUpgrade('PI',44))raw=raw.pow(upgradeEffect('PI', 44))
+                return raw;
             },
             effectDisplay() { return "*" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
@@ -3181,7 +3305,9 @@ addLayer("PI", {
             unlocked() { return hasMilestone('pr', 2) && hasUpgrade('PI', 32); },
             effect() {
                 let pi = player.PI.brokenMemoryMax.add(1);
-                return pi.pow(7);
+                let raw=pi.pow(7)
+                if(hasUpgrade('PI',45))raw=raw.pow(upgradeEffect('PI', 45))
+                return raw;
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
@@ -3192,7 +3318,9 @@ addLayer("PI", {
             unlocked() { return hasMilestone('pr', 2) && hasUpgrade('PI', 33); },
             effect() {
                 let pi = player.PI.brokenMemoryMax.add(1);
-                return pi.pow(5);
+                let raw=pi.pow(5)
+                if(hasUpgrade('PI',45))raw=raw.pow(upgradeEffect('PI', 45))
+                return raw;
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
@@ -3203,7 +3331,64 @@ addLayer("PI", {
             unlocked() { return hasMilestone('pr', 2) && hasUpgrade('PI', 34); },
             effect() {
                 let pi = player.PI.brokenMemoryMax.add(1);
-                return pi.pow(3);
+                let raw=pi.pow(3)
+                if(hasUpgrade('PI',45))raw=raw.pow(upgradeEffect('PI', 45))
+                return raw;
+            },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+        },
+        41: {
+            title: "你…你可还有话要说!",
+            description: "基于最高破碎之忆提升UPI-3效果",
+            cost: new Decimal(1e13),
+            unlocked() { return hasUpgrade('m', 75) && hasUpgrade('PI', 35); },
+            effect() {
+                let pi = player.PI.brokenMemoryMax.add(1);
+                return pi.add(1).log10().add(1).pow(2.5);
+            },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+        },
+         42: {
+            title: "再无话说",
+            description: "基于最高破碎之忆提升UPI-5效果",
+            cost: new Decimal(1e15),
+            unlocked() { return hasUpgrade('PI', 41); },
+            effect() {
+                let pi = player.PI.brokenMemoryMax.add(1);
+                return pi.add(1).log10().add(1).pow(2);
+            },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+        },
+         43: {
+            title: "请速速动手",
+            description: "基于最高破碎之忆提升UPI-8效果",
+            cost: new Decimal(1e16),
+            unlocked() { return hasUpgrade('PI', 42); },
+            effect() {
+                let pi = player.PI.brokenMemoryMax.add(1);
+                return pi.add(1).log10().add(1).pow(0.350234);
+            },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+        },
+         44: {
+            title: "真是一对",
+            description: "基于最高破碎之忆提升UPI-9效果",
+            cost: new Decimal(1e16),
+            unlocked() { return hasUpgrade('PI', 43); },
+            effect() {
+                let pi = player.PI.brokenMemoryMax.add(1);
+                return pi.add(1).log10().add(1).pow(1.5);
+            },
+            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
+        },
+        45: {
+            title: "苦命鸳鸯",
+            description: "基于最高破碎之忆提升UPI-13,14,15效果",
+            cost: new Decimal(1e17),
+            unlocked() { return hasUpgrade('PI', 44); },
+            effect() {
+                let pi = player.PI.brokenMemoryMax.add(1);
+                return pi.add(1).log10().add(1);
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
@@ -3339,8 +3524,16 @@ addLayer("ach", {
     layerShown() { return true },
 
     tabFormat: {
-        "成就": { content: ["main-display", "blank", "achievements"] },
-        "里程碑": { content: ["main-display", "blank", "milestones"] }
+        "成就": { content: [["display-text", function() {
+    let ach = player.ach.points;
+    let eff = tmp.ach?.effect || new Decimal(1);
+    return `你有 <h2 style="color: #fbff00ff; text-shadow: 0px 0px 10px #fbff00ff;">${formatWhole(ach)}</h2> 成就点数,使点数获取 <h2 style="color: #fbff00ff; text-shadow: 0px 0px 10px #fbff00ff;">*${format(eff, 4, true)}</h2>`;
+}], "blank", "achievements"] },
+        "里程碑": { content: [["display-text", function() {
+    let ach = player.ach.points;
+    let eff = tmp.ach?.effect || new Decimal(1);
+    return `你有 <h2 style="color: #fbff00ff; text-shadow: 0px 0px 10px #fbff00ff;">${formatWhole(ach)}</h2> 成就点数,使点数获取 <h2 style="color: #fbff00ff; text-shadow: 0px 0px 10px #fbff00ff;">*${format(eff, 4, true)}</h2>`;
+}], "blank", "milestones"] }
     },
     milestones: {
         0: { requirementDescription: "解放双手I (18成就点)", effectDescription: "自动购买P,SP,A层升级", done() { return player.ach.points.gte(18) } },
@@ -3427,6 +3620,7 @@ addLayer("ach", {
                 let cape=new Decimal(1)
                 if(eff.gte(cape))eff=eff.sub(cape).pow(0.5).add(cape)
                     base = base.add(eff)};
+                if (hasUpgrade('m', 74)) base = base.add(upgradeEffect('m', 74));
     if(hasMilestone('pr', 0)){base=base.add(Decimal.pow(player.pr.points,2).div(100));}
     // 如果里程碑7未达成，则应用优化I和II
     if (!hasMilestone('ach', 7)) {

@@ -119,7 +119,7 @@ function getPointGen() {
     if (tmp.ach?.effect) gain = gain.times(tmp.ach.effect);
 
     // ---- M-22: 将原本弱化/延迟一重软上限的效果转换为直接对 gain 的加成 ----
-    if (hasUpgrade('m', 22)) {
+    if (hasUpgrade('m', 22)&&!hasUpgrade('m', 71)) {
          if (hasUpgrade('p', 32)) gain = gain.times(upgradeEffect('p', 32));
          function delay(eff) {
             gain = gain.times(eff);
@@ -167,7 +167,7 @@ function getPointGen() {
     if (bestPps.gt(1)) gain = gain.pow(Ppseff);
     let tpDensityEff = tmp.tp?.buyables?.[21]?.effect;
     if (tpDensityEff && tpDensityEff.gt(1)) gain = gain.pow(tpDensityEff);
-
+tmp.pointsbasesec = new Decimal(gain);
     // ---- 挑战压缩 ----
     if (player.pp.activeChallenge == 11) gain = gain.pow(0.6);
     if (player.pp.activeChallenge == 12) gain = gain.pow(0.5);
@@ -206,7 +206,7 @@ tmp.CM16pointsbasesec = new Decimal(gain);
 
     // ---- 软上限处理 ----
     // 一重（若无 M-22）
-    if (!hasUpgrade('m', 22)) {
+    if (!(hasUpgrade('m', 22)&&!hasUpgrade('m', 71))) {
         let p1 = new Decimal(1e9);
         if (hasUpgrade('sa', 13)) p1 = p1.times(1e9);
         if (hasUpgrade('lw', 13)) p1 = p1.times(1e9);
@@ -346,11 +346,10 @@ tmp.CM16pointsbasesec = new Decimal(gain);
         { cond: () => hasUpgrade('sa', 43), mult: 1.05 },
     ], 'quintupleSoftcapHint', 0.4);
 
-    let pen6 = hasUpgrade('m', 22) ? 0.02 : 0.2;
-    let pen7 = hasUpgrade('m', 22) ? 0.01 : 0.1;
-    let pen8 = hasUpgrade('m', 22) ? 0.005 : 0.05;
-    let pen9 = hasUpgrade('m', 22) ? 0.0025 : 0.025;
-
+    let pen6 = (hasUpgrade('m', 22) && !hasUpgrade('m', 71)) ? 0.02 : 0.2;
+let pen7 = (hasUpgrade('m', 22) && !hasUpgrade('m', 71)) ? 0.01 : 0.1;
+let pen8 = (hasUpgrade('m', 22) && !hasUpgrade('m', 71)) ? 0.005 : 0.05;
+let pen9 = (hasUpgrade('m', 22) && !hasUpgrade('m', 71)) ? 0.0025 : 0.025;
     // 六重
     let p6 = new Decimal("1e1e6");
     if (hasUpgrade('m', 14)) p6 = p6.pow(10);
@@ -402,12 +401,12 @@ tmp.CM16pointsbasesec = new Decimal(gain);
 // ==================== 杂项 ====================
 var displayThings = [
     function() {
-        return '当前残局:获得MPR4且达e1e30点数';
+        return '当前残局:获得MPR5且达e1e38点数';
     }
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e1e30"))
+    return player.points.gte(new Decimal("1e1e38"))
 }
 
 var backgroundStyle = {};
