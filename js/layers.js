@@ -1968,7 +1968,7 @@ addLayer("pr", {
             unlocked() {return hasMilestone('pr', 1)},
     requirementDescription: "在CM16中达到10000点数/s",
     effectDescription: "昔日追忆增加质量阶级效果基础,解锁UPI-11",
-    done() { return player.BestPointsPerSec.gte(1e4) && player.m.activeChallenge == 16; },
+    done() { return player.cm16BestPointsPerSec.gte(1e4) && player.m.activeChallenge == 16; },
     onComplete() {
         player.pr.points = player.pr.points.add(1);
         updateTemp();
