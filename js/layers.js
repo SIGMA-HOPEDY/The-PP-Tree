@@ -3373,7 +3373,7 @@ addLayer("PI", {
          44: {
             title: "真是一对",
             description: "基于最高破碎之忆提升UPI-9效果",
-            cost: new Decimal(1e16),
+            cost: new Decimal(5e16),
             unlocked() { return hasUpgrade('PI', 43); },
             effect() {
                 let pi = player.PI.brokenMemoryMax.add(1);
@@ -3384,7 +3384,7 @@ addLayer("PI", {
         45: {
             title: "苦命鸳鸯",
             description: "基于最高破碎之忆提升UPI-13,14,15效果",
-            cost: new Decimal(1e17),
+            cost: new Decimal(2.5e17),
             unlocked() { return hasUpgrade('PI', 44); },
             effect() {
                 let pi = player.PI.brokenMemoryMax.add(1);
@@ -3627,7 +3627,7 @@ addLayer("ach", {
         if (hasMilestone('ach', 1)) base = base.add(player.ach.points);
         if (hasMilestone('ach', 2)) base = base.pow(player.ach.points.div(37.5).add(1));
     }
-    let raw = base.pow(player.ach.points.add(1));
+    let raw = base.pow(player.ach.points);
     let cap = new Decimal('1e2000');
     return raw.lte(cap) ? raw : cap.times(raw.div(cap).pow(0.5));
 },
