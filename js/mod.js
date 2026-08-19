@@ -412,5 +412,5 @@ function isEndgame() {
 var backgroundStyle = {};
 
 function maxTickLength() {
-    return 3600;
+    return 600;
 }

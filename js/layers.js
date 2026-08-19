@@ -81,6 +81,8 @@ buyables: {
                 let exp = x.times(x.add(1)).pow(x.add(10).log10().div(3).add(1));
                 let cap = new Decimal("5000");
         if(x.gte(cap))exp=exp.pow(x.div(cap))
+            let cap2 = new Decimal("10000");
+        if(x.gte(cap2))exp=exp.pow(x.div(cap2))
                 return Decimal.pow(base, exp).floor();
             },
     freeAmount() {
@@ -94,7 +96,9 @@ buyables: {
         if (hasUpgrade('sp', 44)) base = base.times(upgradeEffect('sp', 44));
         let exp = total.pow(total.add(10).log10().div(2).add(1.01));
         let cap = new Decimal("5000");
-        if(x.gte(cap))exp=exp.pow(x.div(cap).pow(0.5))
+        if(x.gte(cap))exp=exp.pow(x.div(cap).pow(0.9))
+            let cap2 = new Decimal("10000");
+        if(x.gte(cap2))exp=exp.pow(x.div(cap2).pow(0.8))
         return Decimal.pow(base, exp);
     },
     display() {
@@ -397,7 +401,9 @@ addLayer("sp", {
         if (x.eq(0)) return new Decimal(1);
         let base = x.times(x.add(1).log10().add(1).times(10));
         let exp = x.add(1).pow(x.div(10).add(1));
-        return Decimal.pow(base, exp).floor();
+        let cost=Decimal.pow(base, exp).floor()
+        if(x.gte(150))cost=cost.pow(x.sub(150).add(1))
+        return cost;
     },
     // 免费数量（预留扩展）
     freeAmount() {
@@ -409,7 +415,9 @@ addLayer("sp", {
         let base = total.times(total.add(1).log10().times(100));
         if (hasUpgrade('sp', 45)) base = base.times(upgradeEffect('sp', 45));
         let exp = total.add(1).pow(total.div(20).add(1));
-        return Decimal.pow(base, exp);
+        let eff = Decimal.pow(base, exp);
+        if(total.gte(150))eff=eff.pow(x.div(150).add(1))
+        return eff;
     },
     display() {
         let bought = getBuyableAmount(this.layer, this.id);
@@ -1805,18 +1813,24 @@ tabFormat: {
         rows: 4, cols: 5,
         11: {
             title: "点数指数",
-            description: "每秒点数获取^(pp+1)^ {(1+lg(lg(pp+1)+1))/ (2(lg(pp+1)+10))},先于软上限生效",
+            description: "每秒点数获取^(pp+1)^ {(1+lg(lg(pp+1)+1))/ (4(lg(pp+1)+10))},先于软上限生效",
             cost: new Decimal(7000),
             unlocked() { return true },
-            effect() {
-                let x = player.pp.points;
-                if (x.eq(0)) return new Decimal(1);
-                let logX = x.add(1).log10();
-                let logLog = logX.add(1).log10();
-                let exponent = new Decimal(1).add(logLog).div(new Decimal(4).times(logX.add(10)));
-                let y = x.add(1).pow(exponent);
-                return  y;
-            },
+           effect() {
+    let x = player.pp.points;
+    if (x.eq(0)) return new Decimal(1);
+
+    let logX = x.add(1).log10();
+    let logLog = logX.add(1).log10();
+    let exponent = new Decimal(1).add(logLog).div(new Decimal(4).times(logX.add(10)));
+    let y1 = x.add(1).pow(exponent);
+
+    let cap = new Decimal(10);
+    if (y1.gte(cap)) {
+        return cap.times(Decimal.log10(y1.div(cap)).add(1));
+    }
+    return y1;
+},
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id), 4, true) }
         },
         12: { title: "指数软化", description: "软上限(三重、四重)指数再分别乘以1.3,1.4", cost: new Decimal(7000), unlocked() { return hasUpgrade('pp', 11) } },
@@ -1840,6 +1854,10 @@ tabFormat: {
                 if (hasUpgrade('pp', 24)) exp = exp.add(0.025);
                 if (hasUpgrade('m', 15)) exp = exp.add(0.025);
                 let y=Decimal.pow(Decimal.log10(pp.add(10)), exp);
+                let cap = new Decimal("5");
+    if (y.gte(cap)) {
+         return cap.times(Decimal.log10(y.div(cap)).add(1));
+    }
                 return  y;
             },
             effectDisplay() {
@@ -1944,63 +1962,58 @@ addLayer("pr", {
     row: 5,   
     branches: ['pp','m'],                 
     layerShown() { return player.m.activeChallenge == 16 || player.pr.points.gt(0); },
-    milestones: {
-        0: {
-            requirementDescription: "在CM16中达到10000点数",
-            effectDescription: "昔日追忆增加成就基础,解锁UPI-6",
-            done() { return player.points.gte(1e4) && player.m.activeChallenge == 16; },
-            onComplete() {
-                player.pr.points = player.pr.points.add(1);
-                updateTemp();
-            }
-        },
-        1: {
-            unlocked() {return hasMilestone('pr', 0)},
-    requirementDescription: "在CM16中达到10000往昔幻象",
-    effectDescription: "昔日追忆增加能量效果基础,解锁破碎的记忆",
-    done() { return player.PI.points.gte(1e4) && player.m.activeChallenge == 16; },
-    onComplete() {
-        player.pr.points = player.pr.points.add(1);
-        updateTemp();
-    }
-},
- 2: {
-            unlocked() {return hasMilestone('pr', 1)},
-    requirementDescription: "在CM16中达到10000点数/s",
-    effectDescription: "昔日追忆增加质量阶级效果基础,解锁UPI-11",
-    done() { return player.cm16BestPointsPerSec.gte(1e4) && player.m.activeChallenge == 16; },
-    onComplete() {
-        player.pr.points = player.pr.points.add(1);
-        updateTemp();
-    }
-},
-3: {
-            unlocked() {return hasMilestone('pr', 2)},
-    requirementDescription: "在CM16中达到190基础点数/s",
-    effectDescription: "昔日追忆增加质量强化器效果基础,解锁新的能量升级",
-   done() {
-    return player.m.activeChallenge == 16 && (tmp.CM16pointsbasesec || new Decimal(0)).gte(190);
-},
-    onComplete() {
-        player.pr.points = player.pr.points.add(1);
-        updateTemp();
-    }
-},
-4: {
-            unlocked() {return hasMilestone('pr', 3)},
-    requirementDescription: "真是一对苦命鸳鸯",
-    effectDescription: "昔日追忆增加能量倍增器基础",
-   done() {
-    return player.m.activeChallenge == 16 && hasUpgrade('PI',45);
-},
-    onComplete() {
-        player.pr.points = player.pr.points.add(1);
-        updateTemp();
-    }
-},
-        
-        // 可继续按需添加
+                milestones: {
+    0: {
+        requirementDescription: "在CM16中达到10000点数",
+        effectDescription: "昔日追忆增加成就基础,解锁UPI-6",
+        done() { return player.points.gte(1e4) && player.m.activeChallenge == 16; },
+        onComplete() {
+            player.pr.points = player.pr.points.add(1);
+            // 不要调用 updateTemp()！
+        }
     },
+    1: {
+        unlocked() { return hasMilestone('pr', 0); },
+        requirementDescription: "在CM16中达到10000往昔幻象",
+        effectDescription: "昔日追忆增加能量效果基础,解锁破碎的记忆",
+        done() { return player.PI.points.gte(1e4) && player.m.activeChallenge == 16; },
+        onComplete() {
+            player.pr.points = player.pr.points.add(1);
+        }
+    },
+    2: {
+        unlocked() { return hasMilestone('pr', 1); },
+        requirementDescription: "在CM16中达到10000点数/s",
+        effectDescription: "昔日追忆增加质量阶级效果基础,解锁UPI-11",
+        done() { return player.cm16BestPointsPerSec.gte(1e4) && player.m.activeChallenge == 16; },
+        onComplete() {
+            player.pr.points = player.pr.points.add(1);
+        }
+    },
+    3: {
+        unlocked() { return hasMilestone('pr', 2); },
+        requirementDescription: "在CM16中达到190基础点数/s",
+        effectDescription: "昔日追忆增加质量强化器效果基础,解锁新的能量升级",
+        done() {
+            return player.m.activeChallenge == 16 && (tmp.CM16pointsbasesec || new Decimal(0)).gte(190);
+        },
+        onComplete() {
+            player.pr.points = player.pr.points.add(1);
+        }
+    },
+    4: {
+        unlocked() { return hasMilestone('pr', 3); },
+        requirementDescription: "真是一对苦命鸳鸯",
+        effectDescription: "昔日追忆增加能量倍增器基础",
+        done() {
+            return player.m.activeChallenge == 16 && hasUpgrade('PI', 45);
+        },
+        onComplete() {
+            player.pr.points = player.pr.points.add(1);
+        }
+    },
+},
+
     tabFormat: {
         "昔日追忆": {
             content: [
@@ -3225,7 +3238,11 @@ addLayer("PI", {
             unlocked() { return hasMilestone('pr', 0) && hasUpgrade('PI', 15); },
             effect() {
                 let pi = player.PI.points.add(1);
-                return pi.add(1).log10().add(1).pow(0.0666);
+                let raw=pi.add(1).log10().add(1).pow(0.666)
+                let cap=new Decimal(2)
+                if(raw.gte(cap))raw=raw.div(cap).log10().add(1).times(cap)
+                return raw;
+
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
@@ -3235,7 +3252,10 @@ addLayer("PI", {
             cost: new Decimal(1000),
             unlocked() { return hasUpgrade('PI', 21); },
             effect() {
-                return player.points.add(1).log10().add(1).pow(0.0444);
+                let raw=player.points.add(1).log10().add(1).pow(0.0444)
+                let cap=new Decimal(2)
+                if(raw.gte(cap))raw=raw.div(cap).log10().add(1).times(cap)
+                return raw;
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
@@ -3283,7 +3303,10 @@ addLayer("PI", {
             unlocked() { return hasMilestone('pr', 2) && hasUpgrade('PI', 25); },
             effect() {
                 let pi = player.PI.brokenMemoryMax.add(1);
-                return pi.pow(0.350234).div(444).add(0.350234);
+                let raw=pi.pow(0.350234).div(444).add(0.350234);
+                let cap=new Decimal(2)
+                if(raw.gte(cap))raw=raw.div(cap).log10().add(1).times(cap)
+                return raw;
             },
             effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id),6,true); }
         },
@@ -3294,7 +3317,10 @@ addLayer("PI", {
             unlocked() { return hasMilestone('pr', 2) && hasUpgrade('PI', 31); },
             effect() {
                 let pi = player.PI.brokenMemoryMax.add(1);
-                return pi.pow(0.114514).div(444).add(0.114514);
+                let raw=pi.pow(0.114514).div(444).add(0.114514);
+                let cap=new Decimal(2)
+                if(raw.gte(cap))raw=raw.div(cap).log10().add(1).times(cap)
+                return raw;
             },
             effectDisplay() { return "+" + format(upgradeEffect(this.layer, this.id),6,true); }
         },
@@ -3359,17 +3385,19 @@ addLayer("PI", {
             },
             effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
         },
-         43: {
-            title: "请速速动手",
-            description: "基于最高破碎之忆提升UPI-8效果",
-            cost: new Decimal(1e16),
-            unlocked() { return hasUpgrade('PI', 42); },
-            effect() {
-                let pi = player.PI.brokenMemoryMax.add(1);
-                return pi.add(1).log10().add(1).pow(0.350234);
-            },
-            effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id),4,true); }
-        },
+        43: {
+    title: "请速速动手",
+    description: "基于最高破碎之忆提升UPI-8效果(硬上限^6)",
+    cost: new Decimal(1e16),
+    unlocked() { return hasUpgrade('PI', 42); },
+    effect() {
+        let pi = player.PI.brokenMemoryMax.add(1);
+        let raw = pi.add(1).log10().add(1).pow(0.350234);
+        let cap = new Decimal(6);
+        return Decimal.min(raw, cap);
+    },
+    effectDisplay() { return "^" + format(upgradeEffect(this.layer, this.id), 4, true); }
+},
          44: {
             title: "真是一对",
             description: "基于最高破碎之忆提升UPI-9效果",
