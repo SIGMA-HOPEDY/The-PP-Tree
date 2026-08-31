@@ -10,19 +10,23 @@ let modInfo = {
 }
 
 let VERSION = {
-    num: "0.0",
-    name: "更新至350成就点(98个成就)",
+    num: "0.1",
+    name: "当前残局:获得1U-0且达e1e64点数",
 }
-
 let changelog = `<h1>Changelog:</h1><br>
+    <h3>v0.1</h3><br>
+        - 新增升级<br>
+        - 增加成就<br>
+        - 调整平衡<br>
     <h3>v0.0</h3><br>
         - Added things.<br>
         - Added stuff.`
-
 let winText = `这便是终点...了?`
 
 var doNotCallTheseFunctionsEveryTick = ["blowUpEverything"]
-
+function fixOldSave(oldVersion) {
+    // 可留空，若需要兼容旧版本可在此添加修复逻辑
+}
 // 基础
 function getStartPoints() {
     return new Decimal(modInfo.initialStartPoints)
@@ -203,9 +207,16 @@ tmp.CM16pointsbasesec = new Decimal(gain);
         if (hasUpgrade('PI', 25)) gain = gain.pow(upgradeEffect('PI', 25));
         if (hasUpgrade('PI', 31)) gain = gain.pow(upgradeEffect('PI', 31).add(1));
     }
-
+    // HP 效果：提升点数的指数塔高度
+let hpEff = getHPEffect();
+if (hpEff.gt(0)) {
+    let base = 10;
+    let currentSlog = gain.slog(base);
+    let newSlog = currentSlog.add(hpEff);
+    gain = Decimal.tetrate(base, newSlog);
+}
     // ---- 软上限处理 ----
-    // 一重（若无 M-22）
+   if (!hasUpgrade('hp', 15)) { // 一重（若无 M-22）
     if (!(hasUpgrade('m', 22)&&!hasUpgrade('m', 71))) {
         let p1 = new Decimal(1e9);
         if (hasUpgrade('sa', 13)) p1 = p1.times(1e9);
@@ -298,8 +309,14 @@ tmp.CM16pointsbasesec = new Decimal(gain);
         { cond: () => player.m.activeChallenge == 16, mult: 0.5 },
         { cond: () => true, mult: getEclipseMultiplier(3) }
     ], 'tripleSoftcapHint');
-
-    // 四重
+} else {
+    if (tmp && tmp.other) {
+        tmp.other.softcapHint = "";
+        tmp.other.doubleSoftcapHint = "";
+        tmp.other.tripleSoftcapHint = "";
+    }
+}
+    if (!hasUpgrade('hp', 21)) {  // 四重
     let p4 = new Decimal("1e7000");
     if (hasUpgrade('pp', 14)) p4 = p4.times('1e3000');
     if (hasMilestone('m', 7)) p4 = p4.times(player.m.mass.add(1).pow(0.01));
@@ -322,7 +339,11 @@ tmp.CM16pointsbasesec = new Decimal(gain);
         { cond: () => hasUpgrade('p', 44), mult: 1.04 },
         { cond: () => hasUpgrade('sa', 32), mult: 1.03 },
     ], 'quadrupleSoftcapHint');
-
+} else {
+    if (tmp && tmp.other) {
+        tmp.other.quadrupleSoftcapHint = "";
+    }
+}
     // 五重
     let p5 = new Decimal("1e50000");
     if (hasMilestone('m', 7)) p5 = p5.times(player.m.mass.add(1).pow(0.01));
@@ -384,7 +405,9 @@ let pen9 = (hasUpgrade('m', 22) && !hasUpgrade('m', 71)) ? 0.0025 : 0.025;
     if (player.m.activeChallenge == 15) p9 = p9.log10();
     if (player.m.activeChallenge == 16) p9 = p9.log10().pow(0.2);
     gain = applySoftcap(gain, p9, 2.5, [{ cond: () => player.m.activeChallenge == 16, mult: 0.5 },], 'nonupleSoftcapHint', pen9);
-
+// 应用溢出软上限
+const overflowThreshold = Decimal.tetrate(10, 4); // 即 ee1e10
+gain = overflowSoftcap(gain, overflowThreshold);
     // ---- CM16 记录最高点数和点数/S ----
     if (player.m.activeChallenge == 16) {
         if (player.points.gt(player.cm16BestPoints)) player.cm16BestPoints = new Decimal(player.points);
@@ -401,12 +424,12 @@ let pen9 = (hasUpgrade('m', 22) && !hasUpgrade('m', 71)) ? 0.0025 : 0.025;
 // ==================== 杂项 ====================
 var displayThings = [
     function() {
-        return '当前残局:获得MPR5且达e1e38点数';
+        return '当前残局:获得1U-0且达e1e64点数';
     }
 ];
 
 function isEndgame() {
-    return player.points.gte(new Decimal("1e1e38"))
+    return player.points.gte(new Decimal("1e1e64"))
 }
 
 var backgroundStyle = {};
