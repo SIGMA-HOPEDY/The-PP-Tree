@@ -112,25 +112,12 @@ var systemComponents = {
             <br>Offline Time: {{formatTime(player.offTime.remain)}}<br>
         </span>
         <br>
-        <span v-if="player.points && player.points.lt('1e1000')" class="overlayThing">You have </span>
+        <span v-if="player.points && player.points.lt('1e1000')" class="overlayThing">你有 </span>
         <h2 class="overlayThing" id="points">{{format(player.points)}}</h2>
         <span v-if="player.points && player.points.lt('1e1e6')" class="overlayThing"> {{modInfo.pointsName}}</span>
         <br>
         <span v-if="canGenPoints()" class="overlayThing">
-            ({{tmp.other.oompsMag != 0 ? format(tmp.other.oomps) + " OOM" + (tmp.other.oompsMag < 0 ? "^OOM" : tmp.other.oompsMag > 1 ? "^" + tmp.other.oompsMag : "") + "s" : formatSmall(getPointGen())}}/sec)
-     <!-- 未溢出时显示原有软上限提示 -->
-<template v-if="!tmp.other.overflowActive">
-    <span v-if="tmp.other.softcapHint" class="overlayThing" style="color: #ffffff; font-weight: bold;"><br> {{tmp.other.softcapHint}}</span>
-    <span v-if="tmp.other.doubleSoftcapHint" class="overlayThing" style="color: #ffe5e5; font-weight: bold;"><br> {{tmp.other.doubleSoftcapHint}}</span>
-    <span v-if="tmp.other.tripleSoftcapHint" class="overlayThing" style="color: #ffcccc; font-weight: bold;"><br> {{tmp.other.tripleSoftcapHint}}</span>
-    <span v-if="tmp.other.quadrupleSoftcapHint" class="overlayThing" style="color: #ffb3b3; font-weight: bold;"><br> {{tmp.other.quadrupleSoftcapHint}}</span>
-    <span v-if="tmp.other.quintupleSoftcapHint" class="overlayThing" style="color: #ff9999; font-weight: bold;"><br> {{tmp.other.quintupleSoftcapHint}}</span>
-    <span v-if="tmp.other.sextupleSoftcapHint" class="overlayThing" style="color: #ff8080; font-weight: bold;"><br> {{tmp.other.sextupleSoftcapHint}}</span>
-    <span v-if="tmp.other.septupleSoftcapHint" class="overlayThing" style="color: #ff6666; font-weight: bold;"><br> {{tmp.other.septupleSoftcapHint}}</span>
-    <span v-if="tmp.other.octupleSoftcapHint" class="overlayThing" style="color: #ff4d4d; font-weight: bold;"><br> {{tmp.other.octupleSoftcapHint}}</span>
-    <span v-if="tmp.other.nonupleSoftcapHint" class="overlayThing" style="color: #ff3333; font-weight: bold;"><br> {{tmp.other.nonupleSoftcapHint}}</span>
-</template>
-
+            ({{tmp.other.oompsMag != 0 ? format(tmp.other.oomps) + " OOM" + (tmp.other.oompsMag < 0 ? "^OOM" : tmp.other.oompsMag > 1 ? "^" + tmp.other.oompsMag : "") + "s" : formatSmall(getPointGen())}}/s)
 <!-- 溢出时显示的提示 -->
 <template v-if="tmp.other.overflowActive">
     <span class="overlayThing" style="background: linear-gradient(to right, #ffffff, #ff9999, #ff3333); font-weight: bold; -webkit-text-stroke: 1px #000000ff; text-shadow: -1px -1px 0 #ff0000, 1px -1px 0 #ff0000, -1px 1px 0 #ff0000, 1px 1px 0 #ff0000;"><br> 点数已溢出,软上限已不再有意义</span>

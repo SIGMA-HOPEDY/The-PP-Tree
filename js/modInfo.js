@@ -1,7 +1,7 @@
 export let modInfo = {
-	name: "The P-P Tree",
+	name: "The ??? Tree",
 	author: "nobody",
-	pointsName: "points",
+	pointsName: "微小点数",
 	modFiles: ["layers.js", "tree.js"],
 
 	discordName: "",

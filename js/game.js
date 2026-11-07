@@ -137,26 +137,10 @@ function canReset(layer)
 function rowReset(row, layer) {
     // 定义保留升级的规则：key 为 "触发层_被重置层"，value 为判断函数
     const keepRules = {
-        "sp_p": () => hasMilestone('sp', 3),
-        "a_p": () => hasUpgrade('a', 15),
-        "sa_p": () => hasMilestone('sa', 1) || hasUpgrade('sa', 15), 
-        "lw_p": () => hasUpgrade('lw', 15), 
-        "re_p": () => hasUpgrade('re', 15),
-        "lw_sp": () => hasMilestone('lw', 1) || hasUpgrade('lw', 15),
-        "sa_sp": () => hasUpgrade('sa', 15),
-        "re_sp": () => hasUpgrade('re', 15),
-        "re_a": () => hasMilestone('re', 1) || hasUpgrade('re', 15),
-        "sa_a": () => hasUpgrade('sa', 15),
-        "lw_a": () => hasUpgrade('lw', 15),
     };
 
-    // 新增：定义保留挑战的规则
+    // 定义保留挑战的规则
     const keepChallengesRules = {
-        "m_pp": () => hasUpgrade('m', 24),
-		"PI_pp": () => hasUpgrade('m', 24),
-		"pr_pp": () => hasUpgrade('m', 24), 
-        // 可以继续添加其他规则，例如：
-        // "anotherLayer_targetLayer": () => someCondition(),
     };
 
     for (lr in ROW_LAYERS[row]) {
@@ -168,7 +152,6 @@ function rowReset(row, layer) {
 
         if (layers[lr].doReset) {
             if (!isNaN(row)) {
-                // 如果 M 重置 PP 且拥有 M-24，保留挑战
                 if (!shouldKeepChallenges) {
                     Vue.set(player[lr], "activeChallenge", null);
                 }
@@ -180,16 +163,15 @@ function rowReset(row, layer) {
 
             if (shouldKeep) {
                 let savedUpgrades = player[lr].upgrades ? player[lr].upgrades.slice() : [];
-                // 新增：如果需要保留挑战，也保存挑战数据
+                
                 let savedChallenges = shouldKeepChallenges ? player[lr].challenges : null;
                 layerDataReset(lr);
                 player[lr].upgrades = savedUpgrades;
-                // 恢复挑战数据
+                
                 if (savedChallenges) {
                     player[lr].challenges = savedChallenges;
                 }
             } else {
-                // 新增：如果需要保留挑战，在完全重置前保存
                 let savedChallenges = shouldKeepChallenges ? player[lr].challenges : null;
                 layerDataReset(lr);
                 if (savedChallenges) {
